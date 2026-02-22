@@ -173,14 +173,17 @@ fi
 
 echo "=== Klonen erfolgreich. Extrahiere Textdateien... ==="
 
+# Metadaten aus dem geklonten Repo auslesen
+cd "$TEMP_DIR"
+COMMIT_HASH=$(git rev-parse HEAD)
+BRANCH_NAME=$(git symbolic-ref --short HEAD 2>/dev/null || echo "detached")
+
 TIMESTAMP=$(date '+%Y-%m-%d_%H%M%S')
-OUTPUT_FILE="$(pwd)/${OUTPUT_FILE_PREFIX}_${REPO_NAME}_${TIMESTAMP}.txt"
+OUTPUT_FILE="$(pwd -P)/${OUTPUT_FILE_PREFIX}_${REPO_NAME}_${TIMESTAMP}.txt"
 CONTENT_FILE="${OUTPUT_FILE}.content"
 > "$CONTENT_FILE"
 
 file_count=0
-
-cd "$TEMP_DIR"
 
 while IFS= read -r -d '' file; do
     full_path="$TEMP_DIR/$file"
@@ -206,12 +209,15 @@ echo "=== Extraktion abgeschlossen. Erstelle Export-Datei... ==="
 
 cd - > /dev/null
 
+# Header mit Metadaten erstellen und mit Inhalt kombinieren
 {
     echo "========================================================================="
     echo "Repository Export"
     echo "========================================================================="
     echo "Export-Datum: $(date '+%Y-%m-%d %H:%M:%S')"
     echo "Repository-URL: $REPO_URL"
+    echo "Commit-Hash: $COMMIT_HASH"
+    echo "Branch: $BRANCH_NAME"
     echo "Anzahl extrahierter Textdateien: $file_count"
     echo "========================================================================="
     echo
