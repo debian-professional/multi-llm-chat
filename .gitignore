@@ -1,9 +1,4 @@
 
 shell-scripts/repo_export_private-chatboot.txt
-etc/config/backup/swto*
-etc/config/backup/config
-etc/config/backup/passwd
-etc/config/scripts/ssh-v-to-start.log
-etc/config/scripts/ssh.log
-etc/config/scripts/tornode3ip.log
+var/www/deepseek-chat/sessions
 
