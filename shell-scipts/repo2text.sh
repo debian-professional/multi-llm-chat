@@ -15,61 +15,75 @@ show_help() {
     echo "Argumente:"
     echo "  [GitHub-Repository-URL]  Optional: Die HTTPS- oder SSH-URL des Repos."
     echo "                            Wenn keine URL angegeben wird, erfolgt eine interaktive Eingabe."
+    echo "                            Wird das Skript innerhalb eines Git-Repos ausgeführt,"
+    echo "                            wird automatisch die Remote-URL als Vorschlag verwendet."
     echo ""
     echo "Beispiele:"
     echo "  $0 https://github.com/kubernetes/kubernetes.git"
-    echo "  $0   # dann URL eingeben"
+    echo "  $0   # dann URL eingeben (oder Vorschlag aus Git-Remote)"
 }
 
-# === Funktion: Prüfe, ob das Skript in einem sauberen Git-Repo gestartet wurde ===
-check_git_clean() {
-    # Prüfen, ob wir in einem Git-Repo sind
+# === Funktion: Prüfe, ob das aktuelle Verzeichnis in einem Git-Repo liegt und gib die Remote-URL zurück ===
+get_git_remote_url() {
     if ! git rev-parse --git-dir > /dev/null 2>&1; then
-        echo "Hinweis: Das Skript wird nicht innerhalb eines Git-Repos ausgeführt – überspringe Sauberkeitsprüfung."
+        echo ""
         return
     fi
 
-    # Prüfen auf uncommittete Änderungen (working directory + staged)
-    if ! git diff --quiet || ! git diff --cached --quiet; then
-        echo "FEHLER: Es gibt uncommittete Änderungen im Repository."
-        echo "Bitte committen Sie alle Änderungen oder machen Sie sie rückgängig."
-        exit 1
+    # Erstes Remote ermitteln (sortiert, z.B. origin)
+    local remote=$(git remote | head -n1)
+    if [ -z "$remote" ]; then
+        echo ""
+        return
     fi
 
-    # Prüfen auf nicht gepushte Commits
+    local url=$(git config --get "remote.$remote.url")
+    echo "$url"
+}
+
+# === Funktion: Prüfe, ob das Skript in einem sauberen Git-Repo gestartet wurde (nur Warnung) ===
+check_git_cleanliness() {
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        return 0  # kein Git-Repo, also immer "sauber"
+    fi
+
+    local dirty=0
+    local unpushed=0
     local branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+
+    # Uncommittete Änderungen?
+    if ! git diff --quiet || ! git diff --cached --quiet; then
+        dirty=1
+    fi
+
+    # Nicht gepushte Commits?
     if [ -n "$branch" ]; then
         local remote=$(git config "branch.$branch.remote" 2>/dev/null)
         local merge=$(git config "branch.$branch.merge" 2>/dev/null)
         if [ -n "$remote" ] && [ -n "$merge" ]; then
             local upstream="${remote}/${merge#refs/heads/}"
-            local unpushed=$(git rev-list --count "$upstream..$branch" 2>/dev/null)
-            if [ "$unpushed" -gt 0 ]; then
-                echo "FEHLER: Es gibt $unpushed nicht gepushte Commits auf dem Branch '$branch'."
-                echo "Bitte führen Sie 'git push' aus, bevor Sie fortfahren."
-                exit 1
+            local count=$(git rev-list --count "$upstream..$branch" 2>/dev/null)
+            if [ "$count" -gt 0 ]; then
+                unpushed=$count
             fi
-        else
-            echo "WARNUNG: Branch '$branch' hat keinen Upstream. Kann nicht auf gepushte Commits prüfen."
-            # Hier brechen wir nicht ab, nur Warnung.
+        fi
+    fi
+
+    if [ $dirty -eq 1 ] || [ $unpushed -gt 0 ]; then
+        echo ""
+        echo "WARNUNG: Das aktuelle Git-Repository ist nicht sauber:"
+        [ $dirty -eq 1 ] && echo "  - Es gibt uncommittete Änderungen."
+        [ $unpushed -gt 0 ] && echo "  - Es gibt $unpushed nicht gepushte Commits."
+        echo ""
+        read -p "Trotzdem fortfahren? (j/N): " confirm
+        if [[ ! "$confirm" =~ ^[jJ]$ ]]; then
+            echo "Abbruch."
+            exit 1
         fi
     fi
 }
 
 # === Hauptprogramm ===
-
-# Prüfen, ob eine URL als Argument übergeben wurde
-if [ $# -ge 1 ]; then
-    REPO_URL="$1"
-else
-    # Interaktiv nach der URL fragen
-    read -p "Bitte gib die GitHub-Repository-URL ein: " REPO_URL
-    if [ -z "$REPO_URL" ]; then
-        echo "Fehler: Keine URL eingegeben."
-        show_help
-        exit 1
-    fi
-fi
 
 # Prüfen, ob git installiert ist
 if ! command -v git &> /dev/null; then
@@ -78,15 +92,42 @@ if ! command -v git &> /dev/null; then
     exit 1
 fi
 
+# --- URL bestimmen ---
+REPO_URL=""
+
+# 1. Fall: URL als Parameter übergeben
+if [ $# -ge 1 ]; then
+    REPO_URL="$1"
+else
+    # 2. Fall: Skript läuft in einem Git-Repo? Dann Remote auslesen
+    git_remote_url=$(get_git_remote_url)
+    if [ -n "$git_remote_url" ]; then
+        echo "Gefundene Remote-URL des aktuellen Git-Repos: $git_remote_url"
+        read -p "Diese URL verwenden? (j/n): " use_remote
+        if [[ "$use_remote" =~ ^[jJ]$ ]]; then
+            REPO_URL="$git_remote_url"
+        fi
+    fi
+
+    # 3. Fall: immer noch keine URL -> interaktiv abfragen
+    if [ -z "$REPO_URL" ]; then
+        read -p "Bitte gib die GitHub-Repository-URL ein: " REPO_URL
+        if [ -z "$REPO_URL" ]; then
+            echo "Fehler: Keine URL eingegeben."
+            show_help
+            exit 1
+        fi
+    fi
+fi
+
+# Prüfung auf Sauberkeit des aktuellen Repos (falls wir in einem sind)
+check_git_cleanliness
+
 # Repository-Namen aus der URL extrahieren
 REPO_NAME=$(basename "$REPO_URL" .git)
 
-# Prüfen, ob das aktuelle Verzeichnis ein sauberes Git-Repo ist (optional)
-check_git_clean
-
 # Temporäres Verzeichnis zum Klonen erstellen
 TEMP_DIR=$(mktemp -d -t "${REPO_NAME}-XXXXX")
-
 if [ ! -d "$TEMP_DIR" ]; then
     echo "Fehler: Konnte kein temporäres Verzeichnis erstellen."
     exit 1
@@ -103,11 +144,8 @@ fi
 
 echo "=== Klonen erfolgreich. Extrahiere Textdateien... ==="
 
-# Zeitstempel für Dateinamen
 TIMESTAMP=$(date '+%Y-%m-%d_%H%M%S')
 OUTPUT_FILE="${OUTPUT_FILE_PREFIX}_${REPO_NAME}_${TIMESTAMP}.txt"
-
-# Temporäre Datei für den Inhalt (ohne Header)
 CONTENT_FILE="${OUTPUT_FILE}.content"
 > "$CONTENT_FILE"
 
@@ -140,10 +178,10 @@ while IFS= read -r -d '' file; do
 done < <(git ls-files -z)
 
 echo "=== Aufräumen: Lösche temporäres Repository ==="
-cd /tmp  # aus dem Verzeichnis wechseln, damit löschen funktioniert
+cd /tmp
 rm -rf "$TEMP_DIR"
 
-# Jetzt Header mit Metadaten erstellen und mit Inhalt kombinieren
+# Header mit Metadaten erstellen
 {
     echo "========================================================================="
     echo "Repository Export"
@@ -156,7 +194,6 @@ rm -rf "$TEMP_DIR"
     cat "$CONTENT_FILE"
 } > "$OUTPUT_FILE"
 
-# Temporäre Inhaltsdatei löschen
 rm -f "$CONTENT_FILE"
 
 echo "==============================================="
