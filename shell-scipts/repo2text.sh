@@ -23,7 +23,7 @@ show_help() {
     echo "  $0   # dann URL eingeben (oder Vorschlag aus Git-Remote)"
 }
 
-# === Funktion: Prüfe, ob das aktuelle Verzeichnis in einem Git-Repo liegt und gib die Remote-URL zurück ===
+# === Funktion: Lese Remote-URL des aktuellen Git-Repos (falls vorhanden) ===
 get_git_remote_url() {
     if ! git rev-parse --git-dir > /dev/null 2>&1; then
         echo ""
@@ -41,7 +41,7 @@ get_git_remote_url() {
     echo "$url"
 }
 
-# === Funktion: Prüfe, ob das Skript in einem sauberen Git-Repo gestartet wurde (nur Warnung) ===
+# === Funktion: Prüfe, ob das aktuelle Git-Repo "sauber" ist (keine uncommitteten/unpushed Änderungen) ===
 check_git_cleanliness() {
     if ! git rev-parse --git-dir > /dev/null 2>&1; then
         return 0  # kein Git-Repo, also immer "sauber"
@@ -120,7 +120,7 @@ else
     fi
 fi
 
-# Prüfung auf Sauberkeit des aktuellen Repos (falls wir in einem sind)
+# Prüfung auf Sauberkeit des aktuellen Repos (nur wenn wir in einem sind)
 check_git_cleanliness
 
 # Repository-Namen aus der URL extrahieren
@@ -145,7 +145,8 @@ fi
 echo "=== Klonen erfolgreich. Extrahiere Textdateien... ==="
 
 TIMESTAMP=$(date '+%Y-%m-%d_%H%M%S')
-OUTPUT_FILE="${OUTPUT_FILE_PREFIX}_${REPO_NAME}_${TIMESTAMP}.txt"
+# Absolute Pfade für Ausgabedateien (Startverzeichnis)
+OUTPUT_FILE="$(pwd)/${OUTPUT_FILE_PREFIX}_${REPO_NAME}_${TIMESTAMP}.txt"
 CONTENT_FILE="${OUTPUT_FILE}.content"
 > "$CONTENT_FILE"
 
@@ -177,11 +178,12 @@ while IFS= read -r -d '' file; do
     fi
 done < <(git ls-files -z)
 
-echo "=== Aufräumen: Lösche temporäres Repository ==="
-cd /tmp
-rm -rf "$TEMP_DIR"
+echo "=== Extraktion abgeschlossen. Erstelle Export-Datei... ==="
 
-# Header mit Metadaten erstellen
+# Zurück zum ursprünglichen Arbeitsverzeichnis wechseln (wichtig für den nächsten cat)
+cd - > /dev/null
+
+# Header mit Metadaten erstellen und mit Inhalt kombinieren
 {
     echo "========================================================================="
     echo "Repository Export"
@@ -194,10 +196,15 @@ rm -rf "$TEMP_DIR"
     cat "$CONTENT_FILE"
 } > "$OUTPUT_FILE"
 
+# Temporäre Inhaltsdatei löschen
 rm -f "$CONTENT_FILE"
+
+# Jetzt das temporäre Repository löschen
+echo "=== Aufräumen: Lösche temporäres Repository ==="
+rm -rf "$TEMP_DIR"
 
 echo "==============================================="
 echo "Fertig! Es wurden $file_count Textdateien extrahiert."
-echo "Die Ausgabedatei wurde erstellt: $(pwd)/$OUTPUT_FILE"
+echo "Die Ausgabedatei wurde erstellt: $(pwd)/$(basename "$OUTPUT_FILE")"
 echo "==============================================="
 
