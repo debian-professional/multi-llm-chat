@@ -10,6 +10,7 @@ show_help() {
     echo "Beschreibung:"
     echo "  Klont ein GitHub-Repository, extrahiert den Text aller Textdateien"
     echo "  und schreibt sie mit deutlichen Trennern in eine einzige Textdatei."
+    echo "  Anschließend wird zusätzlich ein ZIP-Archiv dieser Textdatei erstellt."
     echo "  Das Repository wird nach der Extraktion automatisch gelöscht."
     echo ""
     echo "Argumente:"
@@ -205,7 +206,7 @@ while IFS= read -r -d '' file; do
             cat "$full_path"
             echo
             echo
-        } >> "$START_DIR/$CONTENT_FILE"   # Absoluter Pfad zur Content-Datei
+        } >> "$START_DIR/$CONTENT_FILE"
 
         ((file_count++))
         echo "  + Hinzugefügt: $file"
@@ -216,10 +217,8 @@ done < <(git ls-files -z)
 
 echo "=== Extraktion abgeschlossen. Erstelle Export-Datei... ==="
 
-# Wieder ins Startverzeichnis wechseln
 cd "$START_DIR"
 
-# Header mit Metadaten erstellen und mit Inhalt kombinieren
 {
     echo "========================================================================="
     echo "Repository Export"
@@ -234,8 +233,16 @@ cd "$START_DIR"
     cat "$CONTENT_FILE"
 } > "$OUTPUT_FILE"
 
-# Temporäre Inhaltsdatei löschen
 rm -f "$CONTENT_FILE"
+
+# === ZIP-Archiv erstellen ===
+if command -v zip &> /dev/null; then
+    echo "=== Erstelle ZIP-Archiv ==="
+    zip -j "$OUTPUT_FILE.zip" "$OUTPUT_FILE"
+    echo "ZIP-Archiv erstellt: $OUTPUT_FILE.zip"
+else
+    echo "WARNUNG: 'zip' nicht gefunden. Überspringe ZIP-Erstellung."
+fi
 
 echo "=== Aufräumen: Lösche temporäres Repository ==="
 rm -rf "$TEMP_DIR"
@@ -243,5 +250,8 @@ rm -rf "$TEMP_DIR"
 echo "==============================================="
 echo "Fertig! Es wurden $file_count Textdateien extrahiert."
 echo "Die Ausgabedatei wurde erstellt: $START_DIR/$OUTPUT_FILE"
+if [ -f "$OUTPUT_FILE.zip" ]; then
+    echo "ZIP-Archiv erstellt:        $START_DIR/$OUTPUT_FILE.zip"
+fi
 echo "==============================================="
 
