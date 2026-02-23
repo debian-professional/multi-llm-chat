@@ -213,7 +213,7 @@ OUTPUT_FILE="${OUTPUT_FILE_PREFIX}_${REPO_NAME}_$(date +%Y%m%d_%H%M%S).${OUTPUT_
 file_count=0
 
 echo "Analysiere..."
-total_files=$(find "$START_DIR" -type f \( -path "$TEMP_DIR/.gitignore" -o -not -path '*/.*' \) | wc -l)
+total_files=$(find "$START_DIR" -type f \( -path "$TEMP_DIR/.gitignore" -o -path "$TEMP_DIR/.gitattributes" -o -not -path '*/.*' \) | wc -l)
 
 echo "Extrahiere..."
 while IFS= read -r -d '' full_path; do
@@ -244,7 +244,7 @@ while IFS= read -r -d '' full_path; do
         esac
         ((file_count++))
     fi
-done < <(find "$START_DIR" -type f \( -path "$TEMP_DIR/.gitignore" -o -not -path '*/.*' \) -print0 | pv -0 -p -t -e -r -s "$total_files" -l)
+done < <(find "$START_DIR" -type f \( -path "$TEMP_DIR/.gitignore" -o -path "$TEMP_DIR/.gitattributes" -o -not -path '*/.*' \) -print0 | pv -0 -p -t -e -r -s "$total_files" -l)
 
 # Nachbereitung je nach Format
 if [[ "$OUTPUT_FORMAT" == "json" ]]; then
@@ -268,3 +268,4 @@ if $INCLUDE_MD5; then
 fi
 echo "Output: $(pwd)/$OUTPUT_FILE"
 echo "==============================================="
+
