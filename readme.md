@@ -106,7 +106,7 @@ und farbcodiertem Chat-Verlauf.
 ### 9. Feedback-System mit Server-Logging
 Like und Dislike werden in die serverseitige Log-Datei geschrieben:
 
-2026-02-17 17:23:45 | 192.168.1.1 | FEEDBACK | LIKE | msgId:42 | "Die Antwort war..."
+2026-02-17 17:23:45 | 192.168.1.1 | FEEDBACK | LIKE | msgId:42 | "Die Antwort war"
 
 Damit können Antwortqualitäten nachvollzogen und ausgewertet werden.
 
@@ -131,7 +131,6 @@ mit Datum, Uhrzeit und detaillierter Beschreibung. Das Manifest enthält:
 Dieses Konzept macht das Projekt **wartbar, erweiterbar und nachvollziehbar** –
 auch nach langen Pausen oder bei Zusammenarbeit mit KI-Assistenten.
 
----
 
 ## Features im Überblick
 
@@ -173,7 +172,7 @@ auch nach langen Pausen oder bei Zusammenarbeit mit KI-Assistenten.
 - ✅ Git-Workflow mit Deploy-Script
 - ✅ Serverseitiges Logging
 
----
+
 
 ## Sicherheitsarchitektur
 
@@ -197,7 +196,7 @@ Python CGI-Script ──► DeepSeek API
 3. Alle Dateien werden vor der Verarbeitung auf Magic Bytes geprüft
 4. Sessions werden mit restriktiven Dateirechten gespeichert (600/700)
 
----
+
 
 ## Technischer Aufbau
 
@@ -221,7 +220,7 @@ Eine einzige HTML-Datei enthält das gesamte Frontend:
 | `get-log.py` | Log-Datei abrufen |
 | `feedback-log.py` | Like/Dislike loggen |
 
----
+
 
 ## Installation
 
@@ -275,7 +274,6 @@ chmod +x /var/www/deepseek-chat/cgi-bin/*.py
 ./deploy.sh
 
 
----
 
 ## Konfiguration
 
@@ -297,7 +295,7 @@ const MODEL_CONFIG = {
 
 Bei einem Modellwechsel muss **nur dieser Block** angepasst werden.
 
----
+
 
 ## Verwendung
 
@@ -318,7 +316,6 @@ Bei einem Modellwechsel muss **nur dieser Block** angepasst werden.
 ### Session laden
 - **Exportieren** → **Chat-Verlauf laden** → gespeicherte Session auswählen
 
----
 
 ## Projektstruktur
 
@@ -343,7 +340,6 @@ Bei einem Modellwechsel muss **nur dieser Block** angepasst werden.
 └── sessions/               # Gespeicherte Chat-Sessions (JSON)
 
 
----
 
 ## Versionierung
 
@@ -359,7 +355,6 @@ git tag -a v0.80 -m "Version 0.80 - stable release"
 git push origin v0.80
 
 
----
 
 ## Manifest
 
@@ -372,7 +367,6 @@ Das Projekt enthält ein detailliertes **Design-Manifest** (`manifest` Datei), d
 Das Manifest ist **integraler Bestandteil des Projekts** und muss bei jeder
 Änderung aktualisiert werden.
 
----
 
 ## Philosophie
 
@@ -386,7 +380,6 @@ um ein professionelles, produktionsreifes Web-Applikation zu bauen.
 
 Einfach. Wartbar. Verständlich. Sicher.
 
----
 
 *Entwickelt mit Leidenschaft und KI-Unterstützung – aber jede Entscheidung
 wurde vom Menschen getroffen.*
