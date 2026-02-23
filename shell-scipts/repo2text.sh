@@ -20,6 +20,7 @@ show_help() {
     echo ""
     echo "Optionen:"
     echo "  -f, --format FORMAT   Ausgabeformat: txt, json, md (oder markdown)"
+    echo "  --flat                Nur Dateinamen ohne Pfad verwenden (flat)"
     echo "  -h, --help            Diese Hilfe anzeigen"
     echo ""
     echo "Argumente:"
@@ -33,7 +34,6 @@ show_help() {
 get_git_remote_url() {
     if ! git rev-parse --git-dir > /dev/null 2>&1; then
         echo ""
-        return
     fi
     local remote=$(git remote | head -n1)
     [ -z "$remote" ] && echo "" && return
@@ -131,10 +131,12 @@ fi
 
 OUTPUT_FORMAT="txt"
 REPO_URL=""
+flat=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -f|--format) OUTPUT_FORMAT="$2"; shift 2 ;;
+        --flat) flat=true; shift ;;
         -h|--help) show_help; exit 0 ;;
         *) REPO_URL="$1"; shift ;;
     esac
@@ -169,11 +171,17 @@ total_files=$(find "$TEMP_DIR" -type f -not -path '*/.*' | wc -l)
 echo "Extrahiere..."
 find "$TEMP_DIR" -type f -not -path '*/.*' -print0 | pv -0 -p -t -e -r -s "$total_files" -l | while IFS= read -r -d '' full_path; do
     rel_path="${full_path#$TEMP_DIR/}"
+
+    display_path="$rel_path"
+    if $flat; then
+        display_path=$(basename "$rel_path")
+    fi
+
     if is_text_file "$full_path"; then
         case "$OUTPUT_FORMAT" in
-            txt) write_txt_file "$OUTPUT_FILE" "$rel_path" "$full_path" ;;
-            md)  write_md_file  "$OUTPUT_FILE" "$rel_path" "$full_path" ;;
-            json) jq -n --arg p "$rel_path" --arg c "$(cat "$full_path")" '{path: $p, content: $c}' >> "json.tmp" ;;
+            txt) write_txt_file "$OUTPUT_FILE" "$display_path" "$full_path" ;;
+            md)  write_md_file  "$OUTPUT_FILE" "$display_path" "$full_path" ;;
+            json) jq -n --arg p "$display_path" --arg c "$(cat "$full_path")" '{path: $p, content: $c}' >> "json.tmp" ;;
         esac
         echo $(($(cat .count.tmp) + 1)) > .count.tmp
     fi
