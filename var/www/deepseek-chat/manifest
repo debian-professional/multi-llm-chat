@@ -865,12 +865,19 @@
         - Dieses Tool erleichtert die Übergabe des gesamten Projektkontexts an KI-Assistenten erheblich.
         - Implementiert in Commit 6ffef70.
 
-     62. [23.02.2026 18:00] - Weiter kleine Anpassungen bei rep22text.sh
+     62. [23.02.2026 18:00] - Weiter kleine Anpassungen bei repo2text.sh
 
         -  Die Optionen --only und --md5 sind vorhanden und funktionsfähig.
         -  Die Dateien .gitignore und .gitattributes im Wurzelverzeichnis werden explizit eingeschlossen.
         -  Die Hilfe-Seite ist aktualisiert, Abhängigkeiten werden korrekt geprüft, und die MD5-Berechnung
            funktioniert sowohl mit md5sum als auch mit md5.
+
+     63. [24.02.2026] - README IN ZWEI WEITEREN SPRACHEN HINZUGEFÜGT:
+        - Readme_EN.md (Englisch) und Readme_ES.md (Spanisch) neu erstellt.
+        - Beide Versionen sind vollständig identisch zur deutschen Readme.md (Ursprungsversion).
+        - Ziel: Internationale Sichtbarkeit des Projekts auf GitHub erhöhen.
+        - Die deutsche Readme.md bleibt die primäre Referenz für alle zukünftigen Änderungen.
+        - Alle drei Sprachversionen müssen bei inhaltlichen Änderungen synchron gehalten werden.
 
     ============================================================================
 
