@@ -36,6 +36,7 @@ show_help() {
 get_git_remote_url() {
     if ! git rev-parse --git-dir > /dev/null 2>&1; then
         echo ""
+        return 
     fi
     local remote=$(git remote | head -n1)
     [ -z "$remote" ] && echo "" && return
