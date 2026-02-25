@@ -879,5 +879,13 @@
         - Die deutsche Readme.md bleibt die primäre Referenz für alle zukünftigen Änderungen.
         - Alle drei Sprachversionen müssen bei inhaltlichen Änderungen synchron gehalten werden.
 
+
+     64. [24.02.2026] - BEIDE SKRIPTE AUF ENGLISCH UMGESTELLT:
+        - repo2text.sh: Alle Kommentare, Hilfetexte, Fehlermeldungen und
+          Statusmeldungen ins Englische übersetzt.
+        - repo2text.ps1: War bereits vollständig auf Englisch.
+        - Grund: Internationale Ausrichtung des Projekts, konsistent
+          mit den englischen/spanischen README-Versionen.
+
     ============================================================================
 
