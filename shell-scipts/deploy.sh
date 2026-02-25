@@ -33,11 +33,13 @@ cp "$SOURCE_DIR/var/www/deepseek-chat/index.html"        "$PROD_DIR/index.html"
 cp "$SOURCE_DIR/var/www/deepseek-chat/manifest"          "$PROD_DIR/manifest"
 cp "$SOURCE_DIR/var/www/deepseek-chat/files-directorys"  "$PROD_DIR/files-directorys"
 cp "$SOURCE_DIR/var/www/deepseek-chat/cgi-bin/"*.py      "$PROD_DIR/cgi-bin/"
+cp "$SOURCE_DIR/var/www/deepseek-chat/language.xml"      "$PROD_DIR/language.xml"
 
 chown www-data:www-data "$PROD_DIR/index.html"
 chown www-data:www-data "$PROD_DIR/manifest"
 chown www-data:www-data "$PROD_DIR/files-directorys"
 chown www-data:www-data "$PROD_DIR/cgi-bin/"*.py
+chown www-data:www-data "$PROD_DIR/language.xml"
 chmod 755 "$PROD_DIR/cgi-bin/"*.py
 
 systemctl reload apache2 > /dev/null 2>&1
