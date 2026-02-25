@@ -601,6 +601,11 @@
             border-radius: 4px;
             margin-top: 15px;
         }
+        
+        /* === ZEILENUMBRUCH-FIX: Alle Nachrichteninhalte sollen Zeilenumbrüche erhalten === */
+        .message-container * {
+            white-space: pre-wrap !important;
+        }
     </style>
 </head>
 <body>
@@ -1579,6 +1584,8 @@
                         }
                     }
                 }
+                // === ZEILENUMBRUCH-FIX: Ersetze escaped \n durch echte Newlines ===
+                fullText = fullText.replace(/\\n/g, '\n');
                 const aiMsgId = addAIResponseToContext(fullText, userMsg.mode);
                 aiContainer.setAttribute('data-msg-id', aiMsgId);
                 addFeedbackButtons(aiContainer, aiMsgId);
@@ -1934,6 +1941,8 @@
                         }
                     }
                 }
+                // === ZEILENUMBRUCH-FIX: Ersetze escaped \n durch echte Newlines ===
+                fullText = fullText.replace(/\\n/g, '\n');
                 const aiMsgId = addAIResponseToContext(fullText, currentMode);
                 aiContainer.setAttribute('data-msg-id', aiMsgId);
                 addFeedbackButtons(aiContainer, aiMsgId);
