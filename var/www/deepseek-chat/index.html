@@ -1586,6 +1586,13 @@
                 }
                 // === ZEILENUMBRUCH-FIX: Ersetze escaped \n durch echte Newlines ===
                 fullText = fullText.replace(/\\n/g, '\n');
+                
+                // === RADIKALE BEREINIGUNG: Alles vor dem ersten "FILE: " löschen ===
+                const fileIndex = fullText.indexOf('FILE: ');
+                if (fileIndex !== -1) {
+                    fullText = fullText.substring(fileIndex);
+                }
+                
                 const aiMsgId = addAIResponseToContext(fullText, userMsg.mode);
                 aiContainer.setAttribute('data-msg-id', aiMsgId);
                 addFeedbackButtons(aiContainer, aiMsgId);
@@ -1747,15 +1754,6 @@
          * id30 = informal system prompt
          * id31 = deepthink addition (formal/no-form)
          * id32 = deepthink addition (informal)
-         * 
-         * STRENGE ANWEISUNG FÜR DATEIANZEIGE:
-         * Bei der Anzeige von Dateiinhalten muss die KI das folgende Format exakt einhalten:
-         * 
-         * FILE: [Dateiname]
-         * ---------------------------------------------------------
-         * [exakter Inhalt der Datei, Zeile für Zeile, unverändert]
-         * 
-         * Keine zusätzlichen Kommentare, keine Markdown-Codeblöcke, keine einleitenden oder abschließenden Texte.
          */
         function buildSystemPrompt(isDeepThink) {
             const meta = langMeta[currentLang];
@@ -1772,8 +1770,8 @@
                     base += (settings.addressForm === 'sie') ? t(31) : t(32);
                 }
             }
-            // === STRENGE ANWEISUNG FÜR DATEIANZEIGE (MUSS EXAKT SO SEIN) ===
-            base += " When asked to display the contents of a file, you MUST output the file content exactly as it is, without any modifications, additions, or formatting. Do NOT wrap the content in Markdown code blocks or any other formatting. Do NOT add any introductory or explanatory text. Start directly with the line 'FILE: [filename]' on its own line, followed immediately by a line containing exactly '---------------------------------------------------------' (60 hyphens), then the exact file content line by line, preserving all original line breaks and spaces. After the file content, add a single blank line. If multiple files are requested, repeat this pattern for each file, one after another, with no extra commentary. This is a strict requirement: any deviation will cause errors.";
+            // === VERSTÄRKTE ANWEISUNG FÜR DATEIANZEIGE ===
+            base += " When asked to display the contents of a file, you MUST output the file content exactly as it is, without any modifications, additions, or formatting. Do NOT wrap the content in Markdown code blocks or any other formatting. Do NOT add any introductory or explanatory text. Start directly with the line 'FILE: [filename]' on its own line, followed immediately by a line containing exactly '---------------------------------------------------------' (60 hyphens), then the exact file content line by line, preserving all original line breaks and spaces. After the file content, add a single blank line. This is a strict requirement: any deviation will cause errors.";
             return base;
         }
         
@@ -1954,6 +1952,13 @@
                 }
                 // === ZEILENUMBRUCH-FIX: Ersetze escaped \n durch echte Newlines ===
                 fullText = fullText.replace(/\\n/g, '\n');
+                
+                // === RADIKALE BEREINIGUNG: Alles vor dem ersten "FILE: " löschen ===
+                const fileIndex = fullText.indexOf('FILE: ');
+                if (fileIndex !== -1) {
+                    fullText = fullText.substring(fileIndex);
+                }
+                
                 const aiMsgId = addAIResponseToContext(fullText, currentMode);
                 aiContainer.setAttribute('data-msg-id', aiMsgId);
                 addFeedbackButtons(aiContainer, aiMsgId);
