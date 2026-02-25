@@ -473,6 +473,8 @@
             transform: translateX(22px);
             background: #90ee90;
         }
+        .toggle-slider.lang-active { background: #1e3a5f !important; }
+        .toggle-slider.lang-active::before { transform: translateX(22px) !important; background: #4dabf7 !important; }
         .settings-info {
             margin-top: 20px;
             padding: 15px;
@@ -1061,10 +1063,16 @@
          */
         function setLanguageToggle(langId) {
             ['en', 'de', 'es', 'custom'].forEach(id => {
-                const toggle = document.getElementById('lang' + id.charAt(0).toUpperCase() + id.slice(1) + 'Toggle');
-                const item   = document.getElementById('lang' + id.charAt(0).toUpperCase() + id.slice(1) + 'Item');
-                if (toggle) toggle.checked = (id === langId);
-                if (item)   item.classList.toggle('toggle-active-blue', id === langId);
+                const itemId = 'lang' + id.charAt(0).toUpperCase() + id.slice(1);
+                const toggle = document.getElementById(itemId + 'Toggle');
+                const item   = document.getElementById(itemId + 'Item');
+                const isActive = (id === langId);
+                if (toggle) toggle.checked = isActive;
+                if (item) {
+                    item.classList.toggle('toggle-active-blue', isActive);
+                    const slider = item.querySelector('.toggle-slider');
+                    if (slider) slider.classList.toggle('lang-active', isActive);
+                }
             });
             const meta = langMeta[langId];
             if (meta) document.getElementById('languageStatus').textContent = meta.name;
@@ -1131,13 +1139,7 @@
         
         function updateServerTitle() {
             const serverInfoEl = document.getElementById('serverInfo');
-            serverInfoEl.textContent = 'IP: ' + t(1);
-            fetch('/cgi-bin/deepseek-api.py', { method: 'OPTIONS' })
-                .then(r => {
-                    const ip = r.headers.get('X-Server-IP') || 'unknown';
-                    serverInfoEl.textContent = 'IP: ' + ip;
-                })
-                .catch(() => { serverInfoEl.textContent = 'IP: unknown'; });
+            serverInfoEl.textContent = 'IP: ' + window.location.hostname;
         }
 
         // =====================================================================
@@ -2224,3 +2226,4 @@
     </script>
 </body>
 </html>
+
