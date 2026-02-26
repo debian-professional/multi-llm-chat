@@ -470,8 +470,8 @@
             transform: translateX(22px);
             background: #90ee90;
         }
-        .toggle-slider.lang-active { background: #1e3a5f !important; }
-        .toggle-slider.lang-active::before { transform: translateX(22px) !important; background: #4dabf7 !important; }
+        .toggle-slider.lang-active { background: #155724 !important; }
+        .toggle-slider.lang-active::before { transform: translateX(22px) !important; background: #90ee90 !important; }
         .settings-info {
             margin-top: 20px;
             padding: 15px;
@@ -675,7 +675,7 @@
                     <div class="group-title" id="languageGroupTitle">Language</div>
                     <div class="group-status" id="languageStatus">English</div>
                 </div>
-                <div class="setting-item toggle-active-blue" id="langEnItem">
+                <div class="setting-item toggle-active" id="langEnItem">
                     <label class="toggle-label" for="langEnToggle">
                         <span class="setting-name" id="langEnLabel">English</span>
                         <span class="toggle-switch">
@@ -1071,7 +1071,7 @@
                 const isActive = (id === langId);
                 if (toggle) toggle.checked = isActive;
                 if (item) {
-                    item.classList.toggle('toggle-active-blue', isActive);
+                    item.classList.toggle('toggle-active', isActive);
                     const slider = item.querySelector('.toggle-slider');
                     if (slider) slider.classList.toggle('lang-active', isActive);
                 }
@@ -2258,7 +2258,6 @@
     </script>
 </body>
 </html>
-
 
 
 
