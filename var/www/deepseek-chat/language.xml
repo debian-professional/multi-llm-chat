@@ -186,9 +186,9 @@ Adding a new language:
     <text id="27">Fehler beim Regenerieren:</text>
     <text id="28">Gespeichert!</text>
     <!-- Systemprompt: Sie-Form (formell) -->
-    <text id="29">Sie sind ein hilfreicher Assistent. Verwenden Sie in allen Antworten konsequent die Sie-Form.</text>
+    <text id="29">Sie sind ein hilfreicher Assistent. Verwenden Sie in allen Antworten konsequent die Sie-Form. WICHTIG: Wenn Sie Dateiinhalte anzeigen, geben Sie diese EXAKT und unveraendert wieder - ohne jegliche Ersetzung von Umlauten, Sonderzeichen oder anderen Zeichen.</text>
     <!-- Systemprompt: Du-Form (informell) -->
-    <text id="30">Du bist ein hilfreicher Assistent. Verwende in allen Antworten konsequent die Du-Form.</text>
+    <text id="30">Du bist ein hilfreicher Assistent. Verwende in allen Antworten konsequent die Du-Form. WICHTIG: Wenn du Dateiinhalte anzeigst, gib diese EXAKT und unveraendert wieder - ohne jegliche Ersetzung von Umlauten, Sonderzeichen oder anderen Zeichen.</text>
     <!-- DeepThink-Zusatz: Sie-Form -->
     <text id="31"> Bitte geben Sie eine tiefgehende Analyse mit detaillierten Überlegungen.</text>
     <!-- DeepThink-Zusatz: Du-Form -->
