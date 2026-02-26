@@ -1607,7 +1607,7 @@
                                 const data = JSON.parse(dataStr);
                                 if (data.choices && data.choices[0] && data.choices[0].delta) {
                                     const token = data.choices[0].delta.content || '';
-                                    if (token) { fullText += token; aiText.textContent = fullText; chat.scrollTop = chat.scrollHeight; }
+                                    if (token) { fullText += token; aiText.textContent = userMsg.hasFile ? decodeUmlautsFromAI(fullText) : fullText; chat.scrollTop = chat.scrollHeight; }
                                 }
                             } catch (e) { }
                         }
@@ -1979,7 +1979,7 @@
                                 const data = JSON.parse(dataStr);
                                 if (data.choices && data.choices[0] && data.choices[0].delta) {
                                     const token = data.choices[0].delta.content || '';
-                                    if (token) { fullText += token; aiText.textContent = fullText; chat.scrollTop = chat.scrollHeight; }
+                                    if (token) { fullText += token; aiText.textContent = hasFile ? decodeUmlautsFromAI(fullText) : fullText; chat.scrollTop = chat.scrollHeight; }
                                 }
                             } catch (e) { }
                         }
