@@ -1247,14 +1247,10 @@
         // =====================================================================
         function encodeUmlautsForAI(text) {
             if (!text) return text;
-            text = text.split('\u00e4').join('[[AE]]');
-            text = text.split('\u00f6').join('[[OE]]');
-            text = text.split('\u00fc').join('[[UE]]');
-            text = text.split('\u00df').join('[[SS]]');
-            text = text.split('\u00c4').join('[[CAE]]');
-            text = text.split('\u00d6').join('[[COE]]');
-            text = text.split('\u00dc').join('[[CUE]]');
-            return text;
+            return text
+                .replace(/ä/g, '[[AE]]').replace(/ö/g, '[[OE]]').replace(/ü/g, '[[UE]]')
+                .replace(/ß/g, '[[SS]]').replace(/Ä/g, '[[CAE]]').replace(/Ö/g, '[[COE]]')
+                .replace(/Ü/g, '[[CUE]]');
         }
 
         function decodeUmlautsFromAI(text) {
@@ -2287,7 +2283,6 @@
     </script>
 </body>
 </html>
-
 
 
 
