@@ -1,3 +1,4 @@
+---------------------------------------------------------
 <!DOCTYPE html>
 <html>
 <head>
@@ -1843,8 +1844,8 @@
         function setAddressFormToggle(value) {
             sieFormToggle.checked = (value === 'sie');
             duFormToggle.checked = (value === 'du');
-            sieFormItem.classList.toggle('toggle-active-blue', value === 'sie');
-            duFormItem.classList.toggle('toggle-active-blue', value === 'du');
+            sieFormItem.classList.toggle('toggle-active', value === 'sie');
+            duFormItem.classList.toggle('toggle-active', value === 'du');
             const meta = langMeta[currentLang];
             if (meta && meta.has_address_form) {
                 addressFormStatus.textContent = value === 'sie'
@@ -2257,4 +2258,8 @@
     </script>
 </body>
 </html>
+
+
+
+
 

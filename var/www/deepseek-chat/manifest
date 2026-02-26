@@ -82,7 +82,11 @@
             ausschließlich Toggle-Switches (Links-nach-Rechts Schieberegler)
           * Kein Radio-Button, Checkbox oder sonstiger Button-Typ erlaubt
           * Toggle-Masse: Breite 46px, Höhe 24px, Knopf 18px
-          * Toggle-Farben: Inaktiv #444/grauer Knopf, Aktiv #155724/grüner Knopf
+          * Toggle-Farben aktiver Zustand je nach Gruppe:
+            - Anredeform (sieFormItem, duFormItem): toggle-active (grün, #155724)
+            - Standard Modus (chatModeItem, deepthinkModeItem): toggle-active-blue (blau, #1e3a5f)
+            - Datenschutz (noTrainingItem): toggle-active (grün, #155724)
+          * Toggle-Farben inaktiver Zustand: #444/grauer Knopf
           * Radio-Gruppen-Verhalten: bei mehreren Optionen wird beim Aktivieren
             eines Toggles der vorherige automatisch deaktiviert
           * CSS-Klassen: .toggle-switch, .toggle-slider, .toggle-label
@@ -744,13 +748,13 @@
         - Manifest Abschnitte A.3, C.3 und E.1 um verbindliche Toggle-Konvention erweitert
 
     49. [19.02.2026 11:45] - Farbänderung Settings-Toggle-Container:
-        - toggle-active (grün) für Anredeform und Standard Modus ersetzt
-          durch toggle-active-blue (blau) für konsistentes Design
-        - Betrifft: sieFormItem, duFormItem, chatModeItem,
-          deepthinkModeItem, searchModeItem
-        - Datenschutz-Sektion bleibt weiterhin grün (toggle-active)
+        - Standard Modus (chatModeItem, deepthinkModeItem) verwendet toggle-active-blue (blau, #1e3a5f)
+        - Anredeform (sieFormItem, duFormItem) verwendet toggle-active (grün, #1a2e1a)
+        - Datenschutz-Sektion (noTrainingItem) verwendet toggle-active (grün, #1a2e1a)
+        - Begründung: Grün kennzeichnet persönliche Präferenzen (Anredeform, Datenschutz),
+          Blau kennzeichnet technische Modi (Chat/DeepThink)
         - CSS .toggle-active-blue war bereits vorhanden (#1e3a5f / #0056b3)
-        - Funktionen: setAddressFormToggle(), setDefaultModeToggle()
+        - Funktionen: setAddressFormToggle() → toggle-active, setDefaultModeToggle() → toggle-active-blue
 
     50. [19.02.2026 12:13] - Settings-Toggles mit Hauptseite synchronisiert:
         - DeepThink/Search Buttons auf Hauptseite spiegeln sich nun
