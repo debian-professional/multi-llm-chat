@@ -151,6 +151,8 @@ Adding a new language:
     <text id="235">Cancel</text>
     <text id="236">Text from clipboard</text>
     <text id="237">characters</text>
+    <text id="238">Model:</text>
+    <text id="239">Images are not supported by the current DeepSeek model. Please use a text file instead.</text>
 
   </language>
 
@@ -290,6 +292,8 @@ Adding a new language:
     <text id="235">Abbrechen</text>
     <text id="236">Text aus Zwischenablage</text>
     <text id="237">Zeichen</text>
+    <text id="238">Modell:</text>
+    <text id="239">Bilder werden vom aktuellen DeepSeek-Modell nicht unterstützt. Bitte verwende eine Textdatei.</text>
 
   </language>
 
@@ -427,6 +431,8 @@ Adding a new language:
     <text id="235">Cancelar</text>
     <text id="236">Texto del portapapeles</text>
     <text id="237">caracteres</text>
+    <text id="238">Modelo:</text>
+    <text id="239">Las imágenes no son compatibles con el modelo DeepSeek actual. Usa un archivo de texto.</text>
 
   </language>
 
@@ -559,6 +565,8 @@ Adding a new language:
     <text id="235"></text>
     <text id="236"></text>
     <text id="237"></text>
+    <text id="238"></text>
+    <text id="239"></text>
 
   </language>
 

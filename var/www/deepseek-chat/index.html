@@ -696,6 +696,7 @@
             <h1 id="serverTitle">DeepSeek Chat Server</h1>
             <div class="server-info" id="serverInfo">IP: ...</div>
             <div class="context-info" id="contextInfo">Context: 0%</div>
+            <div class="context-info" id="modelInfo">Model: ...</div>
         </div>
     </div>
     
@@ -941,6 +942,16 @@
 
     <script>
         const API_URL = '/cgi-bin/deepseek-api.py';
+        const MODELS_URL = '/cgi-bin/deepseek-api.py';  // same proxy, GET /v1/models
+
+        // MODEL CAPABILITY MAP: which file types each model supports
+        const MODEL_CAPABILITIES = {
+            'deepseek-chat':     { images: false, text: true },   // V3
+            'deepseek-reasoner': { images: false, text: true },   // V3 DeepThink
+            'deepseek-v4':       { images: true,  text: true },   // V4 (anticipated)
+            'default':           { images: false, text: true },
+        };
+        let detectedModels = [];   // filled on first API call
         const SAVE_SESSION_URL = '/cgi-bin/save-session.py';
         const LOAD_SESSION_URL = '/cgi-bin/load-session.py';
         const DELETE_SESSION_URL = '/cgi-bin/delete-session.py';
@@ -979,6 +990,7 @@
         const SETTINGS_VERSION = '1.3';
         const SUPPORTED_FILE_FORMATS = ['.txt', '.pdf'];
         const ACCEPTED_FILE_FORMATS = ['.txt', '.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.csv', '.xlsx', '.pptx'];
+        const IMAGE_FILE_FORMATS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
 
         // =====================================================================
         // LANGUAGE SYSTEM
@@ -1150,6 +1162,14 @@
 
             // Language status
             document.getElementById('languageStatus').textContent = meta.name;
+
+            // Model info
+            const modelInfoEl = document.getElementById('modelInfo');
+            if (modelInfoEl && detectedModels.length > 0) {
+                modelInfoEl.textContent = t(238) + ' ' + detectedModels.join(', ');
+            } else if (modelInfoEl) {
+                modelInfoEl.textContent = t(238) + ' ...';
+            }
 
             // Paste overlay
             document.getElementById('pasteTitleText').textContent = t(232);
@@ -2206,6 +2226,12 @@
                 alert(tf(10, fileExtension, ACCEPTED_FILE_FORMATS.join(', ')));
                 selectedFile = null; fileUpload.value = ''; return;
             }
+            // Image check: alert if current model does not support images
+            if (isImageFile(fileExtension) && !currentModelSupportsImages()) {
+                alert(t(239));
+                selectedFile = null; fileUpload.value = ''; return;
+            }
+
             const execSig = await checkMagicBytes(file);
             if (execSig) {
                 fileInfo.innerHTML = `<div class="pdf-error">${t(11)}<br>${t(34).replace('{0}', file.name).replace('{1}', '')}<br>Platform: ${execSig.platform}<br>Format: ${execSig.format}</div>`;
@@ -2258,6 +2284,43 @@
         }
         
         // =====================================================================
+        // DEEPSEEK MODEL VERSION DETECTION
+        // =====================================================================
+        async function fetchDeepSeekModels() {
+            try {
+                const response = await fetch('/cgi-bin/deepseek-models.py', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                const data = await response.json();
+                if (data && data.data && Array.isArray(data.data)) {
+                    detectedModels = data.data.map(m => m.id);
+                    const modelEl = document.getElementById('modelInfo');
+                    if (modelEl) {
+                        modelEl.textContent = t(238) + ' ' + detectedModels.join(', ');
+                    }
+                }
+            } catch (e) {
+                const modelEl = document.getElementById('modelInfo');
+                if (modelEl) modelEl.textContent = t(238) + ' N/A';
+            }
+        }
+
+        function isImageFile(extension) {
+            return IMAGE_FILE_FORMATS.includes(extension.toLowerCase());
+        }
+
+        function currentModelSupportsImages() {
+            // Check detected models against capability map
+            for (const modelId of detectedModels) {
+                const cap = MODEL_CAPABILITIES[modelId] || MODEL_CAPABILITIES['default'];
+                if (cap.images) return true;
+            }
+            return false;
+        }
+
+        // =====================================================================
         // CLIPBOARD PASTE HANDLER (Ctrl+V)
         // =====================================================================
         function handlePaste(e) {
@@ -2271,6 +2334,11 @@
                     const file = item.getAsFile();
                     if (!file) return;
                     clipboardImageFile = file;
+                    // Check if model supports images
+                    if (!currentModelSupportsImages()) {
+                        alert(t(239));
+                        return;
+                    }
                     const reader = new FileReader();
                     reader.onload = function(ev) {
                         const thumb = document.getElementById('clipboardImageThumb');
@@ -2486,6 +2554,7 @@
             updateServerTitle();
             loadSettings();         // applies currentLang from saved settings
             initializeEventListeners();
+            fetchDeepSeekModels();  // detect model version on startup
             updateSettingsUI();     // calls applyLanguage() internally
             updateContextDisplay();
             currentSessionId = generateSessionId();
