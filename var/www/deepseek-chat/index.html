@@ -684,6 +684,71 @@
         }
         .clipboard-image-remove:hover { background: #c82333; }
 
+        /* =====================================================================
+           FILE CARD: Datei-Vorschau in User-Nachrichten (wie bei Claude)
+           ===================================================================== */
+        .file-card {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: #2a2a2a;
+            border: 1px solid #3a3a3a;
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+            min-width: 180px;
+            max-width: 280px;
+        }
+        .file-card-icon {
+            width: 40px;
+            height: 48px;
+            background: #1a1a2e;
+            border: 1px solid #333;
+            border-radius: 4px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 4px;
+            flex-shrink: 0;
+            position: relative;
+        }
+        .file-card-icon::before {
+            content: '';
+            position: absolute;
+            top: 0; right: 0;
+            width: 12px; height: 12px;
+            background: #2a2a2a;
+            border-left: 1px solid #333;
+            border-bottom: 1px solid #333;
+            border-radius: 0 4px 0 0;
+        }
+        .file-card-badge {
+            font-size: 9px;
+            font-weight: bold;
+            color: #f0f0f0;
+            background: #0056b3;
+            border-radius: 3px;
+            padding: 2px 4px;
+            letter-spacing: 0.5px;
+        }
+        .file-card-info {
+            flex: 1;
+            overflow: hidden;
+        }
+        .file-card-name {
+            font-size: 13px;
+            font-weight: bold;
+            color: #f0f0f0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .file-card-type {
+            font-size: 11px;
+            color: #888;
+            margin-top: 2px;
+        }
+
         /* === ZEILENUMBRUCH-FIX: Alle Nachrichteninhalte sollen Zeilenumbrüche erhalten === */
         .message-container * {
             white-space: pre-wrap !important;
@@ -1892,7 +1957,8 @@
         
         let selectedFile = null;
         let fileTextContent = null;
-        let clipboardImageFile = null;   // Image pasted from clipboard
+        let clipboardImageFile = null;
+        let uploadedFileName = null;    // filename for file card display   // Image pasted from clipboard
         let eventListeners = [];
         let isSending = false;
         let currentSessionId = null;
@@ -2068,7 +2134,10 @@
             if (fileTextContent) userMessage = `${t(12)}\n${encodeUmlautsForAI(fileTextContent)}\n\n${t(13)} ${message}`;
             const hasFile = !!fileTextContent;
             const msgId = addUserMessageToContext(userMessage, currentMode, hasFile);
-            addMessageToChat(message, true, msgId, currentMode);
+            const displayMessage = (hasFile && uploadedFileName)
+                ? createFileCardHTML(uploadedFileName) + message
+                : message;
+            addMessageToChat(displayMessage, true, msgId, currentMode);
             inputField.value = '';
             const systemPrompt = buildSystemPrompt(currentMode === 'deepthink');
             updateSystemPromptTokens(systemPrompt);
@@ -2156,7 +2225,7 @@
                 isSending = false; sendButton.disabled = false; sendButton.textContent = t(205);
                 inputField.disabled = false;
                 selectedFile = null; fileTextContent = null;
-                fileInfo.innerHTML = ''; fileInfo.classList.remove('visible');
+                fileInfo.innerHTML = ''; fileInfo.classList.remove('visible'); uploadedFileName = null;
                 fileUpload.value = '';
                 chat.scrollTop = chat.scrollHeight;
             }
@@ -2168,7 +2237,11 @@
             messageContainer.setAttribute('data-msg-id', msgId);
             const messageDiv = document.createElement('div');
             messageDiv.className = isUser ? 'user-message' : 'ai-message';
-            messageDiv.textContent = text;
+            if (isUser) {
+                messageDiv.innerHTML = text;
+            } else {
+                messageDiv.textContent = text;
+            }
             messageContainer.appendChild(messageDiv);
             if (!isUser) addFeedbackButtons(messageContainer, msgId);
             const rightButtons = document.createElement('div');
@@ -2220,7 +2293,7 @@
         async function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
-            selectedFile = file; fileTextContent = null;
+            selectedFile = file; fileTextContent = null; uploadedFileName = file.name;
             const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
             if (!ACCEPTED_FILE_FORMATS.includes(fileExtension)) {
                 alert(tf(10, fileExtension, ACCEPTED_FILE_FORMATS.join(', ')));
@@ -2245,7 +2318,7 @@
                 if (removeBtn) {
                     const removeHandler = function() {
                         selectedFile = null; fileTextContent = null;
-                        fileInfo.innerHTML = ''; fileInfo.classList.remove('visible');
+                        fileInfo.innerHTML = ''; fileInfo.classList.remove('visible'); uploadedFileName = null;
                         fileUpload.value = ''; removeBtn.removeEventListener('click', removeHandler);
                     };
                     removeBtn.addEventListener('click', removeHandler);
@@ -2275,7 +2348,7 @@
             if (removeBtn) {
                 const removeHandler = function() {
                     selectedFile = null; fileTextContent = null;
-                    fileInfo.innerHTML = ''; fileInfo.classList.remove('visible');
+                    fileInfo.innerHTML = ''; fileInfo.classList.remove('visible'); uploadedFileName = null;
                     fileUpload.value = ''; removeBtn.removeEventListener('click', removeHandler);
                 };
                 removeBtn.addEventListener('click', removeHandler);
@@ -2305,6 +2378,25 @@
                 const modelEl = document.getElementById('modelInfo');
                 if (modelEl) modelEl.textContent = t(238) + ' N/A';
             }
+        }
+
+        function getFileTypeLabel(filename) {
+            const ext = filename.split('.').pop().toUpperCase();
+            return ext || 'FILE';
+        }
+
+        function createFileCardHTML(filename) {
+            const badge = getFileTypeLabel(filename);
+            const name = filename.length > 30 ? filename.substring(0, 27) + '...' : filename;
+            return `<div class="file-card">
+                <div class="file-card-icon">
+                    <span class="file-card-badge">${badge}</span>
+                </div>
+                <div class="file-card-info">
+                    <div class="file-card-name">${name}</div>
+                    <div class="file-card-type">${badge} ${t(237)}</div>
+                </div>
+            </div><br>`;
         }
 
         function isImageFile(extension) {
@@ -2437,13 +2529,14 @@
                 const text = overlay._pendingText;
                 if (text) {
                     fileTextContent = text.length > MAX_FILE_CONTENT_LENGTH ? text.substring(0, MAX_FILE_CONTENT_LENGTH) : text;
+                    uploadedFileName = 'clipboard.txt';
                     fileInfo.innerHTML = `${t(236)} (${fileTextContent.length} ${t(237)}) <button id="removeFile">${t(222)}</button>`;
                     fileInfo.classList.add('visible');
                     const removeBtn = document.getElementById('removeFile');
                     if (removeBtn) {
                         const removeHandler = function() {
                             selectedFile = null; fileTextContent = null;
-                            fileInfo.innerHTML = ''; fileInfo.classList.remove('visible');
+                            fileInfo.innerHTML = ''; fileInfo.classList.remove('visible'); uploadedFileName = null;
                             fileUpload.value = ''; removeBtn.removeEventListener('click', removeHandler);
                         };
                         removeBtn.addEventListener('click', removeHandler);
