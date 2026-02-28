@@ -2418,65 +2418,75 @@
         function handlePaste(e) {
             // ALWAYS prevent default first - we handle everything manually
             e.preventDefault();
-            const items = (e.clipboardData || window.clipboardData).items;
-            if (!items || items.length === 0) return;
 
-            // Check for image first
-            for (const item of items) {
-                if (item.type.startsWith('image/')) {
-                    e.preventDefault();
-                    const file = item.getAsFile();
-                    if (!file) return;
-                    clipboardImageFile = file;
-                    // Check if model supports images
-                    if (!currentModelSupportsImages()) {
-                        alert(t(239));
-                        return;
-                    }
-                    const reader = new FileReader();
-                    reader.onload = function(ev) {
-                        const thumb = document.getElementById('clipboardImageThumb');
-                        const info = document.getElementById('clipboardImageInfo');
-                        const preview = document.getElementById('clipboardImagePreview');
-                        thumb.src = ev.target.result;
-                        info.textContent = t(231) + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
-                        preview.classList.add('visible');
-                    };
-                    reader.readAsDataURL(file);
-                    return;
-                }
+            const cd = e.clipboardData || window.clipboardData;
+            if (!cd) return;
+
+            const items = Array.from(cd.items || []);
+            const types = items.map(i => i.type);
+            console.log('[Paste] types:', types, '| dataTransfer.types:', Array.from(cd.types || []));
+
+            // --- IMAGE ---
+            const imageItem = items.find(i => i.type.startsWith('image/'));
+            if (imageItem) {
+                const file = imageItem.getAsFile();
+                if (!file) return;
+                clipboardImageFile = file;
+                if (!currentModelSupportsImages()) { alert(t(239)); return; }
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    const thumb = document.getElementById('clipboardImageThumb');
+                    const info  = document.getElementById('clipboardImageInfo');
+                    const prev  = document.getElementById('clipboardImagePreview');
+                    thumb.src = ev.target.result;
+                    info.textContent = t(231) + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+                    prev.classList.add('visible');
+                };
+                reader.readAsDataURL(file);
+                return;
             }
 
-            // Check for file paths (text/uri-list) - files copied in file manager
-            for (const item of items) {
-                if (item.type === 'text/uri-list') {
-                    e.preventDefault();
-                    alert(t(240));
-                    return;
-                }
+            // --- FILE PATHS: check DataTransfer.types first (more reliable) ---
+            const dtTypes = Array.from(cd.types || []);
+            const isFilePaste =
+                dtTypes.includes('text/uri-list') ||
+                dtTypes.some(tp => tp.includes('gnome-copied') || tp.includes('x-special') || tp.includes('uri')) ||
+                types.includes('text/uri-list') ||
+                types.some(tp => tp.includes('gnome-copied') || tp.includes('x-special') || tp.includes('uri'));
+
+            if (isFilePaste) {
+                alert(t(240));
+                return;
             }
 
-            // Check for text
-            for (const item of items) {
-                if (item.type === 'text/plain') {
-                    item.getAsString(function(text) {
-                        if (!text || text.length === 0) return;
-                        // Check if text looks like file paths (file:// URIs)
-                        if (text.trim().startsWith('file://') || /^(\/[^\n]+\n?)+$/.test(text.trim())) {
-                            alert(t(240));
-                            return;
-                        }
-                        // Show paste dialog
-                        const preview = document.getElementById('pastePreview');
-                        preview.textContent = text.length > 300 ? text.substring(0, 300) + '...' : text;
-                        document.getElementById('pasteOverlay').style.display = 'flex';
-                        // Store text for later use
-                        document.getElementById('pasteOverlay')._pendingText = text;
-                        document.getElementById('pasteOverlay')._cursorPos = inputField.selectionStart;
-                    });
-                    e.preventDefault();
-                    return;
-                }
+            // --- TEXT ---
+            const textItem = items.find(i => i.type === 'text/plain');
+            if (textItem) {
+                textItem.getAsString(function(text) {
+                    if (!text || text.length === 0) return;
+                    // Detect file paths
+                    const trimmed = text.trim();
+                    const looksLikePaths =
+                        trimmed.startsWith('file://') ||
+                        (/^(\/[^
+]+[
+]?){2,}$/.test(trimmed)) ||
+                        (trimmed.split('\n').filter(Boolean).every(line => line.trim().startsWith('/')));
+                    if (looksLikePaths) { alert(t(240)); return; }
+                    // Show paste dialog
+                    const preview = document.getElementById('pastePreview');
+                    preview.textContent = text.length > 300 ? text.substring(0, 300) + '...' : text;
+                    document.getElementById('pasteOverlay').style.display = 'flex';
+                    document.getElementById('pasteOverlay')._pendingText = text;
+                    document.getElementById('pasteOverlay')._cursorPos = inputField.selectionStart;
+                });
+                return;
+            }
+
+            // --- FALLBACK: no usable content (e.g. files only) ---
+            // If items is empty or only contains non-text/non-image types → file paste
+            if (items.length === 0 || items.every(i => !i.type.startsWith('text/') && !i.type.startsWith('image/'))) {
+                alert(t(240));
             }
         }
 
@@ -2514,8 +2524,14 @@
                     activeSingleExportDropdown.classList.remove('show'); activeSingleExportDropdown = null;
                 }
             });
-            // Paste handler
+            // Paste handler - on inputField AND document level for XFCE/Thunar compatibility
             addEventListenerWithCleanup(inputField, 'paste', handlePaste);
+            addEventListenerWithCleanup(document, 'paste', function(e) {
+                // Only handle if inputField is focused
+                if (document.activeElement === inputField) {
+                    handlePaste(e);
+                }
+            });
 
             // Clipboard image remove
             const clipboardRemoveBtn = document.getElementById('clipboardImageRemove');
