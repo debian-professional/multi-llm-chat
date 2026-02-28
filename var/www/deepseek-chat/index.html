@@ -1,9 +1,8 @@
----------------------------------------------------------
 <!DOCTYPE html>
 <html>
 <head>
-    <title>DeepSeek Chat</title>
     <meta charset="UTF-8">
+    <title>DeepSeek Chat</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     
     <!-- 
@@ -2514,28 +2513,6 @@
             });
             // Paste handler
             addEventListenerWithCleanup(inputField, 'paste', handlePaste);
-
-            // XFCE/Thunar fallback: if e.preventDefault() didn't block the paste,
-            // detect file paths in the input event and undo them immediately
-            let prevInputValue = '';
-            addEventListenerWithCleanup(inputField, 'focus', () => { prevInputValue = inputField.value; });
-            addEventListenerWithCleanup(inputField, 'input', function(e) {
-                if (e.inputType && e.inputType.startsWith('insertFromPaste')) {
-                    const current = inputField.value;
-                    const added = current.substring(prevInputValue.length);
-                    const trimmed = added.trim();
-                    const lines = trimmed.split('\n').filter(Boolean);
-                    const looksLikePaths =
-                        trimmed.startsWith('file://') ||
-                        (lines.length >= 2 && lines.every(line => line.trim().startsWith('/')));
-                    if (looksLikePaths) {
-                        inputField.value = prevInputValue;
-                        alert(t(240));
-                        return;
-                    }
-                }
-                prevInputValue = inputField.value;
-            });
 
             // Clipboard image remove
             const clipboardRemoveBtn = document.getElementById('clipboardImageRemove');
