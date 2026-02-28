@@ -2475,13 +2475,6 @@
                     return;
                 }
             }
-            // Fallback: items is empty or no text/image found = file manager paste (XFCE/Thunar)
-            const hasUsable = items.some(function(i) {
-                return i.type.startsWith('image/') || i.type === 'text/plain';
-            });
-            if (!hasUsable) {
-                alert(t(240));
-            }
         }
 
         function closePasteOverlay() {
@@ -2520,6 +2513,23 @@
             });
             // Paste handler
             addEventListenerWithCleanup(inputField, 'paste', handlePaste);
+
+            // X11/Linux/Firefox workaround: preventDefault() does not block paste on Linux.
+            // Instead: let paste happen, then check content after 0ms and undo if file paths.
+            document.addEventListener('paste', function() {
+                if (document.activeElement !== inputField) return;
+                setTimeout(function() {
+                    var val = inputField.value;
+                    var lines = val.trim().split(/[\r\n]+/).filter(Boolean);
+                    var looksLikePaths = lines.length >= 2 && lines.every(function(l) {
+                        return /^\s*\//.test(l) || /^\s*file:\/\//.test(l);
+                    });
+                    if (looksLikePaths) {
+                        inputField.value = '';
+                        alert(t(240));
+                    }
+                }, 0);
+            }, true);
 
             // Clipboard image remove
             const clipboardRemoveBtn = document.getElementById('clipboardImageRemove');
