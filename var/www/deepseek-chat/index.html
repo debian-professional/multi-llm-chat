@@ -2127,6 +2127,16 @@
             if (isSending) return;
             const message = inputField.value.trim();
             if (!message && !fileTextContent) return;
+            // Block file paths from being sent (last resort)
+            const msgLines = message.split(/[
+]+/).filter(Boolean);
+            if (msgLines.length >= 2 && msgLines.every(function(l) {
+                return /^\s*\//.test(l) || /^\s*file:\/\//.test(l);
+            })) {
+                inputField.value = '';
+                alert(t(240));
+                return;
+            }
             isSending = true;
             sendButton.disabled = true; sendButton.textContent = t(5);
             inputField.disabled = true;
@@ -2416,8 +2426,11 @@
         // CLIPBOARD PASTE HANDLER (Ctrl+V)
         // =====================================================================
         function handlePaste(e) {
-            const items = (e.clipboardData || window.clipboardData).items;
-            if (!items) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const cd = e.clipboardData || window.clipboardData;
+            if (!cd) return;
+            const items = cd.items ? Array.from(cd.items) : [];
 
             // Check for image first
             for (const item of items) {
@@ -2512,22 +2525,23 @@
                     activeSingleExportDropdown.classList.remove('show'); activeSingleExportDropdown = null;
                 }
             });
-            // Paste handler - capture phase on document catches EVERYTHING including Thunar/XFCE
-            document.addEventListener('paste', function(e) {
+            // Paste handler - triple safety for XFCE/Thunar
+            // Layer 1: capture phase (fires before browser default)
+            document.addEventListener('paste', function(ev) {
                 if (document.activeElement !== inputField) return;
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                handlePaste(e);
-            }, true); // true = capture phase, fires before any other handler
-
+                ev.preventDefault();
+                ev.stopImmediatePropagation();
+                handlePaste(ev);
+            }, true);
             addEventListenerWithCleanup(inputField, 'paste', handlePaste);
-
-            // Belt-and-suspenders: check textarea after any input for file paths
-            addEventListenerWithCleanup(inputField, 'input', function() {
-                const lines = inputField.value.trim().split('\n').filter(Boolean);
+            // Layer 2: input event - catches anything that slips through
+            inputField.addEventListener('input', function() {
+                const lines = inputField.value.trim().split(/[
+]+/).filter(Boolean);
                 if (lines.length >= 2 && lines.every(function(l) {
-                    return l.trim().startsWith('/') || l.trim().startsWith('file://');
+                    return /^\s*\//.test(l) || /^\s*file:\/\//.test(l);
                 })) {
+                    console.log('[FilePath] Detected, clearing input');
                     inputField.value = '';
                     alert(t(240));
                 }
