@@ -721,7 +721,7 @@
            - Bilder werden blockiert wenn Modell keine Bilder unterstützt (alert)
            - MODEL_CAPABILITIES Map: bereit für DeepSeek V4
 
-    68. [28.02.2026 18:50] - BUGFIX: CTRL+V DATEIPFAD-ERKENNUNG (XFCE/THUNAR):
+     68. [28.02.2026 18:50] - BUGFIX: CTRL+V DATEIPFAD-ERKENNUNG (XFCE/THUNAR):
         PROBLEM:
            - Beim Kopieren von Dateien in Thunar (XFCE) und Ctrl+V im Eingabefeld
              wurden die Dateipfade als Text eingefügt statt blockiert zu werden
@@ -738,6 +738,47 @@
         WEITERE FIXES:
            - Führende "---" Trennlinie vor <!DOCTYPE html> entfernt (Quirks Mode)
            - <meta charset="UTF-8"> als erstes Element in <head> verschoben
+
+
+    69. [03.03.2026] - GOOGLE GEMINI API-INTEGRATION:
+
+        NEUES CGI-SCRIPT:
+           - /cgi-bin/google-api.py: Lokaler Proxy für Google Gemini API
+           - Liest GOOGLE_API_KEY aus /etc/apache2/envvars (bereits eingetragen)
+           - Konvertiert OpenAI-Format (messages) in Gemini-Format (contents)
+           - Konvertiert Gemini SSE-Response in DeepSeek-kompatibles SSE-Format
+           - Logging analog zu deepseek-api.py (ohne API-Key)
+           - Streaming über streamGenerateContent?alt=sse
+
+        EINSTELLUNGEN (index.html):
+           - Neuer Settings-Block "API Service" nach dem Privacy-Block
+           - Toggle: DeepSeek (Standard) / Google Gemini
+           - Bei Google: Zusätzlicher Toggle "Google Plan" (Free / Paid)
+           - Modell-Auswahl via Dropdown (dokumentierte Manifest-Ausnahme)
+             * DeepSeek-Modelle: deepseek-chat, deepseek-reasoner
+             * Google-Modelle: gemini-2.0-flash, gemini-1.5-pro, gemini-2.5-pro
+
+        ABHÄNGIGKEITEN / SICHTBARKEIT:
+           - Bei Google aktiv: DeepThink-Button wird ausgeblendet
+           - Bei Google aktiv: Privacy-Toggle wird ausgeblendet
+           - Bei Google Free: noTraining nicht anwendbar (bereits durch Ausblenden abgedeckt)
+           - Bei Google Paid: Privacy-Toggle wieder sichtbar
+           - Wechsel zu Google bei aktivem DeepThink-Modus: automatisch auf Chat zurückgesetzt
+
+        MODELL-KONFIGURATION:
+           - MODEL_CONFIG erweitert um Google-Modelle:
+             * gemini-2.0-flash:  maxContextTokens 1.048.576, maxOutputTokens 8.192
+             * gemini-1.5-pro:    maxContextTokens 2.097.152, maxOutputTokens 8.192
+             * gemini-2.5-pro:    maxContextTokens 1.048.576, maxOutputTokens 65.536
+           - DEEPSEEK_MODELS und GOOGLE_MODELS Konstanten für Dropdown-Befüllung
+           - SETTINGS_VERSION: 1.3 -> 1.4 (migrateSettings rückwärtskompatibel)
+           - Neue Settings-Felder: apiService, googleTier, selectedModel
+
+        MANIFEST:
+           - Abschnitt A.3: Dropdown-Ausnahme dokumentiert
+           - Abschnitt B.4b: Neuer Abschnitt API-Dienst-Auswahl
+           - Abschnitt D.1: API-Kommunikation erweitert
+           - Abschnitt F.6: Neue verbindliche Sprach-Pflicht – alle Texte zwingend in language.xml
 
 
     ============================================================================

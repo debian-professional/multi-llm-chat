@@ -40,6 +40,13 @@
        - Transition:  all 0.2s
        - CSS-Klassen: .pill-button (Aktions), .pill-button-mode (Toggle)
 
+       AUSNAHME: MODELL-AUSWAHL DROPDOWN (dokumentierte Ausnahme, Eintrag 69):
+       - Für die Modellauswahl wird ein <select>-Element (Dropdown) verwendet
+       - Begründung: Bei 3-5+ Modellen pro Dienst ist Toggle-Style nicht sinnvoll
+       - Styling: Dark Mode konform (#2d2d2d, #f0f0f0, border-radius: 8px)
+       - Element-ID: #modelSelect, CSS-Klasse: .model-select-wrapper
+       - Diese Ausnahme gilt ausschliesslich für das Modell-Auswahl-Dropdown
+
        A) AKTIONS-BUTTONS (blau) - CSS-Klasse: .pill-button
           Verwendet für: Senden, Datei hochladen, Exportieren, Einstellungen,
                          Log-Dateien, Einstellungen übernehmen, Aktualisieren
@@ -118,6 +125,19 @@
        - DeepThink: Blaue Pill-Markierung, echtes Reasoning (deepseek-reasoner)
        - Modus wird in jeder Nachricht gekennzeichnet
        - Search wurde entfernt (nicht in der DeepSeek API verfügbar)
+       - DeepThink-Button wird ausgeblendet wenn Google Gemini als API-Dienst gewählt ist
+    
+    4b. API-DIENST-AUSWAHL (hinzugefügt 03.03.2026):
+       - Wählbare API-Dienste: DeepSeek (Standard) oder Google Gemini
+       - Umschaltung in den Einstellungen via Toggle-Switch (Konvention A.3.F)
+       - Bei Google: DeepThink-Button und Privacy-Toggle werden ausgeblendet
+       - Bei Google Free: noTraining nicht anwendbar (wird nicht angezeigt)
+       - Bei Google Paid: noTraining sichtbar und steuerbar
+       - Modell-Auswahl via Dropdown (dokumentierte Ausnahme, siehe A.3)
+       - DeepSeek-Modelle: deepseek-chat, deepseek-reasoner
+       - Google-Modelle: gemini-2.0-flash, gemini-1.5-pro, gemini-2.5-pro
+       - API-Key: GOOGLE_API_KEY in /etc/apache2/envvars (analog zu DEEPSEEK_API_KEY)
+       - Backend: separates Script /cgi-bin/google-api.py
     
     5. ANREDEFORM-KONSISTENZ (ENDEUTIG UND UNUMSTÖSSLICH):
        - Die gewählte Anredeform (Sie/Du) wird im gesamten Interface konsequent angewendet
@@ -230,15 +250,19 @@
     D) TECHNISCHE KONVENTIONEN:
     ----------------------------
     1. API-KOMMUNIKATION:
-       - Endpoint: /cgi-bin/deepseek-api.py (lokaler Proxy)
-       - Backend: https://api.deepseek.com/v1/chat/completions (über Proxy)
-       - Modell: deepseek-chat (Chat) / deepseek-reasoner (DeepThink)
-       - MODEL_CONFIG Objekt steuert alle Token-Limits je Modell (siehe Eintrag 56)
+       - DeepSeek Endpoint: /cgi-bin/deepseek-api.py (lokaler Proxy)
+       - Google Endpoint:   /cgi-bin/google-api.py (lokaler Proxy)
+       - DeepSeek Backend: https://api.deepseek.com/v1/chat/completions (über Proxy)
+       - Google Backend:   https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent
+       - DeepSeek Modelle: deepseek-chat (Chat) / deepseek-reasoner (DeepThink)
+       - Google Modelle:   gemini-2.0-flash / gemini-1.5-pro / gemini-2.5-pro
+       - MODEL_CONFIG Objekt steuert alle Token-Limits je Modell (siehe Eintrag 56 + 69)
        - System-Prompt basierend auf Anredeform und Modus
-       - API-KEY SPEICHERUNG: Der API-Key wird NICHT im Client-Code gespeichert
-       - SICHERHEITSVERBESSERUNG (13.02.2026): API-Key wurde in serverseitige Umgebungsvariable ausgelagert
-       - Ein Python CGI-Script unter /cgi-bin/deepseek-api.py verwaltet die sichere Kommunikation
-       - Der Client sendet Anfragen an den lokalen Proxy, niemals direkt an die externe API
+       - API-KEY SPEICHERUNG: Kein API-Key im Client-Code
+       - SICHERHEITSVERBESSERUNG (13.02.2026): DeepSeek API-Key in serverseitige Umgebungsvariable ausgelagert
+       - SICHERHEITSVERBESSERUNG (03.03.2026): Google API-Key in serverseitige Umgebungsvariable ausgelagert
+       - Python CGI-Scripts verwalten die sichere Kommunikation
+       - Der Client sendet Anfragen an lokale Proxies, niemals direkt an externe APIs
     
     2. DATENSPEICHERUNG:
        - localStorage für Einstellungen
@@ -366,11 +390,33 @@
        - Buttons mit anderen Grundfarben als in A.3 definiert sind VERBOTEN
        - Buttons mit anderer Höhe als 36px (bzw. Feedback 8px 16px) sind VERBOTEN
        - Diese Regel gilt für alle bestehenden und zukünftigen Buttons ohne Ausnahme
+
+    6. SPRACH-PFLICHT (ABSOLUT VERBINDLICH UND UNUMSTÖSSLICH):
+       - ALLE sichtbaren Texte im Interface MÜSSEN in der Datei language.xml definiert sein
+       - Kein einziger Text darf direkt im HTML-Code als Literal stehen
+       - Dies gilt für: Buttons, Labels, Beschriftungen, Statusmeldungen, Fehlertexte,
+         Gruppentitel, Platzhaltertexte, Beschreibungen und alle sonstigen UI-Texte
+       - Texte werden ausschliesslich über die Funktion t(id) oder tf(id, ...) eingebunden
+       - Neue Texte erhalten die nächste freie ID im entsprechenden ID-Bereich:
+         * ID   1-100 : Systemmeldungen
+         * ID 101-200 : Einstellungstexte
+         * ID 201-300 : Chat-Interface-Texte
+       - Bei jeder neuen Funktion: ZUERST Texte in language.xml für ALLE Sprachen eintragen,
+         DANN erst HTML und JavaScript schreiben
+       - Jede Sprache (en, de, es, custom) muss VOLLSTÄNDIG gepflegt sein
+       - Verstösse gegen diese Regel sind nicht akzeptabel
     
     WICHTIG: Jede Änderung an diesem Manifest muss hier dokumentiert werden!
     ============================================================================
 
     changelog manifest :
+
+    [03.03.2026] - Eintrag 69: Google Gemini API-Integration
+    - Abschnitt A.3: Dropdown-Ausnahme für Modellauswahl dokumentiert
+    - Abschnitt B.4b: Neuer Abschnitt API-Dienst-Auswahl hinzugefügt
+    - Abschnitt D.1: API-Kommunikation um Google-Endpoint erweitert
+    - MODEL_CONFIG: Google-Modelle gemini-2.0-flash, gemini-1.5-pro, gemini-2.5-pro hinzugefügt
+    - Abschnitt F.6: Neue verbindliche Sprach-Pflicht – alle Texte zwingend in language.xml
 
 
 ================================================================================

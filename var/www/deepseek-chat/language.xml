@@ -112,6 +112,13 @@ Adding a new language:
     <text id="128">Custom</text>
     <text id="129">DeepThink Mode</text>
     <text id="130">Normal Chat</text>
+    <text id="131">API Service</text>
+    <text id="132">DeepSeek</text>
+    <text id="133">Google</text>
+    <text id="134">Google Plan</text>
+    <text id="135">Free</text>
+    <text id="136">Paid</text>
+    <text id="137">Model</text>
 
     <!-- 201-300: Chat interface texts -->
     <text id="201">Enter your message here...</text>
@@ -254,6 +261,13 @@ Adding a new language:
     <text id="128">Benutzerdefiniert</text>
     <text id="129">DeepThink Modus</text>
     <text id="130">Normaler Chat</text>
+    <text id="131">API-Dienst</text>
+    <text id="132">DeepSeek</text>
+    <text id="133">Google</text>
+    <text id="134">Google Plan</text>
+    <text id="135">Kostenlos</text>
+    <text id="136">Bezahlt</text>
+    <text id="137">Modell</text>
 
     <!-- 201-300: Chat-Interface-Texte -->
     <text id="201">Ihre Nachricht hier eingeben...</text>
@@ -394,6 +408,13 @@ Adding a new language:
     <text id="128">Personalizado</text>
     <text id="129">Modo DeepThink</text>
     <text id="130">Chat normal</text>
+    <text id="131">Servicio API</text>
+    <text id="132">DeepSeek</text>
+    <text id="133">Google</text>
+    <text id="134">Plan de Google</text>
+    <text id="135">Gratuito</text>
+    <text id="136">De pago</text>
+    <text id="137">Modelo</text>
 
     <!-- 201-300: Textos de la interfaz del chat -->
     <text id="201">Escriba su mensaje aquí...</text>
@@ -529,6 +550,13 @@ Adding a new language:
     <text id="128">Custom</text>
     <text id="129">DeepThink Mode</text>
     <text id="130">Normal Chat</text>
+    <text id="131">API Service</text>
+    <text id="132">DeepSeek</text>
+    <text id="133">Google</text>
+    <text id="134">Google Plan</text>
+    <text id="135">Free</text>
+    <text id="136">Paid</text>
+    <text id="137">Model</text>
 
     <!-- 201-300: Chat interface texts -->
     <text id="201">Enter your message here...</text>

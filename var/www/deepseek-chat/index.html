@@ -471,6 +471,22 @@
         }
         .toggle-slider.lang-active { background: #155724 !important; }
         .toggle-slider.lang-active::before { transform: translateX(22px) !important; background: #90ee90 !important; }
+        .model-select-wrapper { margin-top: 12px; }
+        .model-select-label { font-size: 13px; color: #aaa; margin-bottom: 6px; }
+        #modelSelect {
+            width: 100%;
+            padding: 8px 12px;
+            background: #2d2d2d;
+            color: #f0f0f0;
+            border: 1px solid #555;
+            border-radius: 8px;
+            font-family: Arial;
+            font-size: 14px;
+            cursor: pointer;
+            outline: none;
+        }
+        #modelSelect:hover { border-color: #0056b3; }
+        #modelSelect:focus { border-color: #0056b3; }
         .settings-info {
             margin-top: 20px;
             padding: 15px;
@@ -963,6 +979,65 @@
                     </div>
                 </div>
             </div>
+
+            <!-- API SERVICE GROUP -->
+            <div class="settings-group" id="apiServiceGroup">
+                <div class="group-header">
+                    <div class="group-title" id="apiServiceGroupTitle">API Service</div>
+                    <div class="group-status" id="apiServiceStatus">DeepSeek</div>
+                </div>
+                <div class="setting-item toggle-active-blue" id="deepseekServiceItem">
+                    <label class="toggle-label" for="deepseekServiceToggle">
+                        <span class="setting-name" id="deepseekServiceLabel">DeepSeek</span>
+                        <span class="toggle-switch">
+                            <input type="checkbox" id="deepseekServiceToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </span>
+                    </label>
+                </div>
+                <div class="setting-item" id="googleServiceItem">
+                    <label class="toggle-label" for="googleServiceToggle">
+                        <span class="setting-name" id="googleServiceLabel">Google Gemini</span>
+                        <span class="toggle-switch">
+                            <input type="checkbox" id="googleServiceToggle">
+                            <span class="toggle-slider"></span>
+                        </span>
+                    </label>
+                </div>
+                <!-- Google Tier (nur sichtbar wenn Google aktiv) -->
+                <div id="googleTierGroup" style="display:none;">
+                    <div class="group-header" style="margin-top:15px;">
+                        <div class="group-title" id="googleTierGroupTitle">Google Plan</div>
+                        <div class="group-status" id="googleTierStatus">Free</div>
+                    </div>
+                    <div class="setting-item toggle-active" id="googleFreeTierItem">
+                        <label class="toggle-label" for="googleFreeTierToggle">
+                            <span class="setting-name" id="googleFreeTierLabel">Free</span>
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="googleFreeTierToggle" checked>
+                                <span class="toggle-slider"></span>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="setting-item" id="googlePaidTierItem">
+                        <label class="toggle-label" for="googlePaidTierToggle">
+                            <span class="setting-name" id="googlePaidTierLabel">Paid</span>
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="googlePaidTierToggle">
+                                <span class="toggle-slider"></span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+                <!-- Modell-Auswahl Dropdown (Manifest-Ausnahme: Dropdown statt Toggle) -->
+                <div class="model-select-wrapper">
+                    <div class="model-select-label" id="modelSelectLabel">Model</div>
+                    <select id="modelSelect">
+                        <option value="deepseek-chat">deepseek-chat</option>
+                        <option value="deepseek-reasoner">deepseek-reasoner</option>
+                    </select>
+                </div>
+            </div>
             
             <div class="settings-info">
                 <div class="info-title" id="settingsInfoTitle">Settings are saved automatically</div>
@@ -1006,6 +1081,7 @@
 
     <script>
         const API_URL = '/cgi-bin/deepseek-api.py';
+        const GOOGLE_API_URL = '/cgi-bin/google-api.py';
         const MODELS_URL = '/cgi-bin/deepseek-api.py';  // same proxy, GET /v1/models
 
         // MODEL CAPABILITY MAP: which file types each model supports
@@ -1043,15 +1119,32 @@
                 maxContextTokens:  65000,
                 maxOutputTokens:   32768,
                 maxContextMessages: 30
+            },
+            'gemini-2.0-flash': {
+                maxContextTokens:  1048576,
+                maxOutputTokens:   8192,
+                maxContextMessages: 100
+            },
+            'gemini-1.5-pro': {
+                maxContextTokens:  2097152,
+                maxOutputTokens:   8192,
+                maxContextMessages: 100
+            },
+            'gemini-2.5-pro': {
+                maxContextTokens:  1048576,
+                maxOutputTokens:   65536,
+                maxContextMessages: 100
             }
         };
+        const DEEPSEEK_MODELS = ['deepseek-chat', 'deepseek-reasoner'];
+        const GOOGLE_MODELS   = ['gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-2.5-pro'];
         // =====================================================================
 
         const TOKENS_PER_CHAR = 0.25;
         const MAX_FILE_CONTENT_LENGTH = 250000;
         const MAX_FILE_SIZE_MB = 10;
         const PDF_EXTRACTION_TIMEOUT = 30000;
-        const SETTINGS_VERSION = '1.3';
+        const SETTINGS_VERSION = '1.4';
         const SUPPORTED_FILE_FORMATS = ['.txt', '.pdf'];
         const ACCEPTED_FILE_FORMATS = ['.txt', '.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.csv', '.xlsx', '.pptx'];
         const IMAGE_FILE_FORMATS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
@@ -1217,6 +1310,20 @@
             document.getElementById('settingsInfoTitle').textContent = t(121);
             document.getElementById('saveSettings').textContent = t(123);
 
+            // API Service group
+            document.getElementById('apiServiceGroupTitle').textContent = t(131);
+            document.getElementById('deepseekServiceLabel').textContent = t(132);
+            document.getElementById('googleServiceLabel').textContent = 'Google Gemini';
+            document.getElementById('googleTierGroupTitle').textContent = t(134);
+            document.getElementById('googleFreeTierLabel').textContent = t(135);
+            document.getElementById('googlePaidTierLabel').textContent = t(136);
+            document.getElementById('modelSelectLabel').textContent = t(137);
+            // Status texts aktualisieren
+            const svc = settings ? (settings.apiService || 'deepseek') : 'deepseek';
+            document.getElementById('apiServiceStatus').textContent = (svc === 'google') ? t(133) : t(132);
+            const tier = settings ? (settings.googleTier || 'free') : 'free';
+            document.getElementById('googleTierStatus').textContent = (tier === 'paid') ? t(136) : t(135);
+
             // Sessions overlay
             document.getElementById('sessionsTitleText').textContent = t(215);
 
@@ -1306,8 +1413,13 @@
         }
         
         function updateContextEstimation() {
-            const modelName = (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
-            const config = MODEL_CONFIG[modelName];
+            let modelName;
+            if (settings.apiService === 'google') {
+                modelName = settings.selectedModel || 'gemini-2.0-flash';
+            } else {
+                modelName = (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
+            }
+            const config = MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-chat'];
             const maxMessages = config.maxContextMessages;
             const recentMessages = contextHistory.messages.slice(-maxMessages);
             const totalTokens = recentMessages.reduce((sum, msg) => sum + (msg.estimatedTokens || 0), 0);
@@ -1316,8 +1428,13 @@
         }
 
         function updateContextDisplay() {
-            const modelName = (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
-            const config = MODEL_CONFIG[modelName];
+            let modelName;
+            if (settings.apiService === 'google') {
+                modelName = settings.selectedModel || 'gemini-2.0-flash';
+            } else {
+                modelName = (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
+            }
+            const config = MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-chat'];
             const pct = Math.min(100, Math.round((contextHistory.totalEstimatedTokens / config.maxContextTokens) * 100));
             const contextInfoEl = document.getElementById('contextInfo');
             contextInfoEl.textContent = t(2) + ' ' + pct + '% (' + modelName + ')';
@@ -1773,9 +1890,12 @@
                     const content = msg.hasFile ? msg.content : replaceGermanUmlauts(msg.content);
                     messages.push({ role: msg.role, content });
                 });
-                const modelName = (userMsg.mode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
-                const maxTokens = MODEL_CONFIG[modelName].maxOutputTokens;
-                const response = await fetch(API_URL, {
+                const modelName = (settings.apiService === 'google')
+                    ? (settings.selectedModel || 'gemini-2.0-flash')
+                    : (userMsg.mode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
+                const activeApiUrl = (settings.apiService === 'google') ? GOOGLE_API_URL : API_URL;
+                const maxTokens = (MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-chat']).maxOutputTokens;
+                const response = await fetch(activeApiUrl, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ model: modelName, messages, max_tokens: maxTokens, no_training: settings.noTraining })
                 });
@@ -1900,20 +2020,23 @@
         // =====================================================================
         function migrateSettings(oldSettings) {
             if (!oldSettings || typeof oldSettings !== 'object') {
-                return { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true };
+                return { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', selectedModel: 'deepseek-chat' };
             }
             let defaultMode = oldSettings.defaultMode || 'chat';
             if (defaultMode === 'search') defaultMode = 'chat';
             return {
-                version:     SETTINGS_VERSION,
-                language:    oldSettings.language || 'en',
-                addressForm: oldSettings.addressForm || 'sie',
-                defaultMode: defaultMode,
-                noTraining:  oldSettings.noTraining !== undefined ? oldSettings.noTraining : true
+                version:       SETTINGS_VERSION,
+                language:      oldSettings.language || 'en',
+                addressForm:   oldSettings.addressForm || 'sie',
+                defaultMode:   defaultMode,
+                noTraining:    oldSettings.noTraining !== undefined ? oldSettings.noTraining : true,
+                apiService:    oldSettings.apiService || 'deepseek',
+                googleTier:    oldSettings.googleTier || 'free',
+                selectedModel: oldSettings.selectedModel || 'deepseek-chat'
             };
         }
         
-        let settings = { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true };
+        let settings = { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', selectedModel: 'deepseek-chat' };
         let currentMode = 'chat';
 
         const sendButton = document.getElementById('sendButton');
@@ -1953,6 +2076,15 @@
         const duFormItem = document.getElementById('duFormItem');
         const chatModeItem = document.getElementById('chatModeItem');
         const deepthinkModeItem = document.getElementById('deepthinkModeItem');
+        const deepseekServiceToggle = document.getElementById('deepseekServiceToggle');
+        const googleServiceToggle = document.getElementById('googleServiceToggle');
+        const deepseekServiceItem = document.getElementById('deepseekServiceItem');
+        const googleServiceItem = document.getElementById('googleServiceItem');
+        const googleFreeTierToggle = document.getElementById('googleFreeTierToggle');
+        const googlePaidTierToggle = document.getElementById('googlePaidTierToggle');
+        const googleFreeTierItem = document.getElementById('googleFreeTierItem');
+        const googlePaidTierItem = document.getElementById('googlePaidTierItem');
+        const modelSelect = document.getElementById('modelSelect');
         
         let selectedFile = null;
         let fileTextContent = null;
@@ -2046,6 +2178,47 @@
             }
         }
         
+        function setApiServiceToggle(value) {
+            deepseekServiceToggle.checked = (value === 'deepseek');
+            googleServiceToggle.checked  = (value === 'google');
+            deepseekServiceItem.classList.toggle('toggle-active-blue', value === 'deepseek');
+            googleServiceItem.classList.toggle('toggle-active-blue',  value === 'google');
+            document.getElementById('apiServiceStatus').textContent = (value === 'google') ? t(133) : t(132);
+            updateApiServiceUI(value);
+        }
+
+        function setGoogleTierToggle(value) {
+            googleFreeTierToggle.checked = (value === 'free');
+            googlePaidTierToggle.checked = (value === 'paid');
+            googleFreeTierItem.classList.toggle('toggle-active', value === 'free');
+            googlePaidTierItem.classList.toggle('toggle-active', value === 'paid');
+            document.getElementById('googleTierStatus').textContent = (value === 'paid') ? t(136) : t(135);
+        }
+
+        function updateApiServiceUI(service) {
+            const isGoogle = (service === 'google');
+            // DeepThink-Button auf Hauptseite ein-/ausblenden
+            deepThinkButton.style.display = isGoogle ? 'none' : '';
+            deepThinkIndicator.style.display = isGoogle ? 'none' : '';
+            // noTraining-Gruppe ein-/ausblenden
+            const privacyGroup = document.getElementById('noTrainingItem').closest('.settings-group');
+            if (privacyGroup) privacyGroup.style.display = isGoogle ? 'none' : '';
+            // Google-Tier-Gruppe ein-/ausblenden
+            document.getElementById('googleTierGroup').style.display = isGoogle ? '' : 'none';
+            // Modell-Dropdown befüllen
+            const models = isGoogle ? GOOGLE_MODELS : DEEPSEEK_MODELS;
+            modelSelect.innerHTML = '';
+            models.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m; opt.textContent = m;
+                modelSelect.appendChild(opt);
+            });
+            // Falls Google aktiv und DeepThink läuft: auf Chat zurückschalten
+            if (isGoogle && currentMode === 'deepthink') {
+                setMode('chat');
+            }
+        }
+
         function setMode(mode) {
             if (mode === 'search') mode = 'chat';
             currentMode = mode;
@@ -2116,6 +2289,16 @@
             noTrainingStatus.textContent = settings.noTraining !== false ? t(117) : t(118);
             if (settings.noTraining !== false) noTrainingItem.classList.add('toggle-active');
             else noTrainingItem.classList.remove('toggle-active');
+            setApiServiceToggle(settings.apiService || 'deepseek');
+            setGoogleTierToggle(settings.googleTier || 'free');
+            // Gespeichertes Modell im Dropdown auswählen
+            if (modelSelect && settings.selectedModel) {
+                for (let i = 0; i < modelSelect.options.length; i++) {
+                    if (modelSelect.options[i].value === settings.selectedModel) {
+                        modelSelect.selectedIndex = i; break;
+                    }
+                }
+            }
             applyLanguage();
         }
 
@@ -2153,9 +2336,12 @@
                     const content = msg.hasFile ? msg.content : replaceGermanUmlauts(msg.content);
                     messages.push({ role: msg.role, content });
                 });
-                const modelName = (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
-                const maxTokens = MODEL_CONFIG[modelName].maxOutputTokens;
-                const response = await fetch(API_URL, {
+                const modelName = (settings.apiService === 'google')
+                    ? (settings.selectedModel || 'gemini-2.0-flash')
+                    : (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
+                const activeApiUrl = (settings.apiService === 'google') ? GOOGLE_API_URL : API_URL;
+                const maxTokens = (MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-chat']).maxOutputTokens;
+                const response = await fetch(activeApiUrl, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ model: modelName, messages, max_tokens: maxTokens, no_training: settings.noTraining })
                 });
@@ -2638,12 +2824,43 @@
                 else noTrainingItem.classList.remove('toggle-active');
             });
 
+            // --- API Service toggles ---
+            addEventListenerWithCleanup(deepseekServiceToggle, 'change', () => {
+                if (deepseekServiceToggle.checked) setApiServiceToggle('deepseek');
+            });
+            addEventListenerWithCleanup(googleServiceToggle, 'change', () => {
+                if (googleServiceToggle.checked) setApiServiceToggle('google');
+            });
+            addEventListenerWithCleanup(deepseekServiceItem, 'click', (e) => {
+                if (e.target !== deepseekServiceToggle) { deepseekServiceToggle.checked = true; setApiServiceToggle('deepseek'); }
+            });
+            addEventListenerWithCleanup(googleServiceItem, 'click', (e) => {
+                if (e.target !== googleServiceToggle) { googleServiceToggle.checked = true; setApiServiceToggle('google'); }
+            });
+
+            // --- Google Tier toggles ---
+            addEventListenerWithCleanup(googleFreeTierToggle, 'change', () => {
+                if (googleFreeTierToggle.checked) setGoogleTierToggle('free');
+            });
+            addEventListenerWithCleanup(googlePaidTierToggle, 'change', () => {
+                if (googlePaidTierToggle.checked) setGoogleTierToggle('paid');
+            });
+            addEventListenerWithCleanup(googleFreeTierItem, 'click', (e) => {
+                if (e.target !== googleFreeTierToggle) { googleFreeTierToggle.checked = true; setGoogleTierToggle('free'); }
+            });
+            addEventListenerWithCleanup(googlePaidTierItem, 'click', (e) => {
+                if (e.target !== googlePaidTierToggle) { googlePaidTierToggle.checked = true; setGoogleTierToggle('paid'); }
+            });
+
             // --- Save button ---
             const saveHandler = function() {
                 settings.language    = currentLang;
                 settings.addressForm = duFormToggle.checked ? 'du' : 'sie';
                 settings.defaultMode = deepthinkModeToggle.checked ? 'deepthink' : 'chat';
                 settings.noTraining  = noTrainingToggle.checked;
+                settings.apiService  = googleServiceToggle.checked ? 'google' : 'deepseek';
+                settings.googleTier  = googlePaidTierToggle.checked ? 'paid' : 'free';
+                settings.selectedModel = modelSelect.value;
                 saveSettings();
                 setMode(settings.defaultMode);
                 updateInputPlaceholder();
@@ -2688,7 +2905,4 @@
     </script>
 </body>
 </html>
-
-
-
 
