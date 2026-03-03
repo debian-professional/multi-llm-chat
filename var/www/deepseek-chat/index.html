@@ -1189,6 +1189,11 @@
                 maxOutputTokens:   32768,
                 maxContextMessages: 30
             },
+            'gemini-2.5-flash': {
+                maxContextTokens:  1048576,
+                maxOutputTokens:   8192,
+                maxContextMessages: 100
+            },
             'gemini-2.0-flash': {
                 maxContextTokens:  1048576,
                 maxOutputTokens:   8192,
@@ -1206,8 +1211,8 @@
             }
         };
         const DEEPSEEK_MODELS      = ['deepseek-chat', 'deepseek-reasoner'];
-        const GOOGLE_MODELS_FREE   = ['gemini-2.0-flash', 'gemini-1.5-flash'];
-        const GOOGLE_MODELS_PAID   = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.5-pro'];
+        const GOOGLE_MODELS_FREE   = ['gemini-2.5-flash'];
+        const GOOGLE_MODELS_PAID   = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro', 'gemini-2.0-flash'];
         const GOOGLE_MODELS        = GOOGLE_MODELS_FREE; // Fallback
         // =====================================================================
 
@@ -1426,7 +1431,7 @@
             const modelInfoEl = document.getElementById('modelInfo');
             if (modelInfoEl) {
                 if (settings && settings.apiService === 'google') {
-                    modelInfoEl.textContent = t(238) + ' ' + (settings.selectedModel || 'gemini-2.0-flash');
+                    modelInfoEl.textContent = t(238) + ' ' + (settings.selectedModel || 'gemini-2.5-flash');
                 } else if (detectedModels.length > 0) {
                     modelInfoEl.textContent = t(238) + ' ' + detectedModels.join(', ');
                 } else {
@@ -1507,7 +1512,7 @@
         function updateContextEstimation() {
             let modelName;
             if (settings.apiService === 'google') {
-                modelName = settings.selectedModel || 'gemini-2.0-flash';
+                modelName = settings.selectedModel || 'gemini-2.5-flash';
             } else {
                 modelName = (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
             }
@@ -1522,7 +1527,7 @@
         function updateContextDisplay() {
             let modelName;
             if (settings.apiService === 'google') {
-                modelName = settings.selectedModel || 'gemini-2.0-flash';
+                modelName = settings.selectedModel || 'gemini-2.5-flash';
             } else {
                 modelName = (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
             }
@@ -1983,7 +1988,7 @@
                     messages.push({ role: msg.role, content });
                 });
                 const modelName = (settings.apiService === 'google')
-                    ? (settings.selectedModel || 'gemini-2.0-flash')
+                    ? (settings.selectedModel || 'gemini-2.5-flash')
                     : (userMsg.mode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
                 const activeApiUrl = (settings.apiService === 'google') ? GOOGLE_API_URL : API_URL;
                 const maxTokens = (MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-chat']).maxOutputTokens;
@@ -2346,7 +2351,7 @@
             const modelInfoEl = document.getElementById('modelInfo');
             if (modelInfoEl) {
                 if (isGoogle) {
-                    const selModel = modelSelect.value || 'gemini-2.0-flash';
+                    const selModel = modelSelect.value || 'gemini-2.5-flash';
                     modelInfoEl.textContent = t(238) + ' ' + selModel;
                 } else if (detectedModels.length > 0) {
                     modelInfoEl.textContent = t(238) + ' ' + detectedModels.join(', ');
@@ -2474,7 +2479,7 @@
                     messages.push({ role: msg.role, content });
                 });
                 const modelName = (settings.apiService === 'google')
-                    ? (settings.selectedModel || 'gemini-2.0-flash')
+                    ? (settings.selectedModel || 'gemini-2.5-flash')
                     : (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
                 const activeApiUrl = (settings.apiService === 'google') ? GOOGLE_API_URL : API_URL;
                 const maxTokens = (MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-chat']).maxOutputTokens;
