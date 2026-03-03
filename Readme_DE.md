@@ -261,6 +261,11 @@ Die Benutzeroberfläche unterstützt mehrere Sprachen, die aus einer externen `l
 - Die gewählte Form beeinflusst: System-Prompt (erzwingt konsistente KI-Antworten), Eingabe-Platzhalter, alle Einstellungsbeschreibungen.
 - Englisch hat keine Anredeform-Unterscheidung.
 
+**System-Prompt** wird dynamisch aufgebaut basierend auf Sprache, Anredeform und Modus:
+- Basis-Prompt (Text-IDs 29/30 für formell/informell)
+- DeepThink-Ergänzung (Text-IDs 31/32)
+- Eine strikte Anweisung zur Dateidarstellung wird immer auf Englisch angehängt — um konsistentes Verhalten unabhängig von der UI-Sprache sicherzustellen.
+
 ### Einstellungen (Toggles statt Radio-Buttons)
 
 Alle Einstellungen verwenden **Toggle-Schalter** (links-nach-rechts schiebend), niemals Radio-Buttons oder Checkboxen:
@@ -323,6 +328,8 @@ Jedes Gespräch wird automatisch als benannte Session verwaltet:
 - Inhaltsverzeichnis mit allen Nachrichten
 - Vollständiger Chat-Verlauf mit Zeitstempeln und Modus-Indikatoren
 - Farbkodierung nach Nachrichten-Rolle und Modus
+
+**Technischer Hinweis PDF**: Binäre PDF-Daten werden ausschließlich über `sys.stdout.buffer` mit als Bytes codierten HTTP-Headern geschrieben — dies vermeidet den „Bad header"-Fehler, der auftritt, wenn `print()` (Text-Modus) mit binärer Ausgabe gemischt wird.
 
 ### Feedback-Buttons & Logging
 

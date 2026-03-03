@@ -349,7 +349,7 @@ Four buttons appear on hover for each AI response (left side, bottom):
 
 ### Dynamic Context Display
 
-The server header shows three lines of information:
+The server header shows four lines of information:
 1. Server name (in blue, `#4dabf7`)
 2. `IP: xxx.xxx.xxx.xxx`
 3. `Context: XX% (model-name)`

@@ -141,6 +141,38 @@ X-Accel-Buffering: no
 Cache-Control: no-cache
 ```
 
+### Integración con Google Gemini
+
+Además de DeepSeek, la aplicación soporta **Google Gemini** como segundo proveedor de LLM:
+
+- El cambio entre proveedores se realiza mediante el **toggle de Selección de LLM** en el panel de configuración principal (toggle verde, coherente con los toggles de preferencias personales).
+- Un script Python dedicado `google-api.py` gestiona toda la comunicación con la API de Google Generative Language (`https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent`).
+- La **GOOGLE_API_KEY** se almacena de forma segura en `/etc/apache2/envvars` — nunca en el código del cliente.
+- Cuando Google está activo: el botón DeepThink se oculta (no aplicable), el toggle de Privacidad no es visible para usuarios del Free Tier.
+- **Disponibilidad de modelos por nivel**:
+  - **Free Tier**: `gemini-2.5-flash` (5 RPM, 20 RPD)
+  - **Paid Tier**: `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-1.5-pro`, `gemini-2.0-flash`
+- El desplegable de modelos se actualiza automáticamente al cambiar entre Free y Paid — los modelos no disponibles desaparecen al instante.
+
+### Panel de Configuración LLM
+
+Un nuevo botón **Configuración LLM** abre un segundo overlay de configuración con opciones específicas del proveedor:
+
+- **Para DeepSeek**: Modo de Chat (Chat / DeepThink), toggle de Privacidad (no usar datos para entrenamiento), desplegable de selección de modelo.
+- **Para Google**: Plan Google (Free / Paid), desplegable de selección de modelo.
+- El panel de configuración principal permanece compacto: solo Selección de LLM, Idioma y Forma de tratamiento.
+- Este enfoque de dos paneles mantiene la UI ordenada y hace que todas las opciones sean fácilmente accesibles.
+
+### Manejo de Límite de Tasa 429
+
+Cuando la API de Google Gemini devuelve un error `429 Too Many Requests`, la aplicación lo gestiona de forma elegante:
+
+- **3 intentos de reintento automático** con **15 segundos de espera** entre cada uno.
+- Se muestra un **mensaje de cuenta regresiva** en el chat durante cada período de espera (p. ej. "Límite de tasa alcanzado – esperando 15 segundos y reintentando... (Intento 1/3)").
+- Tras agotar todos los reintentos, se muestra un mensaje de error amigable.
+- Los detalles de error detallados de la respuesta de la API de Google se escriben en el registro del servidor para diagnóstico.
+- Nota: Un `429` puede significar que se ha superado el RPM (solicitudes por minuto) o que se ha agotado la cuota diaria. El registro contiene el mensaje de error completo de Google para distinguir entre ambos casos.
+
 ### Manejador de Portapapeles (Ctrl+V)
 
 Un sofisticado manejador de portapapeles intercepta los eventos de pegado y responde de forma inteligente según el tipo de contenido:
@@ -261,6 +293,11 @@ La UI admite múltiples idiomas cargados desde un archivo `language.xml` externo
 - La forma seleccionada afecta a: el prompt del sistema (fuerza respuestas consistentes de la IA), el marcador de posición del campo de entrada, todas las descripciones de ajustes.
 - El inglés no tiene distinción de forma de tratamiento.
 
+**El prompt del sistema** se construye dinámicamente según el idioma, la forma de tratamiento y el modo:
+- Prompt base (IDs de texto 29/30 para formal/informal)
+- Adición de DeepThink (IDs de texto 31/32)
+- Una instrucción estricta para la visualización de archivos siempre se añade en inglés para garantizar un comportamiento consistente independientemente del idioma de la UI.
+
 ### Configuración (Toggles en lugar de Botones de Radio)
 
 Todos los ajustes usan **interruptores toggle** (deslizando de izquierda a derecha), nunca botones de radio ni casillas de verificación:
@@ -323,6 +360,8 @@ Cada conversación se gestiona automáticamente como una sesión con nombre:
 - Tabla de contenidos con todos los mensajes
 - Historial completo del chat con marcas de tiempo e indicadores de modo
 - Codificación de colores por rol del mensaje y modo
+
+**Nota técnica sobre PDF**: Los datos PDF binarios se escriben exclusivamente a través de `sys.stdout.buffer` con encabezados HTTP codificados como bytes — evitando el error "Bad header" que ocurre al mezclar `print()` (modo texto) con salida binaria.
 
 ### Botones de Feedback y Registro
 
@@ -508,22 +547,30 @@ chmod 700 /var/www/deepseek-chat/sessions
 
 ### Configuración
 
+**Clave API de DeepSeek** (en `/etc/apache2/envvars`):
+```bash
+export DEEPSEEK_API_KEY="tu-clave-deepseek-aquí"
+```
+
+**Clave API de Google Gemini** (mismo archivo):
+```bash
+export GOOGLE_API_KEY="tu-clave-google-aquí"
+```
+
+Ambas claves se cargan en el entorno de Apache y se pasan a los scripts CGI correspondientes — no aparecen en ningún archivo accesible desde el cliente.
+
 **Configuración del modelo** (`MODEL_CONFIG` en `index.html`):
 ```javascript
 const MODEL_CONFIG = {
-    'deepseek-chat': {
-        maxContextTokens:   100000,
-        maxOutputTokens:    8192,
-        maxContextMessages: 50
-    },
-    'deepseek-reasoner': {
-        maxContextTokens:   65000,
-        maxOutputTokens:    32768,
-        maxContextMessages: 30
-    }
+    'deepseek-chat':    { maxContextTokens: 100000,  maxOutputTokens: 8192,  maxContextMessages: 50  },
+    'deepseek-reasoner':{ maxContextTokens: 65000,   maxOutputTokens: 32768, maxContextMessages: 30  },
+    'gemini-2.5-flash': { maxContextTokens: 1048576, maxOutputTokens: 8192,  maxContextMessages: 100 },
+    'gemini-2.5-pro':   { maxContextTokens: 1048576, maxOutputTokens: 65536, maxContextMessages: 100 },
+    'gemini-1.5-pro':   { maxContextTokens: 2097152, maxOutputTokens: 8192,  maxContextMessages: 100 },
+    'gemini-2.0-flash': { maxContextTokens: 1048576, maxOutputTokens: 8192,  maxContextMessages: 100 }
 };
 ```
-Para actualizar estos valores cuando DeepSeek lance nuevas versiones de modelos, solo es necesario modificar este bloque.
+Para añadir un nuevo modelo, basta con ampliar este bloque y la lista `GOOGLE_MODELS_FREE` / `GOOGLE_MODELS_PAID` correspondiente.
 
 **Configuración de idioma** (`language.xml`):
 - Añadir un nuevo bloque `<language id="custom" name="..." visible="true">` para activar el slot de idioma personalizado.
@@ -561,6 +608,7 @@ Para actualizar estos valores cuando DeepSeek lance nuevas versiones de modelos,
 │   ├── files-directorys                Resumen de archivos / listado de directorios
 │   ├── cgi-bin/
 │   │   ├── deepseek-api.py            Proxy de streaming a la API de DeepSeek
+│   │   ├── google-api.py              Proxy de streaming a la API de Google Gemini (con reintento 429)
 │   │   ├── deepseek-models.py         Consulta el endpoint /v1/models
 │   │   ├── save-session.py            Guarda sesiones de chat (POST)
 │   │   ├── load-session.py            Carga lista de sesiones (GET) o sesión (GET ?id=)
@@ -592,15 +640,41 @@ const MODEL_CONFIG = {
         maxContextTokens:   65000,    // Ventana de contexto de DeepSeek R1
         maxOutputTokens:    32768,    // R1 admite cadenas de razonamiento más largas
         maxContextMessages: 30        // Menos mensajes debido al overhead de razonamiento
+    },
+    'gemini-2.5-flash': {
+        maxContextTokens:   1048576,  // Ventana de contexto de 1M tokens
+        maxOutputTokens:    8192,
+        maxContextMessages: 100
+    },
+    'gemini-2.5-pro': {
+        maxContextTokens:   1048576,
+        maxOutputTokens:    65536,
+        maxContextMessages: 100
+    },
+    'gemini-1.5-pro': {
+        maxContextTokens:   2097152,  // Ventana de contexto de 2M tokens
+        maxOutputTokens:    8192,
+        maxContextMessages: 100
+    },
+    'gemini-2.0-flash': {
+        maxContextTokens:   1048576,
+        maxOutputTokens:    8192,
+        maxContextMessages: 100
     }
 };
 ```
 
-Fuente: [Documentación de la API de DeepSeek](https://api-docs.deepseek.com) (a partir del 19.02.2026).
+Listas de modelos por nivel de Google:
+```javascript
+const GOOGLE_MODELS_FREE = ['gemini-2.5-flash'];
+const GOOGLE_MODELS_PAID = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro', 'gemini-2.0-flash'];
+```
+
+Fuentes: [Documentación de la API de DeepSeek](https://api-docs.deepseek.com) (19.02.2026), [Google AI Rate Limits](https://ai.dev/rate-limit) (03.03.2026).
 
 **Estimación de tokens**: `TOKENS_PER_CHAR = 0,25` (4 caracteres ≈ 1 token — estimación conservadora para texto mixto inglés/alemán).
 
-Cuando se lance un nuevo modelo de DeepSeek, **solo es necesario actualizar este bloque `MODEL_CONFIG`**. Todas las funciones dependientes (`updateContextDisplay()`, `sendMessage()`, `handleRegenerate()`) usarán automáticamente los nuevos valores.
+Al añadir un nuevo modelo, **solo es necesario actualizar `MODEL_CONFIG` y la lista de modelos correspondiente**. Todas las funciones dependientes (`updateContextDisplay()`, `sendMessage()`, `handleRegenerate()`) usarán automáticamente los nuevos valores.
 
 ---
 
@@ -699,4 +773,4 @@ DeepSeek Chat es un **escaparate del desarrollo web profesional** — sin sobrec
 
 ---
 
-*Última actualización: 28.02.2026*
+*Última actualización: 03.03.2026*
