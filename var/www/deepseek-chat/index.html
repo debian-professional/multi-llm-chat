@@ -904,6 +904,15 @@
                         </span>
                     </label>
                 </div>
+                <div class="setting-item" id="huggingfaceServiceItem">
+                    <label class="toggle-label" for="huggingfaceServiceToggle">
+                        <span class="setting-name" id="huggingfaceServiceLabel">Hugging Face</span>
+                        <span class="toggle-switch">
+                            <input type="checkbox" id="huggingfaceServiceToggle">
+                            <span class="toggle-slider"></span>
+                        </span>
+                    </label>
+                </div>
             </div>
 
             <!-- LANGUAGE GROUP -->
@@ -1095,6 +1104,35 @@
                 </div>
             </div>
 
+            <!-- HUGGING FACE GRUPPE (nur bei Hugging Face sichtbar) -->
+            <div id="llmHuggingFaceGroup" style="display:none;">
+                <!-- HF PLAN -->
+                <div class="settings-group">
+                    <div class="group-header">
+                        <div class="group-title" id="hfTierGroupTitle">HF Plan</div>
+                        <div class="group-status" id="hfTierStatus">Free</div>
+                    </div>
+                    <div class="setting-item toggle-active" id="hfFreeTierItem">
+                        <label class="toggle-label" for="hfFreeTierToggle">
+                            <span class="setting-name" id="hfFreeTierLabel">Free</span>
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="hfFreeTierToggle" checked>
+                                <span class="toggle-slider"></span>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="setting-item" id="hfPaidTierItem">
+                        <label class="toggle-label" for="hfPaidTierToggle">
+                            <span class="setting-name" id="hfPaidTierLabel">Paid</span>
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="hfPaidTierToggle">
+                                <span class="toggle-slider"></span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
             <!-- MODELL-AUSWAHL (immer sichtbar, Inhalt je nach LLM) -->
             <div class="settings-group">
                 <div class="group-header">
@@ -1151,6 +1189,7 @@
     <script>
         const API_URL = '/cgi-bin/deepseek-api.py';
         const GOOGLE_API_URL = '/cgi-bin/google-api.py';
+        const HF_API_URL     = '/cgi-bin/hugging-api.py';
         const MODELS_URL = '/cgi-bin/deepseek-api.py';  // same proxy, GET /v1/models
 
         // MODEL CAPABILITY MAP: which file types each model supports
@@ -1208,11 +1247,43 @@
                 maxContextTokens:  1048576,
                 maxOutputTokens:   65536,
                 maxContextMessages: 100
+            },
+            'Qwen/Qwen2.5-72B-Instruct': {
+                maxContextTokens:   128000,
+                maxOutputTokens:    8192,
+                maxContextMessages: 80
+            },
+            'mistralai/Mistral-7B-Instruct-v0.3': {
+                maxContextTokens:   32768,
+                maxOutputTokens:    4096,
+                maxContextMessages: 40
+            },
+            'microsoft/Phi-3.5-mini-instruct': {
+                maxContextTokens:   128000,
+                maxOutputTokens:    4096,
+                maxContextMessages: 60
+            },
+            'meta-llama/Meta-Llama-3.1-70B-Instruct': {
+                maxContextTokens:   128000,
+                maxOutputTokens:    8192,
+                maxContextMessages: 80
+            },
+            'meta-llama/Meta-Llama-3.1-405B-Instruct': {
+                maxContextTokens:   128000,
+                maxOutputTokens:    8192,
+                maxContextMessages: 80
+            },
+            'mistralai/Mixtral-8x7B-Instruct-v0.1': {
+                maxContextTokens:   32768,
+                maxOutputTokens:    4096,
+                maxContextMessages: 40
             }
         };
         const DEEPSEEK_MODELS      = ['deepseek-chat', 'deepseek-reasoner'];
         const GOOGLE_MODELS_FREE   = ['gemini-2.5-flash'];
         const GOOGLE_MODELS_PAID   = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro', 'gemini-2.0-flash'];
+        const HF_MODELS_FREE       = ['Qwen/Qwen2.5-72B-Instruct', 'mistralai/Mistral-7B-Instruct-v0.3', 'microsoft/Phi-3.5-mini-instruct'];
+        const HF_MODELS_PAID       = ['meta-llama/Meta-Llama-3.1-70B-Instruct', 'meta-llama/Meta-Llama-3.1-405B-Instruct', 'Qwen/Qwen2.5-72B-Instruct', 'mistralai/Mixtral-8x7B-Instruct-v0.1'];
         const GOOGLE_MODELS        = GOOGLE_MODELS_FREE; // Fallback
         // =====================================================================
 
@@ -1360,8 +1431,18 @@
             document.getElementById('llmSettingsButton').textContent = t(140);
             document.getElementById('deepseekServiceLabel').textContent = t(132);
             document.getElementById('googleServiceLabel').textContent = t(138);
+            document.getElementById('huggingfaceServiceLabel').textContent = t(241);
+            document.getElementById('hfTierGroupTitle').textContent = t(242);
+            document.getElementById('hfFreeTierLabel').textContent = t(135);
+            document.getElementById('hfPaidTierLabel').textContent = t(136);
+            const hfTierVal = settings ? (settings.hfTier || 'free') : 'free';
+            document.getElementById('hfTierStatus').textContent = (hfTierVal === 'paid') ? t(136) : t(135);
             const svc = settings ? (settings.apiService || 'deepseek') : 'deepseek';
-            document.getElementById('apiServiceStatus').textContent = (svc === 'google') ? t(133) : t(132);
+            let svcStatus;
+            if (svc === 'google') svcStatus = t(133);
+            else if (svc === 'huggingface') svcStatus = t(241);
+            else svcStatus = t(132);
+            document.getElementById('apiServiceStatus').textContent = svcStatus;
 
             // Address form group - immer sichtbar, bei Englisch ausgegraut
             document.getElementById('addressFormGroupTitle').textContent = t(103);
@@ -1430,8 +1511,8 @@
             // Model info
             const modelInfoEl = document.getElementById('modelInfo');
             if (modelInfoEl) {
-                if (settings && settings.apiService === 'google') {
-                    modelInfoEl.textContent = t(238) + ' ' + (settings.selectedModel || 'gemini-2.5-flash');
+                if (settings && (settings.apiService === 'google' || settings.apiService === 'huggingface')) {
+                    modelInfoEl.textContent = t(238) + ' ' + (settings.selectedModel || '');
                 } else if (detectedModels.length > 0) {
                     modelInfoEl.textContent = t(238) + ' ' + detectedModels.join(', ');
                 } else {
@@ -1511,8 +1592,8 @@
         
         function updateContextEstimation() {
             let modelName;
-            if (settings.apiService === 'google') {
-                modelName = settings.selectedModel || 'gemini-2.5-flash';
+            if (settings.apiService === 'google' || settings.apiService === 'huggingface') {
+                modelName = settings.selectedModel;
             } else {
                 modelName = (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
             }
@@ -1526,8 +1607,8 @@
 
         function updateContextDisplay() {
             let modelName;
-            if (settings.apiService === 'google') {
-                modelName = settings.selectedModel || 'gemini-2.5-flash';
+            if (settings.apiService === 'google' || settings.apiService === 'huggingface') {
+                modelName = settings.selectedModel;
             } else {
                 modelName = (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
             }
@@ -1987,10 +2068,13 @@
                     const content = msg.hasFile ? msg.content : replaceGermanUmlauts(msg.content);
                     messages.push({ role: msg.role, content });
                 });
-                const modelName = (settings.apiService === 'google')
-                    ? (settings.selectedModel || 'gemini-2.5-flash')
+                const modelName = (settings.apiService === 'google' || settings.apiService === 'huggingface')
+                    ? (settings.selectedModel || (settings.apiService === 'google' ? 'gemini-2.5-flash' : 'Qwen/Qwen2.5-72B-Instruct'))
                     : (userMsg.mode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
-                const activeApiUrl = (settings.apiService === 'google') ? GOOGLE_API_URL : API_URL;
+                let activeApiUrl;
+                if (settings.apiService === 'google') activeApiUrl = GOOGLE_API_URL;
+                else if (settings.apiService === 'huggingface') activeApiUrl = HF_API_URL;
+                else activeApiUrl = API_URL;
                 const maxTokens = (MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-chat']).maxOutputTokens;
                 const response = await fetch(activeApiUrl, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -2117,7 +2201,7 @@
         // =====================================================================
         function migrateSettings(oldSettings) {
             if (!oldSettings || typeof oldSettings !== 'object') {
-                return { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', selectedModel: 'deepseek-chat' };
+                return { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', hfTier: 'free', selectedModel: 'deepseek-chat' };
             }
             let defaultMode = oldSettings.defaultMode || 'chat';
             if (defaultMode === 'search') defaultMode = 'chat';
@@ -2129,11 +2213,12 @@
                 noTraining:    oldSettings.noTraining !== undefined ? oldSettings.noTraining : true,
                 apiService:    oldSettings.apiService || 'deepseek',
                 googleTier:    oldSettings.googleTier || 'free',
+                hfTier:        oldSettings.hfTier || 'free',
                 selectedModel: oldSettings.selectedModel || 'deepseek-chat'
             };
         }
         
-        let settings = { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', selectedModel: 'deepseek-chat' };
+        let settings = { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', hfTier: 'free', selectedModel: 'deepseek-chat' };
         let currentMode = 'chat';
 
         const sendButton = document.getElementById('sendButton');
@@ -2179,12 +2264,18 @@
         const deepthinkModeItem = document.getElementById('deepthinkModeItem');
         const deepseekServiceToggle = document.getElementById('deepseekServiceToggle');
         const googleServiceToggle = document.getElementById('googleServiceToggle');
+        const huggingfaceServiceToggle = document.getElementById('huggingfaceServiceToggle');
         const deepseekServiceItem = document.getElementById('deepseekServiceItem');
         const googleServiceItem = document.getElementById('googleServiceItem');
+        const huggingfaceServiceItem = document.getElementById('huggingfaceServiceItem');
         const googleFreeTierToggle = document.getElementById('googleFreeTierToggle');
         const googlePaidTierToggle = document.getElementById('googlePaidTierToggle');
         const googleFreeTierItem = document.getElementById('googleFreeTierItem');
         const googlePaidTierItem = document.getElementById('googlePaidTierItem');
+        const hfFreeTierToggle = document.getElementById('hfFreeTierToggle');
+        const hfPaidTierToggle = document.getElementById('hfPaidTierToggle');
+        const hfFreeTierItem = document.getElementById('hfFreeTierItem');
+        const hfPaidTierItem = document.getElementById('hfPaidTierItem');
         const modelSelect = document.getElementById('modelSelect');
         
         let selectedFile = null;
@@ -2281,15 +2372,23 @@
         
         function setApiServiceToggle(value) {
             settings.apiService = value;
-            deepseekServiceToggle.checked = (value === 'deepseek');
-            googleServiceToggle.checked  = (value === 'google');
-            deepseekServiceItem.classList.toggle('toggle-active', value === 'deepseek');
-            googleServiceItem.classList.toggle('toggle-active',  value === 'google');
+            deepseekServiceToggle.checked    = (value === 'deepseek');
+            googleServiceToggle.checked      = (value === 'google');
+            huggingfaceServiceToggle.checked = (value === 'huggingface');
+            deepseekServiceItem.classList.toggle('toggle-active',    value === 'deepseek');
+            googleServiceItem.classList.toggle('toggle-active',      value === 'google');
+            huggingfaceServiceItem.classList.toggle('toggle-active', value === 'huggingface');
             const dsSlider = deepseekServiceToggle.nextElementSibling;
             const gSlider  = googleServiceToggle.nextElementSibling;
-            if (dsSlider) { dsSlider.classList.toggle('lang-active', value === 'deepseek'); dsSlider.classList.remove('blue-active'); }
-            if (gSlider)  { gSlider.classList.toggle('lang-active', value === 'google');   gSlider.classList.remove('blue-active'); }
-            document.getElementById('apiServiceStatus').textContent = (value === 'google') ? t(133) : t(132);
+            const hfSlider = huggingfaceServiceToggle.nextElementSibling;
+            if (dsSlider) { dsSlider.classList.toggle('lang-active', value === 'deepseek');    dsSlider.classList.remove('blue-active'); }
+            if (gSlider)  { gSlider.classList.toggle('lang-active',  value === 'google');      gSlider.classList.remove('blue-active'); }
+            if (hfSlider) { hfSlider.classList.toggle('lang-active', value === 'huggingface'); hfSlider.classList.remove('blue-active'); }
+            let statusText;
+            if (value === 'google') statusText = t(133);
+            else if (value === 'huggingface') statusText = t(241);
+            else statusText = t(132);
+            document.getElementById('apiServiceStatus').textContent = statusText;
             updateApiServiceUI(value);
         }
 
@@ -2320,20 +2419,50 @@
             }
         }
 
+        function setHfTierToggle(value) {
+            settings.hfTier = value;
+            hfFreeTierToggle.checked = (value === 'free');
+            hfPaidTierToggle.checked = (value === 'paid');
+            hfFreeTierItem.classList.toggle('toggle-active', value === 'free');
+            hfPaidTierItem.classList.toggle('toggle-active', value === 'paid');
+            const freeSlider = hfFreeTierToggle.nextElementSibling;
+            const paidSlider = hfPaidTierToggle.nextElementSibling;
+            if (freeSlider) freeSlider.classList.toggle('lang-active', value === 'free');
+            if (paidSlider) paidSlider.classList.toggle('lang-active', value === 'paid');
+            document.getElementById('hfTierStatus').textContent = (value === 'paid') ? t(136) : t(135);
+            // Modell-Dropdown bei Tier-Wechsel aktualisieren
+            if (settings.apiService === 'huggingface') {
+                const models = (value === 'paid') ? HF_MODELS_PAID : HF_MODELS_FREE;
+                const currentModel = modelSelect.value;
+                modelSelect.innerHTML = '';
+                models.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m; opt.textContent = m;
+                    modelSelect.appendChild(opt);
+                });
+                const exists = models.includes(currentModel);
+                if (exists) modelSelect.value = currentModel;
+            }
+        }
+
         function updateApiServiceUI(service) {
             const isGoogle = (service === 'google');
             // DeepThink-Button auf Hauptseite ein-/ausblenden
             deepThinkButton.style.display = isGoogle ? 'none' : '';
-            deepThinkIndicator.style.display = isGoogle ? 'none' : '';
-            // LLM-Panel: DeepSeek- bzw. Google-Gruppe ein-/ausblenden
+            deepThinkIndicator.style.display = (service !== 'deepseek') ? 'none' : '';
+            // LLM-Panel: Gruppen je nach Anbieter ein-/ausblenden
             const dsGroup = document.getElementById('llmDeepSeekGroup');
             const gGroup  = document.getElementById('llmGoogleGroup');
-            if (dsGroup) dsGroup.style.display = isGoogle ? 'none' : '';
-            if (gGroup)  gGroup.style.display  = isGoogle ? '' : 'none';
+            const hfGroup = document.getElementById('llmHuggingFaceGroup');
+            if (dsGroup) dsGroup.style.display = (service === 'deepseek')     ? '' : 'none';
+            if (gGroup)  gGroup.style.display  = (service === 'google')       ? '' : 'none';
+            if (hfGroup) hfGroup.style.display = (service === 'huggingface')  ? '' : 'none';
             // Modell-Dropdown befüllen
             let models;
-            if (isGoogle) {
+            if (service === 'google') {
                 models = (settings.googleTier === 'paid') ? GOOGLE_MODELS_PAID : GOOGLE_MODELS_FREE;
+            } else if (service === 'huggingface') {
+                models = (settings.hfTier === 'paid') ? HF_MODELS_PAID : HF_MODELS_FREE;
             } else {
                 models = DEEPSEEK_MODELS;
             }
@@ -2343,15 +2472,15 @@
                 opt.value = m; opt.textContent = m;
                 modelSelect.appendChild(opt);
             });
-            // Falls Google aktiv und DeepThink läuft: auf Chat zurückschalten
-            if (isGoogle && currentMode === 'deepthink') {
+            // Falls kein DeepSeek aktiv und DeepThink läuft: auf Chat zurückschalten
+            if (service !== 'deepseek' && currentMode === 'deepthink') {
                 setMode('chat');
             }
             // modelInfo Header aktualisieren
             const modelInfoEl = document.getElementById('modelInfo');
             if (modelInfoEl) {
-                if (isGoogle) {
-                    const selModel = modelSelect.value || 'gemini-2.5-flash';
+                if (service === 'google' || service === 'huggingface') {
+                    const selModel = modelSelect.value;
                     modelInfoEl.textContent = t(238) + ' ' + selModel;
                 } else if (detectedModels.length > 0) {
                     modelInfoEl.textContent = t(238) + ' ' + detectedModels.join(', ');
@@ -2433,6 +2562,7 @@
             else noTrainingItem.classList.remove('toggle-active');
             setApiServiceToggle(settings.apiService || 'deepseek');
             setGoogleTierToggle(settings.googleTier || 'free');
+            setHfTierToggle(settings.hfTier || 'free');
             // Gespeichertes Modell im Dropdown auswählen
             if (modelSelect && settings.selectedModel) {
                 for (let i = 0; i < modelSelect.options.length; i++) {
@@ -2478,10 +2608,13 @@
                     const content = msg.hasFile ? msg.content : replaceGermanUmlauts(msg.content);
                     messages.push({ role: msg.role, content });
                 });
-                const modelName = (settings.apiService === 'google')
-                    ? (settings.selectedModel || 'gemini-2.5-flash')
+                const modelName = (settings.apiService === 'google' || settings.apiService === 'huggingface')
+                    ? (settings.selectedModel || (settings.apiService === 'google' ? 'gemini-2.5-flash' : 'Qwen/Qwen2.5-72B-Instruct'))
                     : (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
-                const activeApiUrl = (settings.apiService === 'google') ? GOOGLE_API_URL : API_URL;
+                let activeApiUrl;
+                if (settings.apiService === 'google') activeApiUrl = GOOGLE_API_URL;
+                else if (settings.apiService === 'huggingface') activeApiUrl = HF_API_URL;
+                else activeApiUrl = API_URL;
                 const maxTokens = (MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-chat']).maxOutputTokens;
                 const requestBody = JSON.stringify({ model: modelName, messages, max_tokens: maxTokens, no_training: settings.noTraining });
 
@@ -2998,11 +3131,17 @@
             addEventListenerWithCleanup(googleServiceToggle, 'change', () => {
                 if (googleServiceToggle.checked) setApiServiceToggle('google');
             });
+            addEventListenerWithCleanup(huggingfaceServiceToggle, 'change', () => {
+                if (huggingfaceServiceToggle.checked) setApiServiceToggle('huggingface');
+            });
             addEventListenerWithCleanup(deepseekServiceItem, 'click', (e) => {
                 if (e.target !== deepseekServiceToggle) { deepseekServiceToggle.checked = true; setApiServiceToggle('deepseek'); }
             });
             addEventListenerWithCleanup(googleServiceItem, 'click', (e) => {
                 if (e.target !== googleServiceToggle) { googleServiceToggle.checked = true; setApiServiceToggle('google'); }
+            });
+            addEventListenerWithCleanup(huggingfaceServiceItem, 'click', (e) => {
+                if (e.target !== huggingfaceServiceToggle) { huggingfaceServiceToggle.checked = true; setApiServiceToggle('huggingface'); }
             });
 
             // --- Google Tier toggles ---
@@ -3019,14 +3158,28 @@
                 if (e.target !== googlePaidTierToggle) { googlePaidTierToggle.checked = true; setGoogleTierToggle('paid'); }
             });
 
+            // --- HF Tier toggles ---
+            addEventListenerWithCleanup(hfFreeTierToggle, 'change', () => {
+                if (hfFreeTierToggle.checked) setHfTierToggle('free');
+            });
+            addEventListenerWithCleanup(hfPaidTierToggle, 'change', () => {
+                if (hfPaidTierToggle.checked) setHfTierToggle('paid');
+            });
+            addEventListenerWithCleanup(hfFreeTierItem, 'click', (e) => {
+                if (e.target !== hfFreeTierToggle) { hfFreeTierToggle.checked = true; setHfTierToggle('free'); }
+            });
+            addEventListenerWithCleanup(hfPaidTierItem, 'click', (e) => {
+                if (e.target !== hfPaidTierToggle) { hfPaidTierToggle.checked = true; setHfTierToggle('paid'); }
+            });
+
             // --- Save button ---
             const saveHandler = function() {
                 settings.language    = currentLang;
                 settings.addressForm = duFormToggle.checked ? 'du' : 'sie';
                 settings.defaultMode = deepthinkModeToggle.checked ? 'deepthink' : 'chat';
                 settings.noTraining  = noTrainingToggle.checked;
-                // settings.apiService und settings.googleTier werden direkt in
-                // setApiServiceToggle() / setGoogleTierToggle() aktuell gehalten
+                // settings.apiService, settings.googleTier und settings.hfTier werden direkt in
+                // setApiServiceToggle() / setGoogleTierToggle() / setHfTierToggle() aktuell gehalten
                 settings.selectedModel = modelSelect.value;
                 saveSettings();
                 setMode(settings.defaultMode);
