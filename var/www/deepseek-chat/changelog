@@ -811,3 +811,35 @@
 
     ============================================================================
 
+
+    71. [03.03.2026] - GOOGLE FREE TIER KORREKTUREN:
+
+        MODELL-LISTEN:
+           - Free Tier:  nur gemini-2.5-flash (20 RPD, 5 RPM)
+           - Paid Tier:  gemini-2.5-flash, gemini-2.5-pro, gemini-1.5-pro, gemini-2.0-flash
+           - MODEL_CONFIG: gemini-2.5-flash hinzugefügt
+           - Standard-Fallback: gemini-2.0-flash -> gemini-2.5-flash
+
+        RETRY-LOGIK (google-api.py / index.html):
+           - Bei 429: 3 Versuche mit je 15 Sekunden Wartezeit
+           - Countdown-Anzeige im Chat während Wartezeit
+           - Nach 3 Fehlversuchen: freundliche Fehlermeldung
+           - language.xml IDs 142-143: Retry-Texte (alle 4 Sprachen)
+
+        VERBOSE LOGGING (google-api.py):
+           - Details aus Google API Response werden ins Log geschrieben
+           - Auf 300 Zeichen begrenzt
+
+        SETTINGS REDESIGN:
+           - LLM Auswahl Toggle: grün statt blau
+           - Anredeform: immer sichtbar, bei Englisch ausgegraut (ID 141)
+           - Neues LLM-Panel: Standard-Modus, Datenschutz, Modell
+           - DeepSeek-Modelle Header-Fix: wird nicht mehr überschrieben wenn Google aktiv
+
+        BUGFIXES:
+           - #sessionsOverlay CSS-Selektor fehlte (Saved Chats immer sichtbar)
+           - modelInfo Header zeigte DeepSeek-Modelle auch bei aktivem Google
+
+
+    ============================================================================
+

@@ -135,7 +135,8 @@
        - Bei Google Paid: noTraining sichtbar und steuerbar
        - Modell-Auswahl via Dropdown (dokumentierte Ausnahme, siehe A.3)
        - DeepSeek-Modelle: deepseek-chat, deepseek-reasoner
-       - Google-Modelle: gemini-2.0-flash, gemini-1.5-pro, gemini-2.5-pro
+       - Google-Modelle Free:  gemini-2.5-flash
+       - Google-Modelle Paid:  gemini-2.5-flash, gemini-2.5-pro, gemini-1.5-pro, gemini-2.0-flash
        - API-Key: GOOGLE_API_KEY in /etc/apache2/envvars (analog zu DEEPSEEK_API_KEY)
        - Backend: separates Script /cgi-bin/google-api.py
     
@@ -255,7 +256,8 @@
        - DeepSeek Backend: https://api.deepseek.com/v1/chat/completions (über Proxy)
        - Google Backend:   https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent
        - DeepSeek Modelle: deepseek-chat (Chat) / deepseek-reasoner (DeepThink)
-       - Google Modelle:   gemini-2.0-flash / gemini-1.5-pro / gemini-2.5-pro
+       - Google Modelle Free: gemini-2.5-flash (20 RPD, 5 RPM)
+       - Google Modelle Paid: gemini-2.5-flash, gemini-2.5-pro, gemini-1.5-pro, gemini-2.0-flash
        - MODEL_CONFIG Objekt steuert alle Token-Limits je Modell (siehe Eintrag 56 + 69)
        - System-Prompt basierend auf Anredeform und Modus
        - API-KEY SPEICHERUNG: Kein API-Key im Client-Code
