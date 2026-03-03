@@ -20,11 +20,17 @@ def log_to_file(status_code, response_data):
         path = os.environ.get('REQUEST_URI', 'unknown')
         timestamp = datetime.datetime.now().isoformat()
         error_msg = None
+        details = None
         if isinstance(response_data, dict):
             error_msg = response_data.get('error')
+            details = response_data.get('details')
         log_line = f"{timestamp} | IP: {ip} | {method} {path} | Status: {status_code}"
         if error_msg:
             log_line += f" | Error: {error_msg}"
+        if details:
+            # Details auf 300 Zeichen begrenzen
+            details_short = details[:300].replace('\n', ' ')
+            log_line += f" | Details: {details_short}"
         log_line += "\n"
         with open(log_path, 'a') as f:
             f.write(log_line)
