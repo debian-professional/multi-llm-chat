@@ -2185,6 +2185,7 @@
         }
         
         function setApiServiceToggle(value) {
+            settings.apiService = value;  // sofort in settings schreiben
             deepseekServiceToggle.checked = (value === 'deepseek');
             googleServiceToggle.checked  = (value === 'google');
             deepseekServiceItem.classList.toggle('toggle-active-blue', value === 'deepseek');
@@ -2199,6 +2200,7 @@
         }
 
         function setGoogleTierToggle(value) {
+            settings.googleTier = value;  // sofort in settings schreiben
             googleFreeTierToggle.checked = (value === 'free');
             googlePaidTierToggle.checked = (value === 'paid');
             googleFreeTierItem.classList.toggle('toggle-active', value === 'free');
@@ -2889,8 +2891,8 @@
                 settings.addressForm = duFormToggle.checked ? 'du' : 'sie';
                 settings.defaultMode = deepthinkModeToggle.checked ? 'deepthink' : 'chat';
                 settings.noTraining  = noTrainingToggle.checked;
-                settings.apiService  = googleServiceToggle.checked ? 'google' : 'deepseek';
-                settings.googleTier  = googlePaidTierToggle.checked ? 'paid' : 'free';
+                // settings.apiService und settings.googleTier werden direkt in
+                // setApiServiceToggle() / setGoogleTierToggle() aktuell gehalten
                 settings.selectedModel = modelSelect.value;
                 saveSettings();
                 setMode(settings.defaultMode);
