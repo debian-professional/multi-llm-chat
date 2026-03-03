@@ -126,6 +126,8 @@ Adding a new language:
     <text id="142">Rate limit reached – waiting {0} seconds and retrying... (Attempt {1}/{2})</text>
     <text id="143">Rate limit reached – please wait a moment and try again.</text>
 
+    <text id="241">Hugging Face</text>
+    <text id="242">HF Plan</text>
     <!-- 201-300: Chat interface texts -->
     <text id="201">Enter your message here...</text>
     <text id="202">Enter your message here...</text>
@@ -281,6 +283,8 @@ Adding a new language:
     <text id="142">Rate Limit erreicht – warte {0} Sekunden und versuche es erneut... (Versuch {1}/{2})</text>
     <text id="143">Rate Limit erreicht – bitte warte einen Moment und versuche es erneut.</text>
 
+    <text id="241">Hugging Face</text>
+    <text id="242">HF-Plan</text>
     <!-- 201-300: Chat-Interface-Texte -->
     <text id="201">Ihre Nachricht hier eingeben...</text>
     <text id="202">Ihre Nachricht hier eingeben...</text>
@@ -434,6 +438,8 @@ Adding a new language:
     <text id="142">Límite de tasa alcanzado – esperando {0} segundos y reintentando... (Intento {1}/{2})</text>
     <text id="143">Límite de tasa alcanzado – espera un momento e inténtalo de nuevo.</text>
 
+    <text id="241">Hugging Face</text>
+    <text id="242">Plan HF</text>
     <!-- 201-300: Textos de la interfaz del chat -->
     <text id="201">Escriba su mensaje aquí...</text>
     <text id="202">Escriba su mensaje aquí...</text>
@@ -582,6 +588,8 @@ Adding a new language:
     <text id="142">Rate limit reached – waiting {0} seconds and retrying... (Attempt {1}/{2})</text>
     <text id="143">Rate limit reached – please wait a moment and try again.</text>
 
+    <text id="241">Hugging Face</text>
+    <text id="242">HF Plan</text>
     <!-- 201-300: Chat interface texts -->
     <text id="201">Enter your message here...</text>
     <text id="202">Enter your message here...</text>
