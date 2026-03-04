@@ -97,8 +97,8 @@ def main():
             return
 
         # Hugging Face Serverless Inference API — OpenAI-kompatibler Endpunkt
-        # Format: https://api-inference.huggingface.co/models/{model_id}/v1/chat/completions
-        api_url = f'https://api-inference.huggingface.co/models/{model}/v1/chat/completions'
+        
+        api_url = f'https://router.huggingface.co/v1/chat/completions'
 
         api_request_data = {
             'model':      model,
