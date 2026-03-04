@@ -2852,13 +2852,13 @@
                 if (data && data.data && Array.isArray(data.data)) {
                     detectedModels = data.data.map(m => m.id);
                     const modelEl = document.getElementById('modelInfo');
-                    if (modelEl && settings.apiService !== 'google') {
+                    if (modelEl && settings.apiService === 'deepseek') {
                         modelEl.textContent = t(238) + ' ' + detectedModels.join(', ');
                     }
                 }
             } catch (e) {
                 const modelEl = document.getElementById('modelInfo');
-                if (modelEl && settings.apiService !== 'google') modelEl.textContent = t(238) + ' N/A';
+                if (modelEl && settings.apiService === 'deepseek') modelEl.textContent = t(238) + ' N/A';
             }
         }
 
