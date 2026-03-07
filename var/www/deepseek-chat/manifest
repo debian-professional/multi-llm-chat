@@ -127,11 +127,12 @@
        - Search wurde entfernt (nicht in der DeepSeek API verfügbar)
        - DeepThink-Button wird ausgeblendet wenn Google Gemini ODER Hugging Face als API-Dienst gewählt ist
     
-    4b. API-DIENST-AUSWAHL (aktualisiert 04.03.2026):
-       - Wählbare API-Dienste: DeepSeek (Standard), Google Gemini, Hugging Face
+    4b. API-DIENST-AUSWAHL (aktualisiert 07.03.2026):
+       - Wählbare API-Dienste: DeepSeek (Standard), Google Gemini, Hugging Face, GroqCloud
        - Umschaltung in den Einstellungen via Toggle-Switch (Konvention A.3.F)
        - Bei Google: DeepThink-Button und DeepThink-Indikator werden ausgeblendet
        - Bei Hugging Face: DeepThink-Button und DeepThink-Indikator werden ausgeblendet
+       - Bei GroqCloud: DeepThink-Button und DeepThink-Indikator werden ausgeblendet
        - Bei Google Free: noTraining nicht anwendbar (wird nicht angezeigt)
        - Bei Google Paid: noTraining sichtbar und steuerbar
        - Modell-Auswahl via Dropdown (dokumentierte Ausnahme, siehe A.3)
@@ -141,10 +142,14 @@
        - HF-Modelle Free:  Qwen/Qwen2.5-72B-Instruct, mistralai/Mistral-7B-Instruct-v0.3, microsoft/Phi-3.5-mini-instruct
        - HF-Modelle Paid:  meta-llama/Meta-Llama-3.1-70B-Instruct, meta-llama/Meta-Llama-3.1-405B-Instruct,
                            Qwen/Qwen2.5-72B-Instruct, mistralai/Mixtral-8x7B-Instruct-v0.1
+       - Groq-Modelle Free:  llama-3.3-70b-versatile, llama-3.1-8b-instant, mixtral-8x7b-32768, gemma2-9b-it
+       - Groq-Modelle Paid:  llama-3.3-70b-versatile, llama-3.1-8b-instant, mixtral-8x7b-32768, gemma2-9b-it
        - API-Key Google:   GOOGLE_API_KEY in /etc/apache2/envvars
        - API-Key HF:       HF_API_KEY in /etc/apache2/envvars (Write-Token mit "Make calls to Inference Providers")
+       - API-Key GroqCloud: GRQ_API_KEY in /etc/apache2/envvars
        - Backend Google:   separates Script /cgi-bin/google-api.py
        - Backend HF:       separates Script /cgi-bin/hugging-api.py
+       - Backend GroqCloud: separates Script /cgi-bin/groq-api.py
     
     5. ANREDEFORM-KONSISTENZ (ENDEUTIG UND UNUMSTÖSSLICH):
        - Die gewählte Anredeform (Sie/Du) wird im gesamten Interface konsequent angewendet
@@ -260,21 +265,26 @@
        - DeepSeek Endpoint:      /cgi-bin/deepseek-api.py (lokaler Proxy)
        - Google Endpoint:        /cgi-bin/google-api.py (lokaler Proxy)
        - Hugging Face Endpoint:  /cgi-bin/hugging-api.py (lokaler Proxy)
+       - GroqCloud Endpoint:     /cgi-bin/groq-api.py (lokaler Proxy)
        - DeepSeek Backend:       https://api.deepseek.com/v1/chat/completions (über Proxy)
        - Google Backend:         https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent
        - Hugging Face Backend:   https://router.huggingface.co/v1/chat/completions (OpenAI-kompatibler Router)
+       - GroqCloud Backend:      https://api.groq.com/openai/v1/chat/completions (OpenAI-kompatibler Endpunkt)
        - DeepSeek Modelle:       deepseek-chat (Chat) / deepseek-reasoner (DeepThink)
        - Google Modelle Free:    gemini-2.5-flash (20 RPD, 5 RPM)
        - Google Modelle Paid:    gemini-2.5-flash, gemini-2.5-pro, gemini-1.5-pro, gemini-2.0-flash
        - HF Modelle Free:        Qwen/Qwen2.5-72B-Instruct, mistralai/Mistral-7B-Instruct-v0.3, microsoft/Phi-3.5-mini-instruct
        - HF Modelle Paid:        meta-llama/Meta-Llama-3.1-70B-Instruct, meta-llama/Meta-Llama-3.1-405B-Instruct,
                                  Qwen/Qwen2.5-72B-Instruct, mistralai/Mixtral-8x7B-Instruct-v0.1
-       - MODEL_CONFIG Objekt steuert alle Token-Limits je Modell (siehe Eintrag 56 + 69 + 72)
+       - Groq Modelle Free:      llama-3.3-70b-versatile, llama-3.1-8b-instant, mixtral-8x7b-32768, gemma2-9b-it
+       - Groq Modelle Paid:      llama-3.3-70b-versatile, llama-3.1-8b-instant, mixtral-8x7b-32768, gemma2-9b-it
+       - MODEL_CONFIG Objekt steuert alle Token-Limits je Modell (siehe Eintrag 56 + 69 + 72 + 73)
        - System-Prompt basierend auf Anredeform und Modus
        - API-KEY SPEICHERUNG: Kein API-Key im Client-Code
        - SICHERHEITSVERBESSERUNG (13.02.2026): DeepSeek API-Key in serverseitige Umgebungsvariable ausgelagert
        - SICHERHEITSVERBESSERUNG (03.03.2026): Google API-Key in serverseitige Umgebungsvariable ausgelagert
        - SICHERHEITSVERBESSERUNG (04.03.2026): Hugging Face API-Key in serverseitige Umgebungsvariable ausgelagert
+       - SICHERHEITSVERBESSERUNG (07.03.2026): GroqCloud API-Key in serverseitige Umgebungsvariable ausgelagert
        - Python CGI-Scripts verwalten die sichere Kommunikation
        - Der Client sendet Anfragen an lokale Proxies, niemals direkt an externe APIs
     
@@ -440,5 +450,30 @@
     - Abschnitt D.1: Hugging Face Endpoint + Backend + Modelle + SICHERHEITSVERBESSERUNG dokumentiert
     - language.xml IDs 241-242: "Hugging Face" und "HF Plan" (alle 4 Sprachen)
 
+    [07.03.2026] - Eintrag 73: GroqCloud als vierter LLM-Anbieter
+    - Abschnitt B.4: DeepThink-Button-Ausblendung auf GroqCloud erweitert
+    - Abschnitt B.4b: GroqCloud als vierter Anbieter ergänzt (Free/Paid-Modelle, API-Key, Backend)
+    - Abschnitt D.1: GroqCloud Endpoint + Backend + Modelle + SICHERHEITSVERBESSERUNG dokumentiert
+    - language.xml IDs 243-244: "GroqCloud" und "Groq Plan" (alle 4 Sprachen)
+    - SETTINGS_VERSION: 1.4 -> 1.5 (groqTier: 'free'|'paid' neu in Settings-Objekt)
+    - NEUES CGI-SCRIPT (groq-api.py):
+       - Endpoint: https://api.groq.com/openai/v1/chat/completions
+       - OpenAI-kompatibler SSE-Streaming-Proxy
+       - API-Key: GRQ_API_KEY aus Apache envvars
+    - Konstanten: GROQ_API_URL, GROQ_MODELS_FREE, GROQ_MODELS_PAID
+    - MODEL_CONFIG erweitert um alle Groq-Modelle:
+       - llama-3.3-70b-versatile (128k ctx), llama-3.1-8b-instant (131k ctx)
+       - mixtral-8x7b-32768 (32k ctx), gemma2-9b-it (8k ctx)
+    - LLM SELECTION: groqServiceToggle hinzugefügt (Settings-Overlay)
+    - LLM SETTINGS: llmGroqGroup mit Groq-Tier-Toggle (Free/Paid) hinzugefügt
+    - Settings-Objekt: apiService += 'groq', groqTier: 'free'|'paid'
+    - Funktionen aktualisiert: setApiServiceToggle, updateApiServiceUI,
+      updateContextEstimation, updateContextDisplay, buildSystemPrompt,
+      applyLanguage, updateSettingsUI, sendMessage, handleRegenerate
+    - Event-Listener: groqServiceToggle, groqFreeTierToggle, groqPaidTierToggle
+
 
 ================================================================================
+
+
+

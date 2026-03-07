@@ -913,6 +913,15 @@
                         </span>
                     </label>
                 </div>
+                <div class="setting-item" id="groqServiceItem">
+                    <label class="toggle-label" for="groqServiceToggle">
+                        <span class="setting-name" id="groqServiceLabel">GroqCloud</span>
+                        <span class="toggle-switch">
+                            <input type="checkbox" id="groqServiceToggle">
+                            <span class="toggle-slider"></span>
+                        </span>
+                    </label>
+                </div>
             </div>
 
             <!-- LANGUAGE GROUP -->
@@ -1133,6 +1142,35 @@
                 </div>
             </div>
 
+            <!-- GROQ GRUPPE (nur bei GroqCloud sichtbar) -->
+            <div id="llmGroqGroup" style="display:none;">
+                <!-- GROQ PLAN -->
+                <div class="settings-group">
+                    <div class="group-header">
+                        <div class="group-title" id="groqTierGroupTitle">Groq Plan</div>
+                        <div class="group-status" id="groqTierStatus">Free</div>
+                    </div>
+                    <div class="setting-item toggle-active" id="groqFreeTierItem">
+                        <label class="toggle-label" for="groqFreeTierToggle">
+                            <span class="setting-name" id="groqFreeTierLabel">Free</span>
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="groqFreeTierToggle" checked>
+                                <span class="toggle-slider"></span>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="setting-item" id="groqPaidTierItem">
+                        <label class="toggle-label" for="groqPaidTierToggle">
+                            <span class="setting-name" id="groqPaidTierLabel">Paid</span>
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="groqPaidTierToggle">
+                                <span class="toggle-slider"></span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
             <!-- MODELL-AUSWAHL (immer sichtbar, Inhalt je nach LLM) -->
             <div class="settings-group">
                 <div class="group-header">
@@ -1190,6 +1228,7 @@
         const API_URL = '/cgi-bin/deepseek-api.py';
         const GOOGLE_API_URL = '/cgi-bin/google-api.py';
         const HF_API_URL     = '/cgi-bin/hugging-api.py';
+        const GROQ_API_URL   = '/cgi-bin/groq-api.py';
         const MODELS_URL = '/cgi-bin/deepseek-api.py';  // same proxy, GET /v1/models
 
         // MODEL CAPABILITY MAP: which file types each model supports
@@ -1277,6 +1316,26 @@
                 maxContextTokens:   32768,
                 maxOutputTokens:    4096,
                 maxContextMessages: 40
+            },
+            'llama-3.3-70b-versatile': {
+                maxContextTokens:  128000,
+                maxOutputTokens:   8192,
+                maxContextMessages: 80
+            },
+            'llama-3.1-8b-instant': {
+                maxContextTokens:  131072,
+                maxOutputTokens:   8192,
+                maxContextMessages: 80
+            },
+            'mixtral-8x7b-32768': {
+                maxContextTokens:   32768,
+                maxOutputTokens:   32768,
+                maxContextMessages: 40
+            },
+            'gemma2-9b-it': {
+                maxContextTokens:   8192,
+                maxOutputTokens:    8192,
+                maxContextMessages: 50
             }
         };
         const DEEPSEEK_MODELS      = ['deepseek-chat', 'deepseek-reasoner'];
@@ -1284,6 +1343,8 @@
         const GOOGLE_MODELS_PAID   = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro', 'gemini-2.0-flash'];
         const HF_MODELS_FREE       = ['Qwen/Qwen2.5-72B-Instruct', 'mistralai/Mistral-7B-Instruct-v0.3', 'microsoft/Phi-3.5-mini-instruct'];
         const HF_MODELS_PAID       = ['meta-llama/Meta-Llama-3.1-70B-Instruct', 'meta-llama/Meta-Llama-3.1-405B-Instruct', 'Qwen/Qwen2.5-72B-Instruct', 'mistralai/Mixtral-8x7B-Instruct-v0.1'];
+        const GROQ_MODELS_FREE     = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
+        const GROQ_MODELS_PAID     = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
         const GOOGLE_MODELS        = GOOGLE_MODELS_FREE; // Fallback
         // =====================================================================
 
@@ -1291,7 +1352,7 @@
         const MAX_FILE_CONTENT_LENGTH = 250000;
         const MAX_FILE_SIZE_MB = 10;
         const PDF_EXTRACTION_TIMEOUT = 30000;
-        const SETTINGS_VERSION = '1.4';
+        const SETTINGS_VERSION = '1.5';
         const SUPPORTED_FILE_FORMATS = ['.txt', '.pdf'];
         const ACCEPTED_FILE_FORMATS = ['.txt', '.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.csv', '.xlsx', '.pptx'];
         const IMAGE_FILE_FORMATS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
@@ -1432,15 +1493,22 @@
             document.getElementById('deepseekServiceLabel').textContent = t(132);
             document.getElementById('googleServiceLabel').textContent = t(138);
             document.getElementById('huggingfaceServiceLabel').textContent = t(241);
+            document.getElementById('groqServiceLabel').textContent = t(243);
             document.getElementById('hfTierGroupTitle').textContent = t(242);
             document.getElementById('hfFreeTierLabel').textContent = t(135);
             document.getElementById('hfPaidTierLabel').textContent = t(136);
             const hfTierVal = settings ? (settings.hfTier || 'free') : 'free';
             document.getElementById('hfTierStatus').textContent = (hfTierVal === 'paid') ? t(136) : t(135);
+            document.getElementById('groqTierGroupTitle').textContent = t(244);
+            document.getElementById('groqFreeTierLabel').textContent = t(135);
+            document.getElementById('groqPaidTierLabel').textContent = t(136);
+            const groqTierVal = settings ? (settings.groqTier || 'free') : 'free';
+            document.getElementById('groqTierStatus').textContent = (groqTierVal === 'paid') ? t(136) : t(135);
             const svc = settings ? (settings.apiService || 'deepseek') : 'deepseek';
             let svcStatus;
             if (svc === 'google') svcStatus = t(133);
             else if (svc === 'huggingface') svcStatus = t(241);
+            else if (svc === 'groq') svcStatus = t(243);
             else svcStatus = t(132);
             document.getElementById('apiServiceStatus').textContent = svcStatus;
 
@@ -1511,7 +1579,7 @@
             // Model info
             const modelInfoEl = document.getElementById('modelInfo');
             if (modelInfoEl) {
-                if (settings && (settings.apiService === 'google' || settings.apiService === 'huggingface')) {
+                if (settings && (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq')) {
                     modelInfoEl.textContent = t(238) + ' ' + (settings.selectedModel || '');
                 } else if (detectedModels.length > 0) {
                     modelInfoEl.textContent = t(238) + ' ' + detectedModels.join(', ');
@@ -1592,7 +1660,7 @@
         
         function updateContextEstimation() {
             let modelName;
-            if (settings.apiService === 'google' || settings.apiService === 'huggingface') {
+            if (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq') {
                 modelName = settings.selectedModel;
             } else {
                 modelName = (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
@@ -1607,7 +1675,7 @@
 
         function updateContextDisplay() {
             let modelName;
-            if (settings.apiService === 'google' || settings.apiService === 'huggingface') {
+            if (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq') {
                 modelName = settings.selectedModel;
             } else {
                 modelName = (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
@@ -2068,12 +2136,13 @@
                     const content = msg.hasFile ? msg.content : replaceGermanUmlauts(msg.content);
                     messages.push({ role: msg.role, content });
                 });
-                const modelName = (settings.apiService === 'google' || settings.apiService === 'huggingface')
-                    ? (settings.selectedModel || (settings.apiService === 'google' ? 'gemini-2.5-flash' : 'Qwen/Qwen2.5-72B-Instruct'))
+                const modelName = (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq')
+                    ? (settings.selectedModel || (settings.apiService === 'google' ? 'gemini-2.5-flash' : (settings.apiService === 'groq' ? 'llama-3.3-70b-versatile' : 'Qwen/Qwen2.5-72B-Instruct')))
                     : (userMsg.mode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
                 let activeApiUrl;
                 if (settings.apiService === 'google') activeApiUrl = GOOGLE_API_URL;
                 else if (settings.apiService === 'huggingface') activeApiUrl = HF_API_URL;
+                else if (settings.apiService === 'groq') activeApiUrl = GROQ_API_URL;
                 else activeApiUrl = API_URL;
                 const maxTokens = (MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-chat']).maxOutputTokens;
                 const response = await fetch(activeApiUrl, {
@@ -2201,7 +2270,7 @@
         // =====================================================================
         function migrateSettings(oldSettings) {
             if (!oldSettings || typeof oldSettings !== 'object') {
-                return { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', hfTier: 'free', selectedModel: 'deepseek-chat' };
+                return { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', hfTier: 'free', groqTier: 'free', selectedModel: 'deepseek-chat' };
             }
             let defaultMode = oldSettings.defaultMode || 'chat';
             if (defaultMode === 'search') defaultMode = 'chat';
@@ -2214,11 +2283,12 @@
                 apiService:    oldSettings.apiService || 'deepseek',
                 googleTier:    oldSettings.googleTier || 'free',
                 hfTier:        oldSettings.hfTier || 'free',
+                groqTier:      oldSettings.groqTier || 'free',
                 selectedModel: oldSettings.selectedModel || 'deepseek-chat'
             };
         }
         
-        let settings = { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', hfTier: 'free', selectedModel: 'deepseek-chat' };
+        let settings = { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', hfTier: 'free', groqTier: 'free', selectedModel: 'deepseek-chat' };
         let currentMode = 'chat';
 
         const sendButton = document.getElementById('sendButton');
@@ -2265,9 +2335,11 @@
         const deepseekServiceToggle = document.getElementById('deepseekServiceToggle');
         const googleServiceToggle = document.getElementById('googleServiceToggle');
         const huggingfaceServiceToggle = document.getElementById('huggingfaceServiceToggle');
+        const groqServiceToggle = document.getElementById('groqServiceToggle');
         const deepseekServiceItem = document.getElementById('deepseekServiceItem');
         const googleServiceItem = document.getElementById('googleServiceItem');
         const huggingfaceServiceItem = document.getElementById('huggingfaceServiceItem');
+        const groqServiceItem = document.getElementById('groqServiceItem');
         const googleFreeTierToggle = document.getElementById('googleFreeTierToggle');
         const googlePaidTierToggle = document.getElementById('googlePaidTierToggle');
         const googleFreeTierItem = document.getElementById('googleFreeTierItem');
@@ -2276,6 +2348,10 @@
         const hfPaidTierToggle = document.getElementById('hfPaidTierToggle');
         const hfFreeTierItem = document.getElementById('hfFreeTierItem');
         const hfPaidTierItem = document.getElementById('hfPaidTierItem');
+        const groqFreeTierToggle = document.getElementById('groqFreeTierToggle');
+        const groqPaidTierToggle = document.getElementById('groqPaidTierToggle');
+        const groqFreeTierItem = document.getElementById('groqFreeTierItem');
+        const groqPaidTierItem = document.getElementById('groqPaidTierItem');
         const modelSelect = document.getElementById('modelSelect');
         
         let selectedFile = null;
@@ -2323,6 +2399,9 @@
             } else if (settings.apiService === 'huggingface') {
                 const modelName = settings.selectedModel || 'an AI assistant';
                 base += ' You are ' + modelName + ', an AI assistant. Do not claim to be Claude, GPT, or any other AI.';
+            } else if (settings.apiService === 'groq') {
+                const modelName = settings.selectedModel || 'an AI assistant';
+                base += ' You are ' + modelName + ', an AI assistant running on GroqCloud. Do not claim to be Claude, GPT, or any other AI.';
             }
             if (isDeepThink) {
                 if (!meta || !meta.has_address_form) {
@@ -2386,18 +2465,23 @@
             deepseekServiceToggle.checked    = (value === 'deepseek');
             googleServiceToggle.checked      = (value === 'google');
             huggingfaceServiceToggle.checked = (value === 'huggingface');
+            groqServiceToggle.checked        = (value === 'groq');
             deepseekServiceItem.classList.toggle('toggle-active',    value === 'deepseek');
             googleServiceItem.classList.toggle('toggle-active',      value === 'google');
             huggingfaceServiceItem.classList.toggle('toggle-active', value === 'huggingface');
-            const dsSlider = deepseekServiceToggle.nextElementSibling;
-            const gSlider  = googleServiceToggle.nextElementSibling;
-            const hfSlider = huggingfaceServiceToggle.nextElementSibling;
-            if (dsSlider) { dsSlider.classList.toggle('lang-active', value === 'deepseek');    dsSlider.classList.remove('blue-active'); }
-            if (gSlider)  { gSlider.classList.toggle('lang-active',  value === 'google');      gSlider.classList.remove('blue-active'); }
-            if (hfSlider) { hfSlider.classList.toggle('lang-active', value === 'huggingface'); hfSlider.classList.remove('blue-active'); }
+            groqServiceItem.classList.toggle('toggle-active',        value === 'groq');
+            const dsSlider   = deepseekServiceToggle.nextElementSibling;
+            const gSlider    = googleServiceToggle.nextElementSibling;
+            const hfSlider   = huggingfaceServiceToggle.nextElementSibling;
+            const grqSlider  = groqServiceToggle.nextElementSibling;
+            if (dsSlider)  { dsSlider.classList.toggle('lang-active',  value === 'deepseek');    dsSlider.classList.remove('blue-active'); }
+            if (gSlider)   { gSlider.classList.toggle('lang-active',   value === 'google');      gSlider.classList.remove('blue-active'); }
+            if (hfSlider)  { hfSlider.classList.toggle('lang-active',  value === 'huggingface'); hfSlider.classList.remove('blue-active'); }
+            if (grqSlider) { grqSlider.classList.toggle('lang-active', value === 'groq');        grqSlider.classList.remove('blue-active'); }
             let statusText;
             if (value === 'google') statusText = t(133);
             else if (value === 'huggingface') statusText = t(241);
+            else if (value === 'groq') statusText = t(243);
             else statusText = t(132);
             document.getElementById('apiServiceStatus').textContent = statusText;
             updateApiServiceUI(value);
@@ -2456,24 +2540,54 @@
             }
         }
 
+        function setGroqTierToggle(value) {
+            settings.groqTier = value;
+            groqFreeTierToggle.checked = (value === 'free');
+            groqPaidTierToggle.checked = (value === 'paid');
+            groqFreeTierItem.classList.toggle('toggle-active', value === 'free');
+            groqPaidTierItem.classList.toggle('toggle-active', value === 'paid');
+            const freeSlider = groqFreeTierToggle.nextElementSibling;
+            const paidSlider = groqPaidTierToggle.nextElementSibling;
+            if (freeSlider) freeSlider.classList.toggle('lang-active', value === 'free');
+            if (paidSlider) paidSlider.classList.toggle('lang-active', value === 'paid');
+            document.getElementById('groqTierStatus').textContent = (value === 'paid') ? t(136) : t(135);
+            // Modell-Dropdown bei Tier-Wechsel aktualisieren
+            if (settings.apiService === 'groq') {
+                const models = (value === 'paid') ? GROQ_MODELS_PAID : GROQ_MODELS_FREE;
+                const currentModel = modelSelect.value;
+                modelSelect.innerHTML = '';
+                models.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m; opt.textContent = m;
+                    modelSelect.appendChild(opt);
+                });
+                const exists = models.includes(currentModel);
+                if (exists) modelSelect.value = currentModel;
+            }
+        }
+
         function updateApiServiceUI(service) {
             const isGoogle = (service === 'google');
             // DeepThink-Button auf Hauptseite ein-/ausblenden
             deepThinkButton.style.display = (service !== 'deepseek') ? 'none' : '';
             deepThinkIndicator.style.display = (service !== 'deepseek') ? 'none' : '';
             // LLM-Panel: Gruppen je nach Anbieter ein-/ausblenden
-            const dsGroup = document.getElementById('llmDeepSeekGroup');
-            const gGroup  = document.getElementById('llmGoogleGroup');
-            const hfGroup = document.getElementById('llmHuggingFaceGroup');
-            if (dsGroup) dsGroup.style.display = (service === 'deepseek')     ? '' : 'none';
-            if (gGroup)  gGroup.style.display  = (service === 'google')       ? '' : 'none';
-            if (hfGroup) hfGroup.style.display = (service === 'huggingface')  ? '' : 'none';
+            const dsGroup  = document.getElementById('llmDeepSeekGroup');
+            const gGroup   = document.getElementById('llmGoogleGroup');
+            const hfGroup  = document.getElementById('llmHuggingFaceGroup');
+            const grqGroup = document.getElementById('llmGroqGroup');
+            if (dsGroup)  dsGroup.style.display  = (service === 'deepseek')     ? '' : 'none';
+            if (gGroup)   gGroup.style.display   = (service === 'google')       ? '' : 'none';
+            if (hfGroup)  hfGroup.style.display  = (service === 'huggingface')  ? '' : 'none';
+            if (grqGroup) grqGroup.style.display = (service === 'groq')         ? '' : 'none';
             // Modell-Dropdown befüllen
             let models;
             if (service === 'google') {
                 models = (settings.googleTier === 'paid') ? GOOGLE_MODELS_PAID : GOOGLE_MODELS_FREE;
             } else if (service === 'huggingface') {
                 models = (settings.hfTier === 'paid') ? HF_MODELS_PAID : HF_MODELS_FREE;
+            } else if (service === 'groq') {
+                models = (settings.groqTier === 'paid') ? GROQ_MODELS_PAID : GROQ_MODELS_FREE;
             } else {
                 models = DEEPSEEK_MODELS;
             }
@@ -2490,7 +2604,7 @@
             // modelInfo Header aktualisieren
             const modelInfoEl = document.getElementById('modelInfo');
             if (modelInfoEl) {
-                if (service === 'google' || service === 'huggingface') {
+                if (service === 'google' || service === 'huggingface' || service === 'groq') {
                     const selModel = modelSelect.value;
                     modelInfoEl.textContent = t(238) + ' ' + selModel;
                 } else if (detectedModels.length > 0) {
@@ -2574,6 +2688,7 @@
             setApiServiceToggle(settings.apiService || 'deepseek');
             setGoogleTierToggle(settings.googleTier || 'free');
             setHfTierToggle(settings.hfTier || 'free');
+            setGroqTierToggle(settings.groqTier || 'free');
             // Gespeichertes Modell im Dropdown auswählen
             if (modelSelect && settings.selectedModel) {
                 for (let i = 0; i < modelSelect.options.length; i++) {
@@ -2619,12 +2734,13 @@
                     const content = msg.hasFile ? msg.content : replaceGermanUmlauts(msg.content);
                     messages.push({ role: msg.role, content });
                 });
-                const modelName = (settings.apiService === 'google' || settings.apiService === 'huggingface')
-                    ? (settings.selectedModel || (settings.apiService === 'google' ? 'gemini-2.5-flash' : 'Qwen/Qwen2.5-72B-Instruct'))
+                const modelName = (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq')
+                    ? (settings.selectedModel || (settings.apiService === 'google' ? 'gemini-2.5-flash' : (settings.apiService === 'groq' ? 'llama-3.3-70b-versatile' : 'Qwen/Qwen2.5-72B-Instruct')))
                     : (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
                 let activeApiUrl;
                 if (settings.apiService === 'google') activeApiUrl = GOOGLE_API_URL;
                 else if (settings.apiService === 'huggingface') activeApiUrl = HF_API_URL;
+                else if (settings.apiService === 'groq') activeApiUrl = GROQ_API_URL;
                 else activeApiUrl = API_URL;
                 const maxTokens = (MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-chat']).maxOutputTokens;
                 const requestBody = JSON.stringify({ model: modelName, messages, max_tokens: maxTokens, no_training: settings.noTraining });
@@ -3154,6 +3270,12 @@
             addEventListenerWithCleanup(huggingfaceServiceItem, 'click', (e) => {
                 if (e.target !== huggingfaceServiceToggle) { huggingfaceServiceToggle.checked = true; setApiServiceToggle('huggingface'); }
             });
+            addEventListenerWithCleanup(groqServiceToggle, 'change', () => {
+                if (groqServiceToggle.checked) setApiServiceToggle('groq');
+            });
+            addEventListenerWithCleanup(groqServiceItem, 'click', (e) => {
+                if (e.target !== groqServiceToggle) { groqServiceToggle.checked = true; setApiServiceToggle('groq'); }
+            });
 
             // --- Google Tier toggles ---
             addEventListenerWithCleanup(googleFreeTierToggle, 'change', () => {
@@ -3181,6 +3303,20 @@
             });
             addEventListenerWithCleanup(hfPaidTierItem, 'click', (e) => {
                 if (e.target !== hfPaidTierToggle) { hfPaidTierToggle.checked = true; setHfTierToggle('paid'); }
+            });
+
+            // --- Groq Tier toggles ---
+            addEventListenerWithCleanup(groqFreeTierToggle, 'change', () => {
+                if (groqFreeTierToggle.checked) setGroqTierToggle('free');
+            });
+            addEventListenerWithCleanup(groqPaidTierToggle, 'change', () => {
+                if (groqPaidTierToggle.checked) setGroqTierToggle('paid');
+            });
+            addEventListenerWithCleanup(groqFreeTierItem, 'click', (e) => {
+                if (e.target !== groqFreeTierToggle) { groqFreeTierToggle.checked = true; setGroqTierToggle('free'); }
+            });
+            addEventListenerWithCleanup(groqPaidTierItem, 'click', (e) => {
+                if (e.target !== groqPaidTierToggle) { groqPaidTierToggle.checked = true; setGroqTierToggle('paid'); }
             });
 
             // --- Save button ---
