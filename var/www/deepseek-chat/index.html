@@ -2692,6 +2692,7 @@
                 opt.value = m; opt.textContent = m;
                 modelSelect.appendChild(opt);
             });
+            settings.selectedModel = modelSelect.value;
             // Falls kein DeepSeek aktiv und DeepThink läuft: auf Chat zurückschalten
             if (service !== 'deepseek' && currentMode === 'deepthink') {
                 setMode('chat');
