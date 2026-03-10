@@ -1085,6 +1085,35 @@
                 </div>
             </div>
 
+            <!-- OPENAI GRUPPE (nur bei OpenAI sichtbar) -->
+            <div id="llmOpenAIGroup" style="display:none;">
+                <!-- OPENAI PLAN -->
+                <div class="settings-group">
+                    <div class="group-header">
+                        <div class="group-title" id="openaiTierGroupTitle">OpenAI Plan</div>
+                        <div class="group-status" id="openaiTierStatus">Free</div>
+                    </div>
+                    <div class="setting-item toggle-active" id="openaiFreeTierItem">
+                        <label class="toggle-label" for="openaiFreeTierToggle">
+                            <span class="setting-name" id="openaiFreeTierLabel">Free</span>
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="openaiFreeTierToggle" checked>
+                                <span class="toggle-slider"></span>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="setting-item" id="openaiPaidTierItem">
+                        <label class="toggle-label" for="openaiPaidTierToggle">
+                            <span class="setting-name" id="openaiPaidTierLabel">Paid</span>
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="openaiPaidTierToggle">
+                                <span class="toggle-slider"></span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
             <!-- GOOGLE GRUPPE (nur bei Google sichtbar) -->
             <div id="llmGoogleGroup" style="display:none;">
                 <!-- GOOGLE PLAN -->
@@ -1230,6 +1259,7 @@
         const GOOGLE_API_URL = '/cgi-bin/google-api.py';
         const HF_API_URL     = '/cgi-bin/hugging-api.py';
         const GROQ_API_URL   = '/cgi-bin/groq-api.py';
+        const OPENAI_API_URL = '/cgi-bin/openai-api.py';
         const MODELS_URL = '/cgi-bin/deepseek-api.py';  // same proxy, GET /v1/models
 
         // MODEL CAPABILITY MAP: which file types each model supports
@@ -1349,11 +1379,12 @@
         const GOOGLE_MODELS        = GOOGLE_MODELS_FREE; // Fallback
         // =====================================================================
 
+
         const TOKENS_PER_CHAR = 0.25;
         const MAX_FILE_CONTENT_LENGTH = 250000;
         const MAX_FILE_SIZE_MB = 10;
         const PDF_EXTRACTION_TIMEOUT = 30000;
-        const SETTINGS_VERSION = '1.5';
+        const SETTINGS_VERSION = '1.6';
         const SUPPORTED_FILE_FORMATS = ['.txt', '.pdf'];
         const ACCEPTED_FILE_FORMATS = ['.txt', '.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.csv', '.xlsx', '.pptx'];
         const IMAGE_FILE_FORMATS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
@@ -1495,6 +1526,12 @@
             document.getElementById('googleServiceLabel').textContent = t(138);
             document.getElementById('huggingfaceServiceLabel').textContent = t(241);
             document.getElementById('groqServiceLabel').textContent = t(243);
+            document.getElementById('openaiServiceLabel').textContent = t(245);
+            document.getElementById('openaiTierGroupTitle').textContent = t(246);
+            document.getElementById('openaiFreeTierLabel').textContent = t(135);
+            document.getElementById('openaiPaidTierLabel').textContent = t(136);
+            const openaiTierVal = settings ? (settings.openaiTier || 'free') : 'free';
+            document.getElementById('openaiTierStatus').textContent = (openaiTierVal === 'paid') ? t(136) : t(135);
             document.getElementById('hfTierGroupTitle').textContent = t(242);
             document.getElementById('hfFreeTierLabel').textContent = t(135);
             document.getElementById('hfPaidTierLabel').textContent = t(136);
@@ -1510,6 +1547,7 @@
             if (svc === 'google') svcStatus = t(133);
             else if (svc === 'huggingface') svcStatus = t(241);
             else if (svc === 'groq') svcStatus = t(243);
+            else if (svc === 'openai') svcStatus = t(245);
             else svcStatus = t(132);
             document.getElementById('apiServiceStatus').textContent = svcStatus;
 
@@ -1580,7 +1618,7 @@
             // Model info
             const modelInfoEl = document.getElementById('modelInfo');
             if (modelInfoEl) {
-                if (settings && (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq')) {
+                if (settings && (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq' || settings.apiService === 'openai')) {
                     modelInfoEl.textContent = t(238) + ' ' + (settings.selectedModel || '');
                 } else if (detectedModels.length > 0) {
                     modelInfoEl.textContent = t(238) + ' ' + detectedModels.join(', ');
@@ -1661,7 +1699,7 @@
         
         function updateContextEstimation() {
             let modelName;
-            if (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq') {
+            if (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq' || settings.apiService === 'openai') {
                 modelName = settings.selectedModel;
             } else {
                 modelName = (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
@@ -1676,7 +1714,7 @@
 
         function updateContextDisplay() {
             let modelName;
-            if (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq') {
+            if (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq' || settings.apiService === 'openai') {
                 modelName = settings.selectedModel;
             } else {
                 modelName = (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
@@ -2137,13 +2175,14 @@
                     const content = msg.hasFile ? msg.content : replaceGermanUmlauts(msg.content);
                     messages.push({ role: msg.role, content });
                 });
-                const modelName = (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq')
-                    ? (settings.selectedModel || (settings.apiService === 'google' ? 'gemini-2.5-flash' : (settings.apiService === 'groq' ? 'llama-3.3-70b-versatile' : 'Qwen/Qwen2.5-72B-Instruct')))
+                const modelName = (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq' || settings.apiService === 'openai')
+                    ? (settings.selectedModel || (settings.apiService === 'google' ? 'gemini-2.5-flash' : (settings.apiService === 'groq' ? 'llama-3.3-70b-versatile' : (settings.apiService === 'openai' ? 'gpt-4o-mini' : 'Qwen/Qwen2.5-72B-Instruct'))))
                     : (userMsg.mode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
                 let activeApiUrl;
                 if (settings.apiService === 'google') activeApiUrl = GOOGLE_API_URL;
                 else if (settings.apiService === 'huggingface') activeApiUrl = HF_API_URL;
                 else if (settings.apiService === 'groq') activeApiUrl = GROQ_API_URL;
+                else if (settings.apiService === 'openai') activeApiUrl = OPENAI_API_URL;
                 else activeApiUrl = API_URL;
                 const maxTokens = (MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-chat']).maxOutputTokens;
                 const response = await fetch(activeApiUrl, {
@@ -2271,7 +2310,7 @@
         // =====================================================================
         function migrateSettings(oldSettings) {
             if (!oldSettings || typeof oldSettings !== 'object') {
-                return { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', hfTier: 'free', groqTier: 'free', selectedModel: 'deepseek-chat' };
+                return { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', hfTier: 'free', groqTier: 'free', openaiTier: 'free', selectedModel: 'deepseek-chat' };
             }
             let defaultMode = oldSettings.defaultMode || 'chat';
             if (defaultMode === 'search') defaultMode = 'chat';
@@ -2285,11 +2324,12 @@
                 googleTier:    oldSettings.googleTier || 'free',
                 hfTier:        oldSettings.hfTier || 'free',
                 groqTier:      oldSettings.groqTier || 'free',
+                openaiTier:    oldSettings.openaiTier || 'free',
                 selectedModel: oldSettings.selectedModel || 'deepseek-chat'
             };
         }
         
-        let settings = { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', hfTier: 'free', groqTier: 'free', selectedModel: 'deepseek-chat' };
+        let settings = { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', hfTier: 'free', groqTier: 'free', openaiTier: 'free', selectedModel: 'deepseek-chat' };
         let currentMode = 'chat';
 
         const sendButton = document.getElementById('sendButton');
@@ -2337,10 +2377,12 @@
         const googleServiceToggle = document.getElementById('googleServiceToggle');
         const huggingfaceServiceToggle = document.getElementById('huggingfaceServiceToggle');
         const groqServiceToggle = document.getElementById('groqServiceToggle');
+        const openaiServiceToggle = document.getElementById('openaiServiceToggle');
         const deepseekServiceItem = document.getElementById('deepseekServiceItem');
         const googleServiceItem = document.getElementById('googleServiceItem');
         const huggingfaceServiceItem = document.getElementById('huggingfaceServiceItem');
         const groqServiceItem = document.getElementById('groqServiceItem');
+        const openaiServiceItem = document.getElementById('openaiServiceItem');
         const googleFreeTierToggle = document.getElementById('googleFreeTierToggle');
         const googlePaidTierToggle = document.getElementById('googlePaidTierToggle');
         const googleFreeTierItem = document.getElementById('googleFreeTierItem');
@@ -2353,6 +2395,10 @@
         const groqPaidTierToggle = document.getElementById('groqPaidTierToggle');
         const groqFreeTierItem = document.getElementById('groqFreeTierItem');
         const groqPaidTierItem = document.getElementById('groqPaidTierItem');
+        const openaiFreeTierToggle = document.getElementById('openaiFreeTierToggle');
+        const openaiPaidTierToggle = document.getElementById('openaiPaidTierToggle');
+        const openaiFreeTierItem = document.getElementById('openaiFreeTierItem');
+        const openaiPaidTierItem = document.getElementById('openaiPaidTierItem');
         const modelSelect = document.getElementById('modelSelect');
         
         let selectedFile = null;
@@ -2403,6 +2449,9 @@
             } else if (settings.apiService === 'groq') {
                 const modelName = settings.selectedModel || 'an AI assistant';
                 base += ' You are ' + modelName + ', an AI assistant running on GroqCloud. Do not claim to be Claude, GPT, or any other AI.';
+            } else if (settings.apiService === 'openai') {
+                const modelName = settings.selectedModel || 'an AI assistant';
+                base += ' You are ' + modelName + ', an AI assistant made by OpenAI.';
             }
             if (isDeepThink) {
                 if (!meta || !meta.has_address_form) {
@@ -2467,22 +2516,27 @@
             googleServiceToggle.checked      = (value === 'google');
             huggingfaceServiceToggle.checked = (value === 'huggingface');
             groqServiceToggle.checked        = (value === 'groq');
+            openaiServiceToggle.checked      = (value === 'openai');
             deepseekServiceItem.classList.toggle('toggle-active',    value === 'deepseek');
             googleServiceItem.classList.toggle('toggle-active',      value === 'google');
             huggingfaceServiceItem.classList.toggle('toggle-active', value === 'huggingface');
             groqServiceItem.classList.toggle('toggle-active',        value === 'groq');
+            openaiServiceItem.classList.toggle('toggle-active',      value === 'openai');
             const dsSlider   = deepseekServiceToggle.nextElementSibling;
             const gSlider    = googleServiceToggle.nextElementSibling;
             const hfSlider   = huggingfaceServiceToggle.nextElementSibling;
             const grqSlider  = groqServiceToggle.nextElementSibling;
+            const oaiSlider  = openaiServiceToggle.nextElementSibling;
             if (dsSlider)  { dsSlider.classList.toggle('lang-active',  value === 'deepseek');    dsSlider.classList.remove('blue-active'); }
             if (gSlider)   { gSlider.classList.toggle('lang-active',   value === 'google');      gSlider.classList.remove('blue-active'); }
             if (hfSlider)  { hfSlider.classList.toggle('lang-active',  value === 'huggingface'); hfSlider.classList.remove('blue-active'); }
             if (grqSlider) { grqSlider.classList.toggle('lang-active', value === 'groq');        grqSlider.classList.remove('blue-active'); }
+            if (oaiSlider) { oaiSlider.classList.toggle('lang-active', value === 'openai');      oaiSlider.classList.remove('blue-active'); }
             let statusText;
             if (value === 'google') statusText = t(133);
             else if (value === 'huggingface') statusText = t(241);
             else if (value === 'groq') statusText = t(243);
+            else if (value === 'openai') statusText = t(245);
             else statusText = t(132);
             document.getElementById('apiServiceStatus').textContent = statusText;
             updateApiServiceUI(value);
@@ -2567,6 +2621,31 @@
             }
         }
 
+        function setOpenAITierToggle(value) {
+            settings.openaiTier = value;
+            openaiFreeTierToggle.checked = (value === 'free');
+            openaiPaidTierToggle.checked = (value === 'paid');
+            openaiFreeTierItem.classList.toggle('toggle-active', value === 'free');
+            openaiPaidTierItem.classList.toggle('toggle-active', value === 'paid');
+            const freeSlider = openaiFreeTierToggle.nextElementSibling;
+            const paidSlider = openaiPaidTierToggle.nextElementSibling;
+            if (freeSlider) freeSlider.classList.toggle('lang-active', value === 'free');
+            if (paidSlider) paidSlider.classList.toggle('lang-active', value === 'paid');
+            document.getElementById('openaiTierStatus').textContent = (value === 'paid') ? t(136) : t(135);
+            if (settings.apiService === 'openai') {
+                const models = (value === 'paid') ? OPENAI_MODELS_PAID : OPENAI_MODELS_FREE;
+                const currentModel = modelSelect.value;
+                modelSelect.innerHTML = '';
+                models.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m; opt.textContent = m;
+                    modelSelect.appendChild(opt);
+                });
+                const exists = models.includes(currentModel);
+                if (exists) modelSelect.value = currentModel;
+            }
+        }
+
         function updateApiServiceUI(service) {
             const isGoogle = (service === 'google');
             // DeepThink-Button auf Hauptseite ein-/ausblenden
@@ -2577,10 +2656,12 @@
             const gGroup   = document.getElementById('llmGoogleGroup');
             const hfGroup  = document.getElementById('llmHuggingFaceGroup');
             const grqGroup = document.getElementById('llmGroqGroup');
+            const oaiGroup = document.getElementById('llmOpenAIGroup');
             if (dsGroup)  dsGroup.style.display  = (service === 'deepseek')     ? '' : 'none';
             if (gGroup)   gGroup.style.display   = (service === 'google')       ? '' : 'none';
             if (hfGroup)  hfGroup.style.display  = (service === 'huggingface')  ? '' : 'none';
             if (grqGroup) grqGroup.style.display = (service === 'groq')         ? '' : 'none';
+            if (oaiGroup) oaiGroup.style.display = (service === 'openai')       ? '' : 'none';
             // Modell-Dropdown befüllen
             let models;
             if (service === 'google') {
@@ -2589,6 +2670,8 @@
                 models = (settings.hfTier === 'paid') ? HF_MODELS_PAID : HF_MODELS_FREE;
             } else if (service === 'groq') {
                 models = (settings.groqTier === 'paid') ? GROQ_MODELS_PAID : GROQ_MODELS_FREE;
+            } else if (service === 'openai') {
+                models = (settings.openaiTier === 'paid') ? OPENAI_MODELS_PAID : OPENAI_MODELS_FREE;
             } else {
                 models = DEEPSEEK_MODELS;
             }
@@ -2605,7 +2688,7 @@
             // modelInfo Header aktualisieren
             const modelInfoEl = document.getElementById('modelInfo');
             if (modelInfoEl) {
-                if (service === 'google' || service === 'huggingface' || service === 'groq') {
+                if (service === 'google' || service === 'huggingface' || service === 'groq' || service === 'openai') {
                     const selModel = modelSelect.value;
                     modelInfoEl.textContent = t(238) + ' ' + selModel;
                 } else if (detectedModels.length > 0) {
@@ -2690,6 +2773,7 @@
             setGoogleTierToggle(settings.googleTier || 'free');
             setHfTierToggle(settings.hfTier || 'free');
             setGroqTierToggle(settings.groqTier || 'free');
+            setOpenAITierToggle(settings.openaiTier || 'free');
             // Gespeichertes Modell im Dropdown auswählen
             if (modelSelect && settings.selectedModel) {
                 for (let i = 0; i < modelSelect.options.length; i++) {
@@ -2735,13 +2819,14 @@
                     const content = msg.hasFile ? msg.content : replaceGermanUmlauts(msg.content);
                     messages.push({ role: msg.role, content });
                 });
-                const modelName = (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq')
-                    ? (settings.selectedModel || (settings.apiService === 'google' ? 'gemini-2.5-flash' : (settings.apiService === 'groq' ? 'llama-3.3-70b-versatile' : 'Qwen/Qwen2.5-72B-Instruct')))
+                const modelName = (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq' || settings.apiService === 'openai')
+                    ? (settings.selectedModel || (settings.apiService === 'google' ? 'gemini-2.5-flash' : (settings.apiService === 'groq' ? 'llama-3.3-70b-versatile' : (settings.apiService === 'openai' ? 'gpt-4o-mini' : 'Qwen/Qwen2.5-72B-Instruct'))))
                     : (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
                 let activeApiUrl;
                 if (settings.apiService === 'google') activeApiUrl = GOOGLE_API_URL;
                 else if (settings.apiService === 'huggingface') activeApiUrl = HF_API_URL;
                 else if (settings.apiService === 'groq') activeApiUrl = GROQ_API_URL;
+                else if (settings.apiService === 'openai') activeApiUrl = OPENAI_API_URL;
                 else activeApiUrl = API_URL;
                 const maxTokens = (MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-chat']).maxOutputTokens;
                 const requestBody = JSON.stringify({ model: modelName, messages, max_tokens: maxTokens, no_training: settings.noTraining });
@@ -3277,6 +3362,12 @@
             addEventListenerWithCleanup(groqServiceItem, 'click', (e) => {
                 if (e.target !== groqServiceToggle) { groqServiceToggle.checked = true; setApiServiceToggle('groq'); }
             });
+            addEventListenerWithCleanup(openaiServiceToggle, 'change', () => {
+                if (openaiServiceToggle.checked) setApiServiceToggle('openai');
+            });
+            addEventListenerWithCleanup(openaiServiceItem, 'click', (e) => {
+                if (e.target !== openaiServiceToggle) { openaiServiceToggle.checked = true; setApiServiceToggle('openai'); }
+            });
 
             // --- Google Tier toggles ---
             addEventListenerWithCleanup(googleFreeTierToggle, 'change', () => {
@@ -3318,6 +3409,20 @@
             });
             addEventListenerWithCleanup(groqPaidTierItem, 'click', (e) => {
                 if (e.target !== groqPaidTierToggle) { groqPaidTierToggle.checked = true; setGroqTierToggle('paid'); }
+            });
+
+            // --- OpenAI Tier toggles ---
+            addEventListenerWithCleanup(openaiFreeTierToggle, 'change', () => {
+                if (openaiFreeTierToggle.checked) setOpenAITierToggle('free');
+            });
+            addEventListenerWithCleanup(openaiPaidTierToggle, 'change', () => {
+                if (openaiPaidTierToggle.checked) setOpenAITierToggle('paid');
+            });
+            addEventListenerWithCleanup(openaiFreeTierItem, 'click', (e) => {
+                if (e.target !== openaiFreeTierToggle) { openaiFreeTierToggle.checked = true; setOpenAITierToggle('free'); }
+            });
+            addEventListenerWithCleanup(openaiPaidTierItem, 'click', (e) => {
+                if (e.target !== openaiPaidTierToggle) { openaiPaidTierToggle.checked = true; setOpenAITierToggle('paid'); }
             });
 
             // --- Save button ---
@@ -3385,4 +3490,3 @@
     </script>
 </body>
 </html>
-

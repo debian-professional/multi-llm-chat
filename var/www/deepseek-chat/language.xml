@@ -130,6 +130,8 @@ Adding a new language:
     <text id="242">HF Plan</text>
     <text id="243">GroqCloud</text>
     <text id="244">Groq Plan</text>
+    <text id="245">OpenAI</text>
+    <text id="246">OpenAI Plan</text>
     <!-- 201-300: Chat interface texts -->
     <text id="201">Enter your message here...</text>
     <text id="202">Enter your message here...</text>
@@ -289,6 +291,8 @@ Adding a new language:
     <text id="242">HF-Plan</text>
     <text id="243">GroqCloud</text>
     <text id="244">Groq-Plan</text>
+    <text id="245">OpenAI</text>
+    <text id="246">OpenAI-Plan</text>
     <!-- 201-300: Chat-Interface-Texte -->
     <text id="201">Ihre Nachricht hier eingeben...</text>
     <text id="202">Ihre Nachricht hier eingeben...</text>
@@ -446,6 +450,8 @@ Adding a new language:
     <text id="242">Plan HF</text>
     <text id="243">GroqCloud</text>
     <text id="244">Plan Groq</text>
+    <text id="245">OpenAI</text>
+    <text id="246">Plan OpenAI</text>
     <!-- 201-300: Textos de la interfaz del chat -->
     <text id="201">Escriba su mensaje aquí...</text>
     <text id="202">Escriba su mensaje aquí...</text>
@@ -598,6 +604,8 @@ Adding a new language:
     <text id="242">HF Plan</text>
     <text id="243">GroqCloud</text>
     <text id="244">Groq Plan</text>
+    <text id="245">OpenAI</text>
+    <text id="246">OpenAI Plan</text>
     <!-- 201-300: Chat interface texts -->
     <text id="201">Enter your message here...</text>
     <text id="202">Enter your message here...</text>
@@ -643,6 +651,4 @@ Adding a new language:
   </language>
 
 </languages>
-
-
 
