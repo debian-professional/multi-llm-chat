@@ -930,5 +930,66 @@
              * Kontextfenster, Output-Limits, Free/Paid-Zuordnung dokumentiert
              * Text
 
+    75. [10.03.2026] - OPENAI ALS FÜNFTER LLM-ANBIETER:
+
+        NEUES CGI-SCRIPT (openai-api.py):
+           - Streaming-Proxy zur OpenAI API
+           - Endpoint: https://api.openai.com/v1/chat/completions
+             (nativer OpenAI-Endpunkt — SSE direkt weitergeleitet)
+           - API-Key: OPENAI_API_KEY aus Apache envvars
+           - Timeout: 60s
+           - Identische Struktur wie groq-api.py
+
+        INDEX.HTML:
+           - Konstanten: OPENAI_API_URL, OPENAI_MODELS_FREE, OPENAI_MODELS_PAID
+           - MODEL_CONFIG erweitert um alle OpenAI-Modelle:
+             * gpt-5.4:             1050k ctx, 16k out, 100 msg  (Flagship, März 2026)
+             * gpt-5.2-chat-latest:  128k ctx, 16k out,  80 msg
+             * gpt-4o:               128k ctx, 16k out,  80 msg
+             * gpt-4.1:             1048k ctx, 32k out, 100 msg  (Coding-optimiert)
+             * gpt-4o-mini:          128k ctx, 16k out,  80 msg
+             * gpt-5-mini:           128k ctx, 16k out,  80 msg
+           - Free-Modelle:  gpt-4o-mini, gpt-5-mini
+           - Paid-Modelle:  gpt-5.4, gpt-5.2-chat-latest, gpt-4o, gpt-4.1, gpt-4o-mini
+           - SETTINGS_VERSION: 1.5 -> 1.6
+           - LLM SELECTION: openaiServiceItem als erstes Element hinzugefügt
+           - LLM SETTINGS: llmOpenAIGroup mit Free/Paid-Toggle
+           - Settings-Objekt: apiService += 'openai', openaiTier: 'free'|'paid'
+           - Funktionen aktualisiert: setApiServiceToggle, setOpenAITierToggle (neu),
+             updateApiServiceUI, updateContextEstimation, updateContextDisplay,
+             buildSystemPrompt, applyLanguage, updateSettingsUI,
+             sendMessage, handleRegenerate, alle Event-Listener
+           - System-Prompt-Identität: "You are [model], an AI assistant made by OpenAI."
+
+        BUGFIXES (nach Deployment, 10.03.2026):
+           - OPENAI_MODELS_FREE / OPENAI_MODELS_PAID Konstanten fehlten in deployed Datei
+             (Python-Replace hatte nicht gegriffen)
+             Fix: 2 Zeilen nach Zeile 1381 via sed eingefügt, dann sync-back + git push
+           - settings.selectedModel wurde nach Dropdown-Befüllung nicht aktualisiert
+             → API erhielt immer noch 'deepseek-chat' als Modellname (404-Fehler)
+             Fix: settings.selectedModel = modelSelect.value; nach dem forEach-Block (Zeile 2694)
+
+        LANGUAGE.XML:
+           - ID 245: "OpenAI" (alle 4 Sprachen)
+           - ID 246: "OpenAI Plan" / "OpenAI-Plan" / "Plan OpenAI" (alle 4 Sprachen)
+
+        MANIFEST:
+           - Abschnitt B.4: DeepThink-Ausblendung auf OpenAI erweitert
+           - Abschnitt B.4b: OpenAI als fünfter Anbieter vollständig dokumentiert
+           - Changelog Eintrag 75 hinzugefügt
+           - Neue Regel: Readme_EN.md ist primäre Referenzdatei;
+             Readme_DE.md und Readme_ES.md sind stets exakte 1:1-Übersetzungen
+
+        DOKUMENTATION:
+           - overview-LLM.md: OpenAI als Abschnitt 2 ergänzt (Hintergrund, Modelle,
+             Preise, Stärken/Schwächen), Vergleichstabelle auf 5 Anbieter erweitert,
+             Entscheidungsmatrix und Fazit aktualisiert, alle Abschnitte umnummeriert
+           - Readme_EN.md: Titel, Multi-LLM-Bullet, Architektur (openai-api.py),
+             neue Sektion "OpenAI Integration", LLM Settings Panel, API Proxy Infoblock,
+             Projektstruktur, Modell-Konfiguration (6 neue Modelle + Konstanten +
+             OPENAI_API_KEY in envvars), Datum 10.03.2026
+           - Readme_DE.md: Exakte 1:1-Übersetzung von Readme_EN.md
+           - Readme_ES.md: Exakte 1:1-Übersetzung von Readme_EN.md
+
     ============================================================================
 
