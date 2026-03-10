@@ -1,9 +1,9 @@
-# Multi-LLM Chat Client – DeepSeek, Google Gemini, Hugging Face & GroqCloud
+# Multi-LLM Chat Client – OpenAI, DeepSeek, Google Gemini, Hugging Face & GroqCloud
 
-**Multi-LLM Chat Client** is a fully self-contained, locally hosted chat client supporting multiple AI providers: DeepSeek, Google Gemini, Hugging Face, and GroqCloud. It was developed with a focus on **security, simplicity, and professional usability**. The architecture requires no exotic frameworks and uses only proven technologies: Apache as the web server, Python CGI for server-side logic, and plain HTML/JavaScript/CSS on the client side.
+**Multi-LLM Chat Client** is a fully self-contained, locally hosted chat client supporting multiple AI providers: OpenAI, DeepSeek, Google Gemini, Hugging Face, and GroqCloud. It was developed with a focus on **security, simplicity, and professional usability**. The architecture requires no exotic frameworks and uses only proven technologies: Apache as the web server, Python CGI for server-side logic, and plain HTML/JavaScript/CSS on the client side.
 
 Key highlights:
-- **Multi-LLM support** – Switch between DeepSeek, Google Gemini, Hugging Face, and GroqCloud via a provider toggle in the LLM Settings panel.
+- **Multi-LLM support** – Switch between OpenAI, DeepSeek, Google Gemini, Hugging Face, and GroqCloud via a provider toggle in the LLM Settings panel.
 - **Unique context management** – Delete individual messages along with all subsequent ones. The chat remains consistent and token usage is dynamically updated.
 - **Maximum security** – The API key is never visible on the client side, uploads are protected against executable files via magic byte inspection, and sessions are stored with restrictive file permissions.
 - **No exotic frameworks** – Everything is based on Apache, Python, Bash, and plain HTML/JS.
@@ -73,6 +73,7 @@ The architecture is intentionally simple but well thought out:
 ### 2. Server
 - **Apache** with CGI support (`mod_cgi`).
 - **Python CGI scripts** under `/cgi-bin/` handle:
+  - Communication with the OpenAI API (`openai-api.py`) — native OpenAI endpoint with streaming (Server-Sent Events)
   - Communication with the DeepSeek API (`deepseek-api.py`) — with streaming (Server-Sent Events)
   - Communication with the Google Gemini API (`google-api.py`) — converts OpenAI format to Gemini format
   - Communication with the Hugging Face Inference API (`hugging-api.py`) — OpenAI-compatible router endpoint
@@ -82,7 +83,7 @@ The architecture is intentionally simple but well thought out:
   - Exports in various formats (`export-pdf.py`, `export-markdown.py`, `export-txt.py`, `export-rtf.py`)
   - Feedback logging (`feedback-log.py`)
   - Log display (`get-log.py`)
-- API keys are provided exclusively via Apache environment variables (`DEEPSEEK_API_KEY`, `GOOGLE_API_KEY`, `HF_API_KEY`, `GRQ_API_KEY` in `/etc/apache2/envvars`) — **never in client code**.
+- API keys are provided exclusively via Apache environment variables (`OPENAI_API_KEY`, `DEEPSEEK_API_KEY`, `GOOGLE_API_KEY`, `HF_API_KEY`, `GRQ_API_KEY` in `/etc/apache2/envvars`) — **never in client code**.
 - A single `ScriptAlias /cgi-bin/ /var/www/deepseek-chat/cgi-bin/` covers all scripts — no Apache changes needed when adding new scripts.
 
 ### 3. Data Storage
@@ -146,6 +147,19 @@ X-Accel-Buffering: no
 Cache-Control: no-cache
 ```
 
+### OpenAI Integration
+
+The client supports OpenAI as the first AI provider (shown at the top of the LLM selection) via `openai-api.py`:
+
+- **Architecture**: Uses the native OpenAI Chat Completions endpoint — no format conversion required. The SSE stream is forwarded directly.
+- **Endpoint**: `https://api.openai.com/v1/chat/completions`
+- **API key**: `OPENAI_API_KEY` in `/etc/apache2/envvars` — never exposed to the client.
+- **Free Tier**: `gpt-4o-mini`, `gpt-5-mini`.
+- **Paid Tier**: `gpt-5.4`, `gpt-5.2-chat-latest`, `gpt-4o`, `gpt-4.1`, `gpt-4o-mini`.
+- The model dropdown in LLM Settings updates automatically based on the selected tier.
+- The DeepThink button and DeepThink indicator are hidden when OpenAI is active.
+- System prompt identifies the active model: *"You are [model], an AI assistant made by OpenAI."*
+
 ### Google Gemini Integration
 
 The client supports Google Gemini as a second AI provider via `google-api.py`:
@@ -187,7 +201,8 @@ The client supports GroqCloud as a fourth AI provider via `groq-api.py`:
 
 A dedicated **LLM Settings** panel (separate from the main Settings panel) keeps provider-specific options out of the main UI:
 
-- **Provider selection**: Toggle between DeepSeek, Google Gemini, Hugging Face, and GroqCloud — only one active at a time.
+- **Provider selection**: Toggle between OpenAI, DeepSeek, Google Gemini, Hugging Face, and GroqCloud — only one active at a time.
+- **OpenAI options**: Free / Paid plan selection with automatic model list update.
 - **DeepSeek options**: Default mode (Normal Chat / DeepThink), Privacy toggle (X-No-Training header).
 - **Google options**: Free / Paid plan selection with automatic model list update.
 - **Hugging Face options**: Free / Paid plan selection with automatic model list update.
@@ -449,7 +464,7 @@ When a file is uploaded or clipboard text is attached, the user message displays
 
 ### API Proxy Infoblock (as of 08.03.2026)
 
-Each of the four CGI proxy scripts (`deepseek-api.py`, `google-api.py`, `hugging-api.py`, `groq-api.py`) contains a structured documentation header directly after the encoding declaration:
+Each of the five CGI proxy scripts (`openai-api.py`, `deepseek-api.py`, `google-api.py`, `hugging-api.py`, `groq-api.py`) contains a structured documentation header directly after the encoding declaration:
 
 - **Import date** — when the file was last updated
 - **Model version** — version of each supported model/sub-model
@@ -614,6 +629,8 @@ const MODEL_CONFIG = {
     'mixtral-8x7b-32768':      { maxContextTokens: 32768,  maxOutputTokens: 32768, maxContextMessages: 40 },
     'gemma2-9b-it':            { maxContextTokens: 8192,   maxOutputTokens: 8192,  maxContextMessages: 50 }
 };
+const OPENAI_MODELS_FREE = ['gpt-4o-mini', 'gpt-5-mini'];
+const OPENAI_MODELS_PAID = ['gpt-5.4', 'gpt-5.2-chat-latest', 'gpt-4o', 'gpt-4.1', 'gpt-4o-mini'];
 const DEEPSEEK_MODELS    = ['deepseek-chat', 'deepseek-reasoner'];
 const GOOGLE_MODELS_FREE = ['gemini-2.5-flash'];
 const GOOGLE_MODELS_PAID = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro', 'gemini-2.0-flash'];
@@ -625,6 +642,7 @@ const GROQ_MODELS_PAID   = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', '
 
 **API key configuration** (`/etc/apache2/envvars`):
 ```bash
+export OPENAI_API_KEY="sk-proj-..."
 export DEEPSEEK_API_KEY="sk-..."
 export GOOGLE_API_KEY="AIza..."
 export HF_API_KEY="hf_..."
@@ -666,6 +684,7 @@ export GRQ_API_KEY="gsk_..."
 │   ├── changelog                       Complete development history (68+ entries, ~44KB)
 │   ├── files-directorys                File overview / directory listing
 │   ├── cgi-bin/
+│   │   ├── openai-api.py              Streaming proxy to OpenAI API
 │   │   ├── deepseek-api.py            Streaming proxy to DeepSeek API
 │   │   ├── google-api.py              Streaming proxy to Google Gemini API
 │   │   ├── hugging-api.py             Streaming proxy to Hugging Face Inference API
@@ -689,10 +708,17 @@ export GRQ_API_KEY="gsk_..."
 
 ## Model Configuration
 
-The `MODEL_CONFIG` object in `index.html` is the single point of truth for all model-specific limits. It covers all four providers:
+The `MODEL_CONFIG` object in `index.html` is the single point of truth for all model-specific limits. It covers all five providers:
 
 ```javascript
 const MODEL_CONFIG = {
+    // OpenAI
+    'gpt-5.4':              { maxContextTokens: 1050000, maxOutputTokens: 16384, maxContextMessages: 100 },
+    'gpt-5.2-chat-latest':  { maxContextTokens: 128000,  maxOutputTokens: 16384, maxContextMessages: 80  },
+    'gpt-4o':               { maxContextTokens: 128000,  maxOutputTokens: 16384, maxContextMessages: 80  },
+    'gpt-4.1':              { maxContextTokens: 1048576, maxOutputTokens: 32768, maxContextMessages: 100 },
+    'gpt-4o-mini':          { maxContextTokens: 128000,  maxOutputTokens: 16384, maxContextMessages: 80  },
+    'gpt-5-mini':           { maxContextTokens: 128000,  maxOutputTokens: 16384, maxContextMessages: 80  },
     // DeepSeek
     'deepseek-chat':     { maxContextTokens: 100000,  maxOutputTokens: 8192,  maxContextMessages: 50  },
     'deepseek-reasoner': { maxContextTokens: 65000,   maxOutputTokens: 32768, maxContextMessages: 30  },
@@ -716,7 +742,7 @@ const MODEL_CONFIG = {
 };
 ```
 
-Sources: [DeepSeek API Docs](https://api-docs.deepseek.com), [Google Gemini Docs](https://ai.google.dev/gemini-api/docs), [Hugging Face Inference Providers](https://huggingface.co/docs/inference-providers), [GroqCloud Docs](https://console.groq.com/docs/models) (as of 08.03.2026).
+Sources: [OpenAI API Docs](https://platform.openai.com/docs), [DeepSeek API Docs](https://api-docs.deepseek.com), [Google Gemini Docs](https://ai.google.dev/gemini-api/docs), [Hugging Face Inference Providers](https://huggingface.co/docs/inference-providers), [GroqCloud Docs](https://console.groq.com/docs/models) (as of 10.03.2026).
 
 ---
 
@@ -815,7 +841,9 @@ DeepSeek Chat is a **showcase for professional web development** — without unn
 
 ---
 
-*Last updated: 08.03.2026*
+*Last updated: 10.03.2026*
+
+
 
 
 

@@ -473,7 +473,41 @@
     - Event-Listener: groqServiceToggle, groqFreeTierToggle, groqPaidTierToggle
 
 
+    [10.03.2026] - Eintrag 74: OpenAI als fünfter LLM-Anbieter
+    - Abschnitt B.4: DeepThink-Button-Ausblendung auf OpenAI erweitert
+    - Abschnitt B.4b: OpenAI als fünfter Anbieter ergänzt (Free/Paid-Modelle, API-Key, Backend)
+    - Abschnitt D.1: OpenAI Endpoint + Backend + Modelle dokumentiert
+    - language.xml IDs 245-246: "OpenAI" und "OpenAI Plan" (alle 4 Sprachen)
+    - SETTINGS_VERSION: 1.5 -> 1.6 (openaiTier: 'free'|'paid' neu in Settings-Objekt)
+    - NEUES CGI-SCRIPT (openai-api.py):
+       - Endpoint: https://api.openai.com/v1/chat/completions
+       - OpenAI nativer SSE-Streaming-Proxy
+       - API-Key: OPENAI_API_KEY aus Apache envvars
+    - Konstanten: OPENAI_API_URL, OPENAI_MODELS_FREE, OPENAI_MODELS_PAID
+    - MODEL_CONFIG erweitert um alle OpenAI-Modelle:
+       - gpt-5.4 (1050000 ctx), gpt-5.2-chat-latest (128000 ctx)
+       - gpt-4o (128000 ctx), gpt-4.1 (1048576 ctx)
+       - gpt-4o-mini (128000 ctx), gpt-5-mini (128000 ctx)
+    - OpenAI-Modelle Free:  gpt-4o-mini, gpt-5-mini
+    - OpenAI-Modelle Paid:  gpt-5.4, gpt-5.2-chat-latest, gpt-4o, gpt-4.1, gpt-4o-mini
+    - LLM SELECTION: openaiServiceItem als erstes Element hinzugefügt (Settings-Overlay)
+    - LLM SETTINGS: llmOpenAIGroup mit OpenAI-Tier-Toggle (Free/Paid) hinzugefügt
+    - Settings-Objekt: apiService += 'openai', openaiTier: 'free'|'paid'
+    - Funktionen aktualisiert: setApiServiceToggle, setOpenAITierToggle (neu),
+      updateApiServiceUI, updateContextEstimation, updateContextDisplay,
+      buildSystemPrompt, applyLanguage, updateSettingsUI, sendMessage,
+      handleRegenerate, alle Event-Listener
+    - System-Prompt-Identität: "You are [model], an AI assistant made by OpenAI."
+    - Bugfixes nach Deployment:
+       * OPENAI_MODELS_FREE/PAID Konstanten fehlten (Server-Hotfix: 2 Zeilen nach Zeile 1381)
+       * settings.selectedModel nach Dropdown-Befüllung nicht aktualisiert (Hotfix: 1 Zeile)
+    - Regel festgelegt: Readme_EN.md ist primäre Referenzdatei; Readme_DE.md und
+      Readme_ES.md sind stets exakte 1:1-Übersetzungen der englischen Version
+
+
 ================================================================================
+
+
 
 
 
