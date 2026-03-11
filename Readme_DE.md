@@ -11,7 +11,7 @@ Wichtigste Highlights:
 - **Keine exotischen Frameworks** – Alles basiert auf Apache, Python, Bash und reinem HTML/JS.
 - **Professionelle Exportfunktionen** – PDF, Markdown, TXT, RTF für den gesamten Chat oder einzelne Nachrichten.
 - **Mehrsprachige Unterstützung** – Vollständige UI-Übersetzung via externer `language.xml` (Englisch, Deutsch, Spanisch, erweiterbar).
-- **Audio recording** – Built-in microphone button (MediaRecorder API) for direct voice input. Automatically visible only when an audio-capable model is active (all Gemini models, OpenAI gpt-4o and gpt-4.1). Audio is transmitted as base64 WebM/MP4 — no transcription, the model processes speech natively.
+- **Audio-Aufnahme** – Integrierter Mikrofon-Button (MediaRecorder API) für direkte Spracheingabe. Automatisch sichtbar nur wenn ein audio-fähiges Modell aktiv ist (alle Gemini-Modelle, OpenAI gpt-4o und gpt-4.1). Audio wird als base64 WebM/MP4 übertragen — keine Transkription, das Modell verarbeitet Sprache direkt.
 - **Zwischenablage-Integration** – Ctrl+V-Handler mit Dialog für Text, Bilder und Schutz gegen versehentliches Einfügen von Dateipfaden.
 - **Streaming-Antworten** – KI-Antworten erscheinen Token für Token, genau wie bei ChatGPT oder Claude.
 - **429-Rate-Limit-Handling** – Automatischer Wiederholungsversuch mit Countdown-Anzeige für Google Gemini Free Tier Limits.
@@ -69,36 +69,36 @@ Das Projekt ist über mehrere Wochen aktiver Entwicklung kontinuierlich gewachse
 Die Architektur ist bewusst einfach, aber durchdacht:
 
 ### 1. Client
-- Pure HTML/JavaScript/CSS, served via Apache.
-- No build tools, no Node.js, no external libraries (except PDF.js for in-browser PDF text extraction).
-- The entire client logic (message processing, UI updates, streaming reception, language switching, clipboard handling) is encapsulated in a single `index.html`.
-- All UI texts are loaded from an external `language.xml` at startup — no hardcoded strings in the HTML.
+- Reines HTML/JavaScript/CSS, ausgeliefert via Apache.
+- Keine Build-Tools, kein Node.js, keine externen Bibliotheken (ausser PDF.js für browserbasierte PDF-Textextraktion).
+- Die gesamte Client-Logik (Nachrichtenverarbeitung, UI-Updates, Streaming-Empfang, Sprachwechsel, Zwischenablage-Handling) ist in einer einzigen `index.html` gekapselt.
+- Alle UI-Texte werden beim Start aus einer externen `language.xml` geladen — keine hartkodierten Strings im HTML.
 
 ### 2. Server
-- **Apache** with CGI support (`mod_cgi`).
-- **Python CGI scripts** under `/cgi-bin/` handle:
-  - Communication with the OpenAI API (`openai-api.py`) — native OpenAI endpoint with streaming (Server-Sent Events)
-  - Communication with the DeepSeek API (`deepseek-api.py`) — with streaming (Server-Sent Events)
-  - Communication with the Google Gemini API (`google-api.py`) — converts OpenAI format to Gemini format
-  - Communication with the Hugging Face Inference API (`hugging-api.py`) — OpenAI-compatible router endpoint
-  - Communication with the GroqCloud API (`groq-api.py`) — OpenAI-compatible endpoint, hardware-accelerated inference (LPU)
-  - Model discovery (`deepseek-models.py`) — queries `/v1/models` at startup
-  - Session storage and retrieval (`save-session.py`, `load-session.py`, `delete-session.py`)
-  - Exports in various formats (`export-pdf.py`, `export-markdown.py`, `export-txt.py`, `export-rtf.py`)
-  - Feedback logging (`feedback-log.py`)
-  - Log display (`get-log.py`)
-- API keys are provided exclusively via Apache environment variables (`OPENAI_API_KEY`, `DEEPSEEK_API_KEY`, `GOOGLE_API_KEY`, `HF_API_KEY`, `GRQ_API_KEY` in `/etc/apache2/envvars`) — **never in client code**.
-- A single `ScriptAlias /cgi-bin/ /var/www/deepseek-chat/cgi-bin/` covers all scripts — no Apache changes needed when adding new scripts.
+- **Apache** mit CGI-Unterstützung (`mod_cgi`).
+- **Python CGI-Skripte** unter `/cgi-bin/` übernehmen:
+  - Kommunikation mit der OpenAI API (`openai-api.py`) — nativer Endpunkt mit Streaming (Server-Sent Events)
+  - Kommunikation mit der DeepSeek API (`deepseek-api.py`) — mit Streaming (Server-Sent Events)
+  - Kommunikation mit der Google Gemini API (`google-api.py`) — konvertiert OpenAI-Format in Gemini-Format
+  - Kommunikation mit der Hugging Face Inference API (`hugging-api.py`) — OpenAI-kompatibler Router-Endpunkt
+  - Kommunikation mit der GroqCloud API (`groq-api.py`) — OpenAI-kompatibler Endpunkt, LPU-beschleunigte Inferenz
+  - Modellerkennung (`deepseek-models.py`) — fragt `/v1/models` beim Start ab
+  - Session-Speicherung und -Abruf (`save-session.py`, `load-session.py`, `delete-session.py`)
+  - Exporte in verschiedenen Formaten (`export-pdf.py`, `export-markdown.py`, `export-txt.py`, `export-rtf.py`)
+  - Feedback-Logging (`feedback-log.py`)
+  - Log-Anzeige (`get-log.py`)
+- API-Keys werden ausschliesslich über Apache-Umgebungsvariablen (`OPENAI_API_KEY`, `DEEPSEEK_API_KEY`, `GOOGLE_API_KEY`, `HF_API_KEY`, `GRQ_API_KEY` in `/etc/apache2/envvars`) bereitgestellt — **nie im Client-Code**.
+- Ein einziger `ScriptAlias /cgi-bin/ /var/www/deepseek-chat/cgi-bin/` deckt alle Skripte ab — keine Apache-Änderungen beim Hinzufügen neuer Skripte nötig.
 
-### 3. Data Storage
-- **Sessions** are stored as JSON files in `/var/www/deepseek-chat/sessions/` with `chmod 700`.
-- **Logs** are written to `/var/www/deepseek-chat/cgi-bin/deepseek-chat.log` (without API key or session contents).
-- **Settings** remain locally in the browser (`localStorage`) with version control.
-- **Language data** is loaded from `language.xml` at page load via `fetch()`.
+### 3. Datenspeicherung
+- **Sessions** werden als JSON-Dateien in `/var/www/deepseek-chat/sessions/` mit `chmod 700` gespeichert.
+- **Logs** werden nach `/var/www/deepseek-chat/cgi-bin/deepseek-chat.log` geschrieben (ohne API-Key oder Session-Inhalte).
+- **Einstellungen** verbleiben lokal im Browser (`localStorage`) mit Versionskontrolle.
+- **Sprachdaten** werden beim Seitenaufruf aus `language.xml` via `fetch()` geladen.
 
-### 4. Helper Scripts
-- `deploy.sh`, `sync-back.sh`, `install.sh`, `tag-release.sh` facilitate deployment between development and production directories.
-- `repo2text.sh` exports the entire repository as a text file for AI assistants.
+### 4. Hilfsskripte
+- `deploy.sh`, `sync-back.sh`, `install.sh`, `tag-release.sh` erleichtern das Deployment zwischen Entwicklungs- und Produktionsverzeichnissen.
+- `repo2text.sh` exportiert das gesamte Repository als Textdatei für KI-Assistenten.
 
 ---
 
@@ -106,16 +106,16 @@ Die Architektur ist bewusst einfach, aber durchdacht:
 
 Eines der herausragenden Features ist die Möglichkeit, **einzelne Nachrichten zusammen mit allen nachfolgenden zu löschen**. Dies geht weit über das typische „letzte Nachricht löschen" hinaus und ermöglicht eine flexible Korrektur des Gesprächsverlaufs.
 
-**Implementation**:
-- Each message (user & AI) receives a unique `id` (format: `msg_N`) and is stored in an array `contextHistory.messages`.
-- The `deleteMessage(msgId)` function determines the index of the message, truncates the array from `index` onwards, and removes all following elements from the DOM (including dividers).
-- The token estimate (`updateContextEstimation()`) is immediately recalculated, as is the percentage context utilization in the header.
-- The modified session is then automatically saved (`saveSession()`).
+**Implementierung**:
+- Jede Nachricht (Benutzer & KI) erhält eine eindeutige `id` (Format: `msg_N`) und wird in einem Array `contextHistory.messages` gespeichert.
+- Die Funktion `deleteMessage(msgId)` ermittelt den Index der Nachricht, kürzt das Array ab `index` und entfernt alle folgenden Elemente aus dem DOM (inklusive Trennlinien).
+- Die Token-Schätzung (`updateContextEstimation()`) wird sofort neu berechnet, ebenso die prozentuale Kontextauslastung im Header.
+- Die geänderte Session wird anschliessend automatisch gespeichert (`saveSession()`).
 
-**Why is this unique?**
+**Warum ist das einzigartig?**
 Viele Chat-Clients erlauben nur das Löschen der letzten Nachricht oder gar keine Verlaufsmanipulation. Hier kann der Benutzer **jeden beliebigen Punkt im Gespräch als neuen Startpunkt definieren** — perfekt zum Testen, Korrigieren oder Bereinigen des Kontextfensters ohne Verlust des gesamten Chats.
 
-**Regenerate function**: In addition to deletion, each AI response has a "Regenerate" button that deletes the old response and automatically generates a new one based on the same user message — using the full conversation context up to that point.
+**Regenerieren-Funktion**: Zusätzlich zur Löschung hat jede KI-Antwort einen „Regenerieren"-Button, der die alte Antwort löscht und automatisch eine neue auf Basis derselben Benutzernachricht erzeugt — unter Verwendung des vollständigen Gesprächskontexts bis zu diesem Punkt.
 
 ---
 
@@ -123,28 +123,28 @@ Viele Chat-Clients erlauben nur das Löschen der letzten Nachricht oder gar kein
 
 ### Chat-Interface
 
-- **Dark Mode** (fixed, no option) — easy on the eyes, professional appearance.
-  - Background: `#121212`, text: `#f0f0f0`, accent: `#0056b3`
-- **Server header** shows server name, internal IP address, dynamic context utilization, and detected model names.
-- **Message containers** with hover buttons (feedback, export, delete).
-- **Textarea** expands on focus from 40px to 120px with smooth CSS animation — Enter sends, Shift+Enter creates a new line.
-- All buttons follow a strict **pill-style** design (border-radius: 20px, height: 36px) — no square buttons anywhere.
-- User messages appear in blue (`#4dabf7`), AI responses in white on dark background.
-- Automatic line break preservation (`white-space: pre-wrap`) for all message content.
-- Automatic scrolling to the latest message during and after streaming.
+- **Dark Mode** (fest, keine Option) — augenschonend, professionelles Erscheinungsbild.
+  - Hintergrund: `#121212`, Text: `#f0f0f0`, Akzent: `#0056b3`
+- **Server-Header** zeigt Servername, interne IP-Adresse, dynamische Kontextauslastung und erkannte Modellnamen.
+- **Nachrichten-Container** mit Hover-Buttons (Feedback, Export, Löschen).
+- **Textarea** erweitert sich beim Fokus von 40px auf 120px mit sanfter CSS-Animation — Enter sendet, Shift+Enter erzeugt eine neue Zeile.
+- Alle Buttons folgen einem strikten **Pill-Style**-Design (border-radius: 20px, height: 36px) — keine eckigen Buttons.
+- Benutzernachrichten erscheinen in Blau (`#4dabf7`), KI-Antworten in Weiss auf dunklem Hintergrund.
+- Automatische Zeilenumbruch-Beibehaltung (`white-space: pre-wrap`) für alle Nachrichteninhalte.
+- Automatisches Scrollen zur neuesten Nachricht während und nach dem Streaming.
 
 ### Streaming-Antworten
 
-AI responses are received and displayed **token by token** using Server-Sent Events (SSE):
+KI-Antworten werden **Token für Token** via Server-Sent Events (SSE) empfangen und angezeigt:
 
-- `deepseek-api.py` sends requests to DeepSeek with `stream: True` and forwards the event stream directly.
-- `index.html` reads the stream via `ReadableStream` API and `TextDecoder`.
-- Each received token is appended to the message element in real time.
-- The psychological effect is significant: the first tokens appear within ~0.3 seconds instead of waiting 8+ seconds for a complete response.
-- Both `sendMessage()` and `handleRegenerate()` use identical streaming logic.
-- Auto-scroll remains active during streaming.
+- `deepseek-api.py` sendet Anfragen an DeepSeek mit `stream: True` und leitet den Event-Stream direkt weiter.
+- `index.html` liest den Stream via `ReadableStream`-API und `TextDecoder`.
+- Jedes empfangene Token wird dem Nachrichten-Element in Echtzeit hinzugefügt.
+- Der psychologische Effekt ist erheblich: die ersten Token erscheinen innerhalb von ~0,3 Sekunden statt 8+ Sekunden auf eine vollständige Antwort zu warten.
+- Sowohl `sendMessage()` als auch `handleRegenerate()` verwenden identische Streaming-Logik.
+- Auto-Scroll bleibt während des Streamings aktiv.
 
-**Technical headers** set by `deepseek-api.py` for correct streaming:
+**Technische Header** von `deepseek-api.py` für korrektes Streaming:
 ```
 Content-Type: text/event-stream
 X-Accel-Buffering: no
@@ -155,101 +155,101 @@ Cache-Control: no-cache
 
 Der Client unterstützt OpenAI als ersten KI-Anbieter (oben in der LLM-Auswahl) via `openai-api.py`:
 
-- **Architecture**: Uses the native OpenAI Chat Completions endpoint — no format conversion required. The SSE stream is forwarded directly.
-- **Endpoint**: `https://api.openai.com/v1/chat/completions`
-- **API key**: `OPENAI_API_KEY` in `/etc/apache2/envvars` — never exposed to the client.
+- **Architektur**: Verwendet den nativen OpenAI Chat-Completions-Endpunkt — keine Formatkonvertierung erforderlich. Der SSE-Stream wird direkt weitergeleitet.
+- **Endpunkt**: `https://api.openai.com/v1/chat/completions`
+- **API-Key**: `OPENAI_API_KEY` in `/etc/apache2/envvars` — nie dem Client gegenüber exponiert.
 - **Free Tier**: `gpt-4o-mini`, `gpt-5-mini`.
 - **Paid Tier**: `gpt-5.4`, `gpt-5.2-chat-latest`, `gpt-4o`, `gpt-4.1`, `gpt-4o-mini`.
-- The model dropdown in LLM Settings updates automatically based on the selected tier.
-- **Audio input**: `gpt-4o` and `gpt-4.1` support direct microphone recordings. When either model is active, the audio recording button becomes visible. Audio is sent as `input_audio` in OpenAI format.
-- The DeepThink button and DeepThink indicator are hidden when OpenAI is active.
-- System prompt identifies the active model: *"You are [model], an AI assistant made by OpenAI."*
+- Das Modell-Dropdown in den LLM-Einstellungen aktualisiert sich automatisch basierend auf dem gewählten Tier.
+- **Audio-Input**: `gpt-4o` und `gpt-4.1` unterstützen direkte Mikrofon-Aufnahmen. Wenn eines dieser Modelle aktiv ist, wird der Audio-Aufnahme-Button sichtbar. Audio wird als `input_audio` im OpenAI-Format gesendet.
+- Der DeepThink-Button und -Indikator werden ausgeblendet, wenn OpenAI aktiv ist.
+- System-Prompt identifiziert das aktive Modell: *„You are [model], an AI assistant made by OpenAI."*
 
 ### Google Gemini-Integration
 
 Der Client unterstützt Google Gemini als zweiten KI-Anbieter via `google-api.py`:
 
-- **Architecture**: The CGI script converts the OpenAI-compatible message format used internally into the Gemini-specific `contents` format, sends the request to the Gemini `streamGenerateContent` endpoint, and converts the response back into the OpenAI SSE format expected by `index.html`.
-- **API key**: `GOOGLE_API_KEY` in `/etc/apache2/envvars` — never exposed to the client.
-- **Free Tier** (default): `gemini-2.5-flash` — 5 requests per minute, 20 requests per day.
+- **Architektur**: Das CGI-Skript konvertiert das intern verwendete OpenAI-Format in das Gemini-spezifische `contents`-Format, sendet die Anfrage und konvertiert die Antwort zurück in das von `index.html` erwartete OpenAI-SSE-Format.
+- **API-Key**: `GOOGLE_API_KEY` in `/etc/apache2/envvars` — nie dem Client gegenüber exponiert.
+- **Free Tier** (Standard): `gemini-2.5-flash` — 5 Anfragen pro Minute, 20 Anfragen pro Tag.
 - **Paid Tier**: `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-1.5-pro`, `gemini-2.0-flash`.
-- The model dropdown in LLM Settings updates automatically based on the selected tier.
-- **Audio input**: All Gemini models support direct microphone recordings. The audio recording button is always visible when Google Gemini is the active provider. Audio is sent as `inline_data` in Gemini's native format.
-- The DeepThink button and DeepThink indicator are hidden when Google Gemini is active.
+- Das Modell-Dropdown in den LLM-Einstellungen aktualisiert sich automatisch basierend auf dem gewählten Tier.
+- **Audio-Input**: Alle Gemini-Modelle unterstützen direkte Mikrofon-Aufnahmen. Der Audio-Aufnahme-Button ist immer sichtbar wenn Google Gemini aktiv ist. Audio wird als `inline_data` im nativen Gemini-Format gesendet.
+- Der DeepThink-Button und -Indikator werden ausgeblendet, wenn Google Gemini aktiv ist.
 
 ### Hugging Face-Integration
 
 Der Client unterstützt Hugging Face Inference Providers als dritten KI-Anbieter via `hugging-api.py`:
 
-- **Architecture**: Uses the OpenAI-compatible Hugging Face router endpoint — no format conversion required. The SSE stream is forwarded directly.
-- **Endpoint**: `https://router.huggingface.co/v1/chat/completions` — the router selects the fastest available provider automatically.
-- **API key**: `HF_API_KEY` in `/etc/apache2/envvars` — a Write token from huggingface.co/settings/tokens with "Make calls to Inference Providers" permission.
+- **Architektur**: Verwendet den OpenAI-kompatiblen Hugging Face Router-Endpunkt — keine Formatkonvertierung erforderlich. Der SSE-Stream wird direkt weitergeleitet.
+- **Endpunkt**: `https://router.huggingface.co/v1/chat/completions` — der Router wählt automatisch den schnellsten verfügbaren Anbieter.
+- **API-Key**: `HF_API_KEY` in `/etc/apache2/envvars` — ein Write-Token von huggingface.co/settings/tokens mit der Berechtigung „Make calls to Inference Providers".
 - **Free Tier**: `Qwen/Qwen2.5-72B-Instruct`, `mistralai/Mistral-7B-Instruct-v0.3`, `microsoft/Phi-3.5-mini-instruct`.
 - **Paid Tier**: `meta-llama/Meta-Llama-3.1-70B-Instruct`, `meta-llama/Meta-Llama-3.1-405B-Instruct`, `Qwen/Qwen2.5-72B-Instruct`, `mistralai/Mixtral-8x7B-Instruct-v0.1`.
-- The model dropdown updates automatically based on the selected tier.
-- The DeepThink button and DeepThink indicator are hidden when Hugging Face is active.
+- Das Modell-Dropdown aktualisiert sich automatisch basierend auf dem gewählten Tier.
+- Der DeepThink-Button und -Indikator werden ausgeblendet, wenn Hugging Face aktiv ist.
 
 
 ### GroqCloud-Integration
 
 Der Client unterstützt GroqCloud als vierten KI-Anbieter via `groq-api.py`:
 
-- **Architecture**: Uses the OpenAI-compatible GroqCloud endpoint — no format conversion required. The SSE stream is forwarded directly.
-- **Endpoint**: `https://api.groq.com/openai/v1/chat/completions`
-- **API key**: `GRQ_API_KEY` in `/etc/apache2/envvars`.
-- **Note**: A `User-Agent` header is required to bypass Cloudflare protection (error code 1010 without it).
+- **Architektur**: Verwendet den OpenAI-kompatiblen GroqCloud-Endpunkt — keine Formatkonvertierung. Der SSE-Stream wird direkt weitergeleitet.
+- **Endpunkt**: `https://api.groq.com/openai/v1/chat/completions`
+- **API-Key**: `GRQ_API_KEY` in `/etc/apache2/envvars`.
+- **Hinweis**: Ein `User-Agent`-Header ist erforderlich, um Cloudflare-Schutz zu umgehen (ohne ihn: Fehlercode 1010).
 - **Free & Paid Tier**: `llama-3.3-70b-versatile`, `llama-3.1-8b-instant`, `mixtral-8x7b-32768`, `gemma2-9b-it`.
-- The model dropdown updates automatically based on the selected tier.
-- The DeepThink button and DeepThink indicator are hidden when GroqCloud is active.
-- All models run on GroqCloud's LPU (Language Processing Unit) hardware for very low latency.
+- Das Modell-Dropdown aktualisiert sich automatisch basierend auf dem gewählten Tier.
+- Der DeepThink-Button und -Indikator werden ausgeblendet, wenn GroqCloud aktiv ist.
+- Alle Modelle laufen auf GroqClouds LPU-Hardware (Language Processing Unit) für sehr geringe Latenz.
 
 ### LLM-Einstellungs-Panel
 
 Ein dediziertes **LLM-Einstellungs**-Panel (getrennt vom Haupt-Einstellungs-Panel) hält anbieterspezifische Optionen aus der Haupt-UI heraus:
 
-- **Provider selection**: Toggle between OpenAI, DeepSeek, Google Gemini, Hugging Face, and GroqCloud — only one active at a time.
-- **OpenAI options**: Free / Paid plan selection with automatic model list update.
-- **DeepSeek options**: Default mode (Normal Chat / DeepThink), Privacy toggle (X-No-Training header).
-- **Google options**: Free / Paid plan selection with automatic model list update.
-- **Hugging Face options**: Free / Paid plan selection with automatic model list update.
-- **GroqCloud options**: Free / Paid plan selection with automatic model list update.
-- **Model dropdown**: Always visible, content updates automatically based on the active provider and plan.
-- All settings are saved to `localStorage` and persist after page reload.
+- **Anbieterauswahl**: Umschalten zwischen OpenAI, DeepSeek, Google Gemini, Hugging Face und GroqCloud — immer nur einer aktiv.
+- **OpenAI-Optionen**: Free / Paid Auswahl mit automatischer Modelllistenaktualisierung.
+- **DeepSeek-Optionen**: Standardmodus (Normal Chat / DeepThink), Datenschutz-Toggle (X-No-Training-Header).
+- **Google-Optionen**: Free / Paid Auswahl mit automatischer Modelllistenaktualisierung.
+- **Hugging Face-Optionen**: Free / Paid Auswahl mit automatischer Modelllistenaktualisierung.
+- **GroqCloud-Optionen**: Free / Paid Auswahl mit automatischer Modelllistenaktualisierung.
+- **Modell-Dropdown**: Immer sichtbar, Inhalt aktualisiert sich automatisch basierend auf Anbieter und Plan.
+- Alle Einstellungen werden in `localStorage` gespeichert und bleiben nach dem Seitenreload erhalten.
 
 ### 429-Rate-Limit-Handling
 
 Das Google Gemini Free Tier erzwingt strenge Rate Limits (5 RPM, 20 RPD). Der Client behandelt diese elegant:
 
-- On a 429 response, the client automatically retries up to **3 times** with **15-second intervals**.
-- During the wait, a countdown is displayed directly in the chat: *"Rate limit reached – waiting 15 seconds and retrying... (Attempt 1/3)"*
-- After 3 failed attempts, a final error message is shown.
-- Verbose error details are written to the server log for diagnosis.
-- The retry logic distinguishes between temporary RPM limits (retryable) and exhausted daily quota (not retryable).
+- Bei einer 429-Antwort wiederholt der Client automatisch bis zu **3 Mal** mit **15-Sekunden-Intervallen**.
+- Während der Wartezeit wird ein Countdown direkt im Chat angezeigt: *„Rate limit erreicht – warte 15 Sekunden und versuche erneut... (Versuch 1/3)"*
+- Nach 3 fehlgeschlagenen Versuchen wird eine abschliessende Fehlermeldung angezeigt.
+- Ausführliche Fehlerdetails werden zur Diagnose ins Server-Log geschrieben.
+- Die Wiederholungslogik unterscheidet zwischen temporären RPM-Limits (wiederholbar) und erschöpftem Tageskontingent (nicht wiederholbar).
 
 ### Zwischenablage-Handler (Ctrl+V)
 
 Ein ausgefeilter Zwischenablage-Handler fängt Einfüge-Ereignisse ab und reagiert intelligent basierend auf dem Inhaltstyp:
 
-**Text content** → Paste dialog appears with two options:
-- "Insert at cursor position" — inserts the text directly into the input field at the cursor
-- "Attach as file" — treats the clipboard text as `clipboard.txt` and attaches it as a file to the next message
+**Textinhalt** → Einfüge-Dialog erscheint mit zwei Optionen:
+- „An Cursorposition einfügen" — fügt den Text direkt an der Cursorposition ins Eingabefeld ein
+- „Als Datei anhängen" — behandelt den Zwischenablagentext als `clipboard.txt` und hängt ihn als Datei an die nächste Nachricht an
 
-**Image content** → A thumbnail preview box appears above the input field with the image, its size in KB, and a remove button. The image is ready to be sent with the next message (if the model supports images).
+**Bildinhalt** → Eine Vorschau-Box erscheint über dem Eingabefeld mit dem Bild, seiner Grösse in KB und einem Entfernen-Button. Das Bild ist bereit, mit der nächsten Nachricht gesendet zu werden (sofern das Modell Bilder unterstützt).
 
-**File paths from file manager (XFCE/Thunar, KDE/Dolphin)** → These are blocked and an alert is shown:
-> "Files copied in the file manager cannot be read by the browser. Please use the Upload button instead."
+**Dateipfade vom Dateimanager (XFCE/Thunar, KDE/Dolphin)** → Diese werden blockiert und ein Alert angezeigt:
+> „Im Dateimanager kopierte Dateien können vom Browser nicht gelesen werden. Bitte stattdessen den Upload-Button verwenden."
 
-**Technical background**: On Linux/X11/Firefox, `e.preventDefault()` does not reliably block paste events. The solution is to allow the paste, then immediately check the input field content via `setTimeout(0)` and clear it if file paths are detected. Detection logic: 2 or more lines where every line starts with `/` or `file://`. A `requestAnimationFrame` call ensures the input field is visually cleared before the alert dialog appears.
+**Technischer Hintergrund**: Unter Linux/X11/Firefox blockiert `e.preventDefault()` Einfüge-Ereignisse nicht zuverlässig. Die Lösung: Einfügen erlauben, dann sofort den Inhalt via `setTimeout(0)` prüfen und leeren falls Dateipfade erkannt werden. Erkennungslogik: 2 oder mehr Zeilen, bei denen jede mit `/` oder `file://` beginnt. Ein `requestAnimationFrame`-Aufruf stellt sicher, dass das Eingabefeld visuell geleert wird bevor der Alert-Dialog erscheint.
 
 ### Datei-Upload mit Sicherheitsprüfung
 
-- Accepted formats: `.txt`, `.pdf`, `.doc`, `.docx`, `.jpg`, `.jpeg`, `.png`, `.csv`, `.xlsx`, `.pptx`
-- Processable formats (content extraction): `.txt`, `.pdf`
-- Other accepted formats: attached as binary context (without text extraction)
-- Maximum file size: **10 MB**
-- Maximum extracted content: **250,000 characters** (enough for large text files and repository exports)
+- Akzeptierte Formate: `.txt`, `.pdf`, `.doc`, `.docx`, `.jpg`, `.jpeg`, `.png`, `.csv`, `.xlsx`, `.pptx`
+- Verarbeitbare Formate (Inhaltsextraktion): `.txt`, `.pdf`
+- Andere akzeptierte Formate: als binärer Kontext angehängt (ohne Textextraktion)
+- Maximale Dateigrösse: **10 MB**
+- Maximaler extrahierter Inhalt: **250.000 Zeichen** (ausreichend für grosse Textdateien und Repository-Exporte)
 
-**Magic byte inspection** (first 20 bytes) detects and blocks executable files regardless of their filename extension:
+**Magic-Byte-Prüfung** (erste 20 Bytes) erkennt und blockiert ausführbare Dateien unabhängig von der Dateinamenserweiterung:
 
 | Platform | Format | Signature |
 |----------|--------|-----------|
@@ -266,17 +266,17 @@ Ein ausgefeilter Zwischenablage-Handler fängt Einfüge-Ereignisse ab und reagie
 | Linux/macOS | Shell Script | `23 21` (#!) |
 | Python | Bytecode (.pyc) | `55 0D 0D 0A` |
 
-**PDF extraction**: Uses PDF.js 3.11.174 loaded from CDN with automatic fallback to a secondary CDN. Progress is displayed page by page. Extraction timeout: 30 seconds.
+**PDF-Extraktion**: Verwendet PDF.js 3.11.174 von CDN mit automatischem Fallback auf einen sekundären CDN. Fortschritt wird seitenweise angezeigt. Extraktions-Timeout: 30 Sekunden.
 
-**Uploaded files are displayed as file cards** in the user message (see [File Card Display](#file-card-display)).
+**Hochgeladene Dateien werden als Datei-Cards** in der Benutzernachricht angezeigt (siehe [Datei-Card-Anzeige](#datei-card-anzeige)).
 
 ### Umlaut-Platzhalter-System
 
-A unique solution for a fundamental problem with the DeepSeek API and German text:
+Eine einzigartige Lösung für ein grundlegendes Problem mit der DeepSeek API und deutschem Text:
 
-**Problem**: DeepSeek internally replaces German umlauts in file content with ASCII equivalents (e.g. `Ä → AeNDERUNG`, `Ü → MUeSSEN`). This behavior cannot be suppressed via system prompts or API parameters.
+**Problem**: DeepSeek ersetzt intern deutsche Umlaute in Dateiinhalten durch ASCII-Äquivalente (z.B. `Ä → AeNDERUNG`, `Ü → MUeSSEN`). Dieses Verhalten kann nicht via System-Prompts oder API-Parameter unterdrückt werden.
 
-**Solution**: Before sending file content to DeepSeek, umlauts are replaced with unique placeholders. DeepSeek returns these placeholders unchanged. JavaScript then replaces them back to real umlauts after receiving the response.
+**Lösung**: Vor dem Senden von Dateiinhalten an DeepSeek werden Umlaute durch eindeutige Platzhalter ersetzt. DeepSeek gibt diese Platzhalter unverändert zurück. JavaScript ersetzt sie anschliessend nach Empfang der Antwort wieder durch echte Umlaute.
 
 | Original | Placeholder |
 |----------|-------------|
@@ -288,7 +288,7 @@ A unique solution for a fundamental problem with the DeepSeek API and German tex
 | `Ö` | `[[COE]]` |
 | `Ü` | `[[CUE]]` |
 
-**Important implementation detail**: The functions `encodeUmlautsForAI()` and `decodeUmlautsFromAI()` use **exclusively Unicode escape sequences** (`\u00e4` instead of `ä`) and `split/join` instead of regex — this is critical to avoid corruption when files are transferred via Git.
+**Wichtiges Implementierungsdetail**: Die Funktionen `encodeUmlautsForAI()` und `decodeUmlautsFromAI()` verwenden **ausschliesslich Unicode-Escape-Sequenzen** (`\u00e4` statt `ä`) und `split/join` statt Regex — dies ist entscheidend um Korruption beim Dateitransfer via Git zu vermeiden.
 
 Die Dekodierung läuft **sowohl während des Streamings** (Token für Token) als auch nach Empfang der vollständigen Antwort.
 
@@ -296,20 +296,20 @@ Dieses System wird **nur auf Dateiinhalte angewendet**, nicht auf reguläre Benu
 
 ### DeepThink-Modus
 
-- Switchable via a dedicated button (pill-mode style) in the second button row.
-- In DeepThink mode, the `deepseek-reasoner` model is used (real chain-of-thought reasoning).
-- The button visually changes: dark/inactive (`#2d2d2d`) → active blue (`#1e3a5f` background, `#4dabf7` border and text).
-- An indicator bar appears below the buttons showing "DeepThink Mode active: In-depth analysis in progress".
-- Context limits and output token limits are automatically adjusted (see [Model Configuration](#model-configuration)).
-- The mode is recorded with each message and displayed in exports.
-- The default mode (Chat or DeepThink) can be set in Settings and is persisted in `localStorage`.
+- Umschaltbar über einen dedizierten Button (Pill-Modus-Stil) in der zweiten Button-Zeile.
+- Im DeepThink-Modus wird das Modell `deepseek-reasoner` verwendet (echtes Chain-of-Thought-Reasoning).
+- Der Button ändert sich visuell: dunkel/inaktiv (`#2d2d2d`) → aktiv blau (`#1e3a5f` Hintergrund, `#4dabf7` Rahmen und Text).
+- Eine Indikatorleiste erscheint unterhalb der Buttons mit „DeepThink-Modus aktiv: Tiefgehende Analyse läuft".
+- Kontext- und Ausgabe-Token-Limits werden automatisch angepasst (siehe [Modell-Konfiguration](#modell-konfiguration)).
+- Der Modus wird bei jeder Nachricht aufgezeichnet und in Exporten angezeigt.
+- Der Standardmodus (Chat oder DeepThink) kann in den Einstellungen gesetzt werden und wird in `localStorage` gespeichert.
 
 ### Modellerkennung & Fähigkeiten
 
-At startup, the client queries `/cgi-bin/deepseek-models.py` which in turn calls the DeepSeek `/v1/models` endpoint:
+Beim Start fragt der Client `/cgi-bin/deepseek-models.py` ab, das seinerseits den DeepSeek `/v1/models`-Endpunkt aufruft:
 
-- Detected model IDs are displayed in the server header: `Model: deepseek-chat, deepseek-reasoner`
-- A `MODEL_CAPABILITIES` map defines which models support images:
+- Erkannte Modell-IDs werden im Server-Header angezeigt: `Model: deepseek-chat, deepseek-reasoner`
+- Eine `MODEL_CAPABILITIES`-Map definiert welche Modelle Bilder unterstützen:
   ```javascript
   const MODEL_CAPABILITIES = {
       'deepseek-chat':     { images: false, text: true },
@@ -318,135 +318,135 @@ At startup, the client queries `/cgi-bin/deepseek-models.py` which in turn calls
       'default':           { images: false, text: true },
   };
   ```
-- If an image is pasted via clipboard or a `.jpg`/`.png` file is uploaded, and the current model does not support images, an alert blocks the operation.
-- This architecture is **forward-compatible**: when DeepSeek V4 with image support is released, it will automatically work without code changes.
+- Wenn ein Bild via Zwischenablage eingefügt oder eine `.jpg`/`.png`-Datei hochgeladen wird und das aktuelle Modell keine Bilder unterstützt, blockiert ein Alert die Operation.
+- Diese Architektur ist **vorwärtskompatibel**: wenn DeepSeek V4 mit Bildunterstützung veröffentlicht wird, funktioniert es automatisch ohne Codeänderungen.
 
 ### Mehrsprachiges System
 
 Die UI unterstützt mehrere Sprachen, die aus einer externen `language.xml`-Datei geladen werden:
 
-**Currently included languages**:
-- English (`en`) — default
-- German (`de`) — with formal/informal address form (Sie/Du)
-- Spanish (`es`) — with formal/informal address form (Usted/Tú)
-- Custom slot (`custom`) — can be activated via `visible="true"` in `language.xml`
+**Aktuell enthaltene Sprachen**:
+- Englisch (`en`) — Standard
+- Deutsch (`de`) — mit formeller/informeller Anredeform (Sie/Du)
+- Spanisch (`es`) — mit formeller/informeller Anredeform (Usted/Tú)
+- Benutzerdefinierter Slot (`custom`) — aktivierbar via `visible="true"` in `language.xml`
 
-**How it works**:
-- All UI texts are referenced by numeric IDs (e.g. `t(205)` = Send button label).
-- `loadLanguage()` fetches and parses `language.xml` at page load.
-- `t(id)` returns the text for the current language, falling back to English if not found.
-- `tf(id, ...args)` supports placeholder substitution (`{0}`, `{1}`, ...).
-- `tform(idFormal, idInformal)` returns the appropriate text based on the selected address form.
-- Language switching is immediate without page reload.
-- The selected language is persisted in `localStorage`.
+**So funktioniert es**:
+- Alle UI-Texte werden über numerische IDs referenziert (z.B. `t(205)` = Send-Button-Label).
+- `loadLanguage()` lädt und parst `language.xml` beim Seitenaufruf.
+- `t(id)` gibt den Text für die aktuelle Sprache zurück, mit Fallback auf Englisch falls nicht gefunden.
+- `tf(id, ...args)` unterstützt Platzhalter-Substitution (`{0}`, `{1}`, ...).
+- `tform(idFormal, idInformal)` gibt den passenden Text basierend auf der gewählten Anredeform zurück.
+- Sprachumschaltung erfolgt sofort ohne Seitenreload.
+- Die gewählte Sprache wird in `localStorage` gespeichert.
 
-**Address form system (German/Spanish)**:
-- Languages can declare `has_address_form="true"` in `language.xml`.
-- For such languages, the Settings panel shows an "Address Form" group (Formal/Informal).
-- The selected form affects: system prompt (forces consistent AI responses), input placeholder, all settings descriptions.
-- English has no address form distinction.
+**Anredeform-System (Deutsch/Spanisch)**:
+- Sprachen können `has_address_form="true"` in `language.xml` deklarieren.
+- Für solche Sprachen zeigt das Einstellungs-Panel eine Gruppe „Anredeform" (Formell/Informell).
+- Die gewählte Form beeinflusst: System-Prompt (erzwingt konsistente KI-Antworten), Eingabe-Platzhalter, alle Einstellungsbeschreibungen.
+- Englisch hat keine Anredeformunterscheidung.
 
-**System prompt** is built dynamically based on language, address form, and mode:
-- Base prompt (text IDs 29/30 for formal/informal)
-- DeepThink addition (text IDs 31/32)
-- A strict instruction for file display is always appended in English to ensure consistent behavior regardless of UI language.
+**System-Prompt** wird dynamisch basierend auf Sprache, Anredeform und Modus erstellt:
+- Basis-Prompt (Text-IDs 29/30 für formell/informell)
+- DeepThink-Ergänzung (Text-IDs 31/32)
+- Eine strenge Anweisung für die Datei-Darstellung wird immer auf Englisch angehängt, um konsistentes Verhalten unabhängig von der UI-Sprache sicherzustellen.
 
 ### Einstellungen (Toggles statt Radio-Buttons)
 
 Alle Einstellungen verwenden **Toggle-Schalter** (Links-nach-Rechts-Schieberegler), niemals Radio-Buttons oder Checkboxen:
 
-| Group | Setting | Toggle Color |
+| Gruppe | Einstellung | Toggle-Farbe |
 |-------|---------|-------------|
-| Language | EN / DE / ES / Custom | Green (personal preference) |
-| Address Form | Formal / Informal | Green (personal preference) |
-| Default Mode | Normal Chat / DeepThink | Blue (technical mode) |
-| Privacy | Do not use data for training | Green |
+| Sprache | EN / DE / ES / Custom | Grün (persönliche Präferenz) |
+| Anredeform | Formell / Informell | Grün (persönliche Präferenz) |
+| Standardmodus | Normal Chat / DeepThink | Blau (technischer Modus) |
+| Datenschutz | Daten nicht für Training verwenden | Grün |
 
-**Toggle behavior**:
-- Within a group, toggles behave like radio buttons: activating one deactivates the others.
-- Clicking anywhere on the `setting-item` row activates that toggle (not just the toggle element itself).
-- Visual feedback: active items get a colored background (`#1a2e1a` green or `#1e3a5f` blue).
+**Toggle-Verhalten**:
+- Innerhalb einer Gruppe verhalten sich Toggles wie Radio-Buttons: einen aktivieren deaktiviert die anderen.
+- Klick irgendwo auf die `setting-item`-Zeile aktiviert den Toggle (nicht nur das Toggle-Element selbst).
+- Visuelles Feedback: Aktive Elemente erhalten einen farbigen Hintergrund (`#1a2e1a` grün oder `#1e3a5f` blau).
 
-**Privacy toggle**: Sets the header `X-No-Training: true` in API requests (supported by DeepSeek's opt-out mechanism).
+**Datenschutz-Toggle**: Setzt den Header `X-No-Training: true` in API-Anfragen (unterstützt durch DeepSeeks Opt-out-Mechanismus).
 
-**Settings persistence**: All settings are stored in `localStorage` under key `deepseekSettings`. Current `SETTINGS_VERSION: 1.3`. The `migrateSettings()` function provides backward compatibility with older stored settings (e.g. the removed "search" mode is automatically migrated to "chat").
+**Einstellungs-Persistenz**: Alle Einstellungen werden in `localStorage` unter dem Key `deepseekSettings` gespeichert. Aktuelle `SETTINGS_VERSION: 1.3`. Die Funktion `migrateSettings()` gewährleistet Rückwärtskompatibilität mit älteren Einstellungen (z.B. wird der entfernte „search"-Modus automatisch auf „chat" migriert).
 
 ### Session-Management
 
 Jedes Gespräch wird automatisch als benannte Session verwaltet:
 
-- **Session ID format**: `YYYY-MM-DD_HHMMSS_random` (e.g. `2026-02-16_143045_abc123`) — generated client-side, validated server-side.
-- **Automatic saving**: After every message pair (user + AI), the complete `contextHistory.messages` array is saved to the server as a JSON file.
-- **Session file format**: `{sessionId}.json` in `/var/www/deepseek-chat/sessions/`, `chmod 600`.
-- **Load chat history modal**: Shows all saved sessions with ID, date, message preview, and message count. Each session has [Load] (green) and [Delete] (red) buttons.
-- **Loading behavior**: When loading a session, the current chat is automatically saved first, then the selected session is restored with full message history and UI reconstruction.
-- **Session deletion**: The JSON file is deleted from the server immediately.
+- **Session-ID-Format**: `YYYY-MM-DD_HHMMSS_random` (z.B. `2026-02-16_143045_abc123`) — clientseitig generiert, serverseitig validiert.
+- **Automatisches Speichern**: Nach jedem Nachrichten-Paar (Benutzer + KI) wird das vollständige `contextHistory.messages`-Array als JSON-Datei auf dem Server gespeichert.
+- **Session-Dateiformat**: `{sessionId}.json` in `/var/www/deepseek-chat/sessions/`, `chmod 600`.
+- **Chat-Verlauf laden Modal**: Zeigt alle gespeicherten Sessions mit ID, Datum, Nachrichten-Vorschau und Nachrichtenanzahl. Jede Session hat [Laden] (grün) und [Löschen] (rot) Buttons.
+- **Ladeverhalten**: Beim Laden einer Session wird der aktuelle Chat zuerst automatisch gespeichert, dann wird die gewählte Session mit vollständiger Nachrichtenhistorie und UI-Wiederherstellung geladen.
+- **Session-Löschung**: Die JSON-Datei wird sofort vom Server gelöscht.
 
-**CGI scripts**:
-- `save-session.py` — POST: receives `{sessionId, messages}`, validates ID format, writes JSON
-- `load-session.py` — GET: returns list with previews; GET with `?id=`: returns full session data
-- `delete-session.py` — DELETE: removes session file
+**CGI-Skripte**:
+- `save-session.py` — POST: empfängt `{sessionId, messages}`, validiert ID-Format, schreibt JSON
+- `load-session.py` — GET: gibt Liste mit Vorschauen zurück; GET mit `?id=`: gibt vollständige Session-Daten zurück
+- `delete-session.py` — DELETE: entfernt Session-Datei
 
 ### Exportfunktionen
 
-**Global export** (dropdown button in main row):
+**Globaler Export** (Dropdown-Button in der Hauptzeile):
 
-| Format | Generation | Contains |
+| Format | Erzeugung | Enthält |
 |--------|-----------|---------|
-| PDF | Server-side (ReportLab) | Header, statistics, table of contents, full chat |
-| Markdown | Server-side | Identical structure to PDF, with Markdown anchors |
-| TXT | Server-side | Plain text with separators |
-| RTF | Server-side | RTF format, umlauts as RTF codes (no external library) |
+| PDF | Serverseitig (ReportLab) | Header, Statistiken, Inhaltsverzeichnis, vollständiger Chat |
+| Markdown | Serverseitig | Identische Struktur wie PDF, mit Markdown-Ankern |
+| TXT | Serverseitig | Reiner Text mit Trennzeichen |
+| RTF | Serverseitig | RTF-Format, Umlaute als RTF-Codes (keine externe Bibliothek) |
 
-**Per-message export** (hover button on each message):
+**Nachrichtenweiser Export** (Hover-Button auf jeder Nachricht):
 
-| Format | Generation |
+| Format | Erzeugung |
 |--------|-----------|
-| TXT | Client-side (JavaScript Blob, no server roundtrip) |
-| Markdown | Client-side |
-| RTF | Client-side |
-| PDF | Server-side (single message sent to `export-pdf.py`) |
+| TXT | Clientseitig (JavaScript Blob, kein Server-Roundtrip) |
+| Markdown | Clientseitig |
+| RTF | Clientseitig |
+| PDF | Serverseitig (einzelne Nachricht an `export-pdf.py` gesendet) |
 
-**Export content** (PDF/Markdown):
-- Header with server name, IP, export date, language/address form settings
-- Statistics section: message count, modes used, files attached, estimated tokens, duration
-- Table of contents with all messages
-- Full chat history with timestamps and mode indicators
-- Color coding by message role and mode
+**Export-Inhalt** (PDF/Markdown):
+- Header mit Servername, IP, Exportdatum, Sprach-/Anredeform-Einstellungen
+- Statistik-Abschnitt: Nachrichtenanzahl, verwendete Modi, angehängte Dateien, geschätzte Token, Dauer
+- Inhaltsverzeichnis mit allen Nachrichten
+- Vollständige Chat-Historie mit Zeitstempeln und Modus-Indikatoren
+- Farbkodierung nach Nachrichtenrolle und Modus
 
-**PDF technical note**: Binary PDF data is written exclusively via `sys.stdout.buffer` with HTTP headers encoded as bytes — avoiding the "Bad header" error that occurs when mixing `print()` (text mode) with binary output.
+**PDF-technischer Hinweis**: Binäre PDF-Daten werden ausschliesslich via `sys.stdout.buffer` mit als Bytes kodierten HTTP-Headern geschrieben — vermeidet den „Bad header"-Fehler bei Mischung von `print()` (Textmodus) mit Binärausgabe.
 
 ### Feedback-Buttons & Logging
 
-Four buttons appear on hover for each AI response (left side, bottom):
+Vier Buttons erscheinen beim Hover für jede KI-Antwort (links unten):
 
-- **Copy** — Copies message text to clipboard; shows "Copied!" for 2 seconds, then resets.
-- **Like** — Marks the response positively (blue highlight); sends a LIKE entry to the server log. Clicking again removes the like.
-- **Dislike** — Marks the response negatively (red highlight); sends a DISLIKE entry. Like and Dislike are mutually exclusive.
-- **Regenerate** — Removes the current AI response from context and DOM, then calls the API again with the same user message and full preceding history.
+- **Kopieren** — Kopiert Nachrichtentext in die Zwischenablage; zeigt „Kopiert!" für 2 Sekunden, dann zurücksetzen.
+- **Like** — Markiert die Antwort positiv (blau hervorgehoben); sendet einen LIKE-Eintrag ins Server-Log. Nochmaliger Klick entfernt den Like.
+- **Dislike** — Markiert die Antwort negativ (rot hervorgehoben); sendet einen DISLIKE-Eintrag. Like und Dislike sind gegenseitig exklusiv.
+- **Regenerieren** — Entfernt die aktuelle KI-Antwort aus Kontext und DOM, ruft dann die API erneut mit derselben Benutzernachricht und vollständiger vorheriger Historie auf.
 
-**Server-side log format** (`deepseek-chat.log`):
+**Serverseitiges Log-Format** (`deepseek-chat.log`):
 ```
 2026-02-17 17:30:00 | 192.168.1.x | FEEDBACK | LIKE | msg_5 | "First 60 chars of message..."
 2026-02-17 17:30:00 | 192.168.1.x | POST | /cgi-bin/deepseek-api.py | 200
 ```
-**Never logged**: API keys, session contents, or message text beyond the 60-character feedback preview.
+**Nie geloggt**: API-Keys, Session-Inhalte oder Nachrichtentext über die 60-Zeichen-Feedback-Vorschau hinaus.
 
 ### Dynamische Kontext-Anzeige
 
 Der Server-Header zeigt vier Informationszeilen:
-1. Server name (in blue, `#4dabf7`)
+1. Servername (in Blau, `#4dabf7`)
 2. `IP: xxx.xxx.xxx.xxx`
-3. `Context: XX% (model-name)`
+3. `Context: XX% (modellname)`
 4. `Model: deepseek-chat, deepseek-reasoner`
 
 **Context utilization calculation**:
 - Estimated tokens = total characters in recent messages × `TOKENS_PER_CHAR` (0.25)
 - Only the last N messages are counted (N = `maxContextMessages` from `MODEL_CONFIG`)
-- System prompt tokens are added separately
+- System-Prompt-Token werden separat hinzugefügt
 - Percentage = estimated tokens / `maxContextTokens` × 100
 
-**Warning system**: Above 90%, the context line turns red and blinks (CSS animation, opacity 0 → 1, 1 second cycle) — a highly visible warning that the context window is nearly full.
+**Warnsystem**: Ab 90% wird die Kontextzeile rot und blinkt (CSS-Animation, Deckkraft 0 → 1, 1-Sekunden-Zyklus) — eine gut sichtbare Warnung, dass das Kontextfenster fast voll ist.
 
 Die Anzeige aktualisiert sich automatisch bei: jeder gesendeten Nachricht, jeder gelöschten Nachricht, jedem Modellwechsel.
 
@@ -461,9 +461,9 @@ Wenn eine Datei hochgeladen oder Zwischenablagentext angehängt wird, zeigt die 
 └─────────────────────────────────────┘
 ```
 
-- Shows file type badge (PDF, TXT, XLSX, etc.) derived from the file extension
-- Shows truncated filename (max 30 characters with `...`)
-- Applies to: real file uploads via the Upload button, clipboard text attached as file (`clipboard.txt`), all other accepted formats, and audio recordings
+- Zeigt Dateityp-Badge (PDF, TXT, XLSX etc.) abgeleitet aus der Dateiendung
+- Zeigt gekürzten Dateinamen (max. 30 Zeichen mit `...`)
+- Gilt für: echte Datei-Uploads via Upload-Button, Zwischenablagentext als Datei (`clipboard.txt`), alle anderen akzeptierten Formate und Audio-Aufnahmen
 - Audio-Aufnahmen zeigen das Badge `AUDIO` mit dem lokalisierten Label (z.B. „Audioaufnahme")
 
 ### Multi-Datei-Upload
@@ -474,34 +474,34 @@ Der Upload-Button unterstützt die Auswahl von **mehreren Dateien gleichzeitig**
 - Textextrahierbare Dateien (`.txt`, `.pdf`) werden der Reihe nach verarbeitet; ihre Inhalte werden mit einem `---`-Trennzeichen und einem `[dateiname]`-Header kombiniert.
 - Die Datei-Info-Leiste zeigt alle Dateien mit ` | ` getrennt in einer einzigen Zeile.
 - Eine Datei-Card wird pro Datei in der Benutzernachricht angezeigt.
-- Accepted formats: `.txt`, `.pdf`, `.doc`, `.docx`, `.jpg`, `.jpeg`, `.png`, `.csv`, `.xlsx`, `.pptx`
+- Akzeptierte Formate: `.txt`, `.pdf`, `.doc`, `.docx`, `.jpg`, `.jpeg`, `.png`, `.csv`, `.xlsx`, `.pptx`
 
 ### Audio-Aufnahme
 
 Der Client verfügt über einen integrierten **Mikrofon-Aufnahme-Button**, der direkte Spracheingabe für audio-fähige Modelle ermöglicht:
 
-- **Button**: `audioButton` — pill-mode style, positioned in button row 2 next to the DeepThink button.
-- **Visibility**: The button is only shown when the currently selected model supports audio input. It is hidden automatically when a non-audio model is active. This is controlled by `updateAudioButtonVisibility()` which is called on every model change.
-- **Audio-capable models** (`AUDIO_CAPABLE_MODELS` constant):
+- **Button**: `audioButton` — Pill-Modus-Stil, positioniert in Button-Zeile 2 neben dem DeepThink-Button.
+- **Sichtbarkeit**: Der Button wird nur angezeigt, wenn das aktuell gewählte Modell Audio-Input unterstützt. Er wird automatisch ausgeblendet, wenn ein nicht-audio-fähiges Modell aktiv ist. Dies wird von `updateAudioButtonVisibility()` gesteuert, das bei jedem Modellwechsel aufgerufen wird.
+- **Audio-fähige Modelle** (Konstante `AUDIO_CAPABLE_MODELS`):
   - **Google Gemini**: `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-1.5-pro`, `gemini-2.0-flash`
   - **OpenAI**: `gpt-4o`, `gpt-4.1`
-- **Recording flow**: `getUserMedia()` → `MediaRecorder` API → chunked recording → `Blob` assembled on stop → base64-encoded.
-- **MIME type**: `audio/webm` (Chrome/Firefox) or `audio/mp4` (Safari) — auto-detected at runtime.
-- **After recording**: The audio data is shown in the `fileInfo` box with an AUDIO badge card. The label is pulled from `language.xml` (`t(250)` — "Audio recording" in all four languages).
-- **Sending**: `audio_data` (base64 string) and `audio_mime_type` are included in the JSON request body alongside the text message. The `hasFile` flag is **not** set for audio — no file-processing system prompt is injected.
-- **Mutual exclusivity**: File upload and audio recording are mutually exclusive. Starting a recording clears any pending file attachment and vice versa.
-- **Backend — Google (`google-api.py`)**: Audio is appended to the last user message as an `inline_data` block in Gemini's native format. The model receives and processes the audio directly.
-- **Backend — OpenAI (`openai-api.py`)**: Audio is appended to the last user message as an `input_audio` block in OpenAI's format (`format: webm` or `mp4`).
-- **Maintenance rule** (documented in manifest): Whenever an integrated LLM provider adds or removes audio support for a model, `AUDIO_CAPABLE_MODELS` in `index.html` **must** be updated immediately.
+- **Aufnahme-Ablauf**: `getUserMedia()` → `MediaRecorder`-API → stückweise Aufnahme → `Blob` beim Stopp zusammengesetzt → base64-kodiert.
+- **MIME-Typ**: `audio/webm` (Chrome/Firefox) oder `audio/mp4` (Safari) — zur Laufzeit automatisch erkannt.
+- **Nach der Aufnahme**: Die Audio-Daten werden im `fileInfo`-Feld mit einer AUDIO-Badge-Card angezeigt. Das Label stammt aus `language.xml` (`t(250)` — „Audioaufnahme" in allen vier Sprachen).
+- **Senden**: `audio_data` (base64-String) und `audio_mime_type` werden im JSON-Anfragekörper neben der Textnachricht übermittelt. Das `hasFile`-Flag wird für Audio **nicht** gesetzt — kein Dateiverarbeitungs-System-Prompt wird injiziert.
+- **Gegenseitige Exklusivität**: Datei-Upload und Audio-Aufnahme sind gegenseitig exklusiv. Eine Aufnahme starten löscht ausstehende Dateianhänge und umgekehrt.
+- **Backend — Google (`google-api.py`)**: Audio wird als `inline_data`-Block im nativen Gemini-Format an die letzte Benutzernachricht angehängt. Das Modell empfängt und verarbeitet das Audio direkt.
+- **Backend — OpenAI (`openai-api.py`)**: Audio wird als `input_audio`-Block im OpenAI-Format (`format: webm` oder `mp4`) an die letzte Benutzernachricht angehängt.
+- **Wartungsregel** (im Manifest dokumentiert): Sobald ein integrierter LLM-Anbieter Audio-Unterstützung für ein Modell hinzufügt oder entfernt, **muss** `AUDIO_CAPABLE_MODELS` in `index.html` sofort aktualisiert werden.
 
-**Language IDs added** (all four languages):
+**Hinzugefügte Sprach-IDs** (alle vier Sprachen):
 
-| ID | Content |
+| ID | Inhalt |
 |----|---------|
-| 247 | Record Audio / Audio aufnehmen / Grabar audio |
+| 247 | Audio aufnehmen / Record Audio / Grabar audio |
 | 248 | Stop |
-| 249 | Audio recorded / Audio aufgenommen / Audio grabado |
-| 250 | Audio recording / Audioaufnahme / Grabación de audio |
+| 249 | Audio aufgenommen / Audio recorded / Audio grabado |
+| 250 | Audioaufnahme / Audio recording / Grabación de audio |
 
 
 ---
@@ -511,12 +511,12 @@ Der Client verfügt über einen integrierten **Mikrofon-Aufnahme-Button**, der d
 
 Jedes der fünf CGI-Proxy-Skripte (`openai-api.py`, `deepseek-api.py`, `google-api.py`, `hugging-api.py`, `groq-api.py`) enthält direkt nach der Kodierungsdeklaration einen strukturierten Dokumentations-Header:
 
-- **Import date** — when the file was last updated
-- **Model version** — version of each supported model/sub-model
-- **Context window** — input and output token limits per model
-- **Capabilities** — Text only / Text + Images + Audio + Video
-- **Free/Paid assignment** — for providers with tier distinction
-- **Source link** — official API documentation
+- **Import-Datum** — wann die Datei zuletzt aktualisiert wurde
+- **Modellversion** — Version jedes unterstützten Modells/Untermodells
+- **Kontextfenster** — Eingabe- und Ausgabe-Token-Limits pro Modell
+- **Fähigkeiten** — Nur Text / Text + Bilder + Audio + Video
+- **Free/Paid-Zuordnung** — für Anbieter mit Tier-Unterscheidung
+- **Quelllink** — offizielle API-Dokumentation
 
 Dies stellt sicher, dass Modellinformationen immer direkt im Quellcode nachvollziehbar sind, ohne externe Dokumentation konsultieren zu müssen.
 
@@ -524,22 +524,22 @@ Dies stellt sicher, dass Modellinformationen immer direkt im Quellcode nachvollz
 
 Dieses Bash-Skript wurde speziell entwickelt, um **den gesamten Quellcode eines GitHub-Repositories als einzelne Textdatei zu exportieren** — ideal, um den vollständigen Projektkontext an einen KI-Assistenten weiterzugeben.
 
-**How it works**:
+**So funktioniert es**:
 - Clones the repository with `git clone --depth 1`.
 - Analyzes all text files (MIME type + `grep -Iq .`) and writes them with separators into an output file.
 - Explicitly respects `.gitignore` and `.gitattributes`.
-- Supports TXT, JSON, and Markdown output formats.
+- Unterstützt TXT, JSON und Markdown als Ausgabeformate.
 - Creates a ZIP archive of the export file.
 - Includes metadata: commit hash, branch, timestamp.
 
-**Special options**:
-- `--flat`: Use only filenames without paths.
-- `-o, --only PATH`: Export only a specific subdirectory.
-- `-md5, --md5`: Compute and include MD5 checksum for each file.
-- Intelligent detection of the remote URL when run inside a Git repository.
-- Both `md5sum` (Linux) and `md5` (macOS) are supported.
+**Besondere Optionen**:
+- `--flat`: Nur Dateinamen ohne Pfade verwenden.
+- `-o, --only PFAD`: Nur ein bestimmtes Unterverzeichnis exportieren.
+- `-md5, --md5`: MD5-Prüfsumme für jede Datei berechnen und einschliessen.
+- Intelligente Erkennung der Remote-URL beim Ausführen innerhalb eines Git-Repositories.
+- Sowohl `md5sum` (Linux) als auch `md5` (macOS) werden unterstützt.
 
-**Examples**:
+**Beispiele**:
 
 ```bash
 # Simple export (interactive URL prompt)
@@ -555,10 +555,10 @@ Dieses Bash-Skript wurde speziell entwickelt, um **den gesamten Quellcode eines 
 ./repo2text.sh -md5 https://github.com/debian-professional/multi-llm-chat.git
 ```
 
-**Why is this useful?**
-- Enables complete project documentation in a single file.
-- Perfect for inserting entire codebases into AI chats.
-- The MD5 option helps verify file integrity after export.
+**Warum ist das nützlich?**
+- Ermöglicht vollständige Projektdokumentation in einer einzigen Datei.
+- Perfekt zum Einfügen ganzer Codebasen in KI-Chats.
+- Die MD5-Option hilft beim Überprüfen der Dateiintegrität nach dem Export.
 
 > `repo2text` is also available as a standalone project: [github.com/debian-professional/repo2text](https://github.com/debian-professional/repo2text)
 
@@ -569,38 +569,38 @@ Dieses Bash-Skript wurde speziell entwickelt, um **den gesamten Quellcode eines 
 Sicherheit hatte während des gesamten Projekts höchste Priorität. Hier alle wichtigen Massnahmen:
 
 ### 1. API-Key — Nie dem Client gegenüber exponiert
-- The key is held **exclusively** in the Apache environment variable `DEEPSEEK_API_KEY` (set in `/etc/apache2/envvars`).
-- `deepseek-api.py` retrieves it via `os.environ.get('DEEPSEEK_API_KEY')`.
-- The client communicates only with `/cgi-bin/deepseek-api.py` (local proxy) — never directly with the DeepSeek API.
-- Even in the event of an XSS attack, the key could not be read from the page.
+- Der Key wird **ausschliesslich** in der Apache-Umgebungsvariablen `DEEPSEEK_API_KEY` gehalten (gesetzt in `/etc/apache2/envvars`).
+- `deepseek-api.py` ruft ihn via `os.environ.get('DEEPSEEK_API_KEY')` ab.
+- Der Client kommuniziert nur mit `/cgi-bin/deepseek-api.py` (lokaler Proxy) — nie direkt mit der DeepSeek API.
+- Selbst bei einem XSS-Angriff könnte der Key nicht von der Seite gelesen werden.
 
 ### 2. Magic-Byte-Prüfung gegen ausführbare Dateien
-- Before reading any uploaded file, the first 20 bytes are checked against a comprehensive signature database (see [File Upload with Security Check](#file-upload-with-security-check)).
-- If a signature matches, the upload is blocked with a detailed error message showing the detected platform and format.
-- This protection works even if malicious files are renamed (e.g. `virus.exe` → `invoice.pdf`).
+- Vor dem Lesen einer hochgeladenen Datei werden die ersten 20 Bytes gegen eine umfassende Signatur-Datenbank geprüft (siehe [Datei-Upload mit Sicherheitsprüfung](#datei-upload-mit-sicherheitsprüfung)).
+- Bei übereinstimmender Signatur wird der Upload mit einer detaillierten Fehlermeldung blockiert, die die erkannte Plattform und das Format anzeigt.
+- Dieser Schutz funktioniert auch wenn bösartige Dateien umbenannt werden (z.B. `virus.exe` → `rechnung.pdf`).
 
 ### 3. Sichere Session-Speicherung
-- Sessions directory: `/var/www/deepseek-chat/sessions/` — `chmod 700`
-- Each session file: `chmod 600`
-- Session ID format is validated server-side — no path traversal possible.
+- Sessions-Verzeichnis: `/var/www/deepseek-chat/sessions/` — `chmod 700`
+- Jede Session-Datei: `chmod 600`
+- Session-ID-Format wird serverseitig validiert — kein Path-Traversal möglich.
 
 ### 4. Logging ohne sensible Daten
-- Log contains: timestamps, IP addresses, HTTP methods, paths, status codes, error messages.
-- **Never logged**: API keys, session contents, message text (beyond 60-char feedback previews).
-- OPTIONS requests are filtered out to prevent log flooding.
+- Log enthält: Zeitstempel, IP-Adressen, HTTP-Methoden, Pfade, Statuscodes, Fehlermeldungen.
+- **Nie geloggt**: API-Keys, Session-Inhalte, Nachrichtentext (über 60-Zeichen-Feedback-Vorschauen hinaus).
+- OPTIONS-Anfragen werden gefiltert, um Log-Überflutung zu verhindern.
 
 ### 5. Keine direkte Client-API-Kommunikation
-- All security-critical operations occur server-side via Python CGI.
-- The client has no knowledge of API credentials, server paths, or session storage locations.
+- Alle sicherheitskritischen Operationen finden serverseitig via Python CGI statt.
+- Der Client hat keine Kenntnis von API-Zugangsdaten, Server-Pfaden oder Session-Speicherorten.
 
 ### 6. Input-Validierung
-- File formats validated both by extension and by magic bytes.
-- Session IDs validated against expected format regex server-side.
-- Clipboard paste filtered to block file paths before they reach the API.
+- Dateiformate werden per Erweiterung und per Magic Bytes validiert.
+- Session-IDs werden serverseitig gegen das erwartete Format-Regex validiert.
+- Zwischenablage-Einfügen wird gefiltert, um Dateipfade zu blockieren bevor sie die API erreichen.
 
 ### 7. Transportsicherheit
-- HTTPS enforced via Apache SSL configuration (`deepseek-chat-ssl.conf`).
-- HTTP configuration (`deepseek-chat.conf`) is disabled via `a2dissite`.
+- HTTPS wird via Apache-SSL-Konfiguration erzwungen (`deepseek-chat-ssl.conf`).
+- HTTP-Konfiguration (`deepseek-chat.conf`) wird via `a2dissite` deaktiviert.
 
 ---
 
@@ -608,52 +608,52 @@ Sicherheit hatte während des gesamten Projekts höchste Priorität. Hier alle w
 
 ### Voraussetzungen
 
-- Debian-based system (or any Linux with Apache, Python 3, Bash)
-- Apache with CGI module (`a2enmod cgi`) and SSL (`a2enmod ssl`)
-- Python 3 with packages: `reportlab`
-- For `repo2text.sh`: `jq`, `pv`, `zip`, `git`
-- A valid DeepSeek API key from [platform.deepseek.com](https://platform.deepseek.com)
+- Debian-basiertes System (oder jedes Linux mit Apache, Python 3, Bash)
+- Apache mit CGI-Modul (`a2enmod cgi`) und SSL (`a2enmod ssl`)
+- Python 3 mit Paketen: `reportlab`
+- Für `repo2text.sh`: `jq`, `pv`, `zip`, `git`
+- Ein gültiger DeepSeek API-Key von [platform.deepseek.com](https://platform.deepseek.com)
 
 ### Installation
 
-**1. Clone the repository** (as user `source`):
+**1. Repository klonen** (als Benutzer `source`):
 ```bash
 git clone https://github.com/debian-professional/multi-llm-chat.git /home/source/multi-llm-chat
 ```
 
-**2. Configure the API key**:
+**2. API-Keys konfigurieren**:
 ```bash
 # Add to /etc/apache2/envvars:
 export DEEPSEEK_API_KEY="your-deepseek-api-key-here"
 ```
 
-**3. Enable Apache configuration**:
+**3. Apache-Konfiguration aktivieren**:
 ```bash
 a2ensite deepseek-chat-ssl.conf
 a2dissite deepseek-chat.conf   # disable plain HTTP config
 systemctl restart apache2
 ```
 
-**4. Create required directories**:
+**4. Erforderliche Verzeichnisse erstellen**:
 ```bash
 mkdir -p /var/www/deepseek-chat/sessions
 chown www-data:www-data /var/www/deepseek-chat/sessions
 chmod 700 /var/www/deepseek-chat/sessions
 ```
 
-**5. Run the deploy script** (as root):
+**5. Deploy-Skript ausführen** (als root):
 ```bash
 ./deploy.sh source
 ```
 
-**6. Install helper scripts**:
+**6. Hilfsskripte installieren**:
 ```bash
 ./install.sh   # as root — copies deploy.sh and sync-back.sh to production directory
 ```
 
 ### Konfiguration
 
-**Model configuration** (`MODEL_CONFIG` in `index.html`):
+**Modell-Konfiguration** (`MODEL_CONFIG` in `index.html`):
 ```javascript
 const MODEL_CONFIG = {
     'deepseek-chat':     { maxContextTokens: 100000,  maxOutputTokens: 8192,  maxContextMessages: 50  },
@@ -683,11 +683,11 @@ const HF_MODELS_FREE     = ['Qwen/Qwen2.5-72B-Instruct', 'mistralai/Mistral-7B-I
 const HF_MODELS_PAID     = ['meta-llama/Meta-Llama-3.1-70B-Instruct', 'meta-llama/Meta-Llama-3.1-405B-Instruct', 'Qwen/Qwen2.5-72B-Instruct', 'mistralai/Mixtral-8x7B-Instruct-v0.1'];
 const GROQ_MODELS_FREE   = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
 const GROQ_MODELS_PAID   = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
-// Models with native audio input support (microphone recording button)
+// Modelle mit nativem Audio-Input-Support (Mikrofon-Aufnahme-Button)
 const AUDIO_CAPABLE_MODELS = ['gemini-2.5-flash','gemini-2.5-pro','gemini-1.5-pro','gemini-2.0-flash','gpt-4o','gpt-4.1'];
 ```
 
-**API key configuration** (`/etc/apache2/envvars`):
+**API-Key-Konfiguration** (`/etc/apache2/envvars`):
 ```bash
 export OPENAI_API_KEY="sk-proj-..."
 export DEEPSEEK_API_KEY="sk-..."
@@ -696,18 +696,18 @@ export HF_API_KEY="hf_..."
 export GRQ_API_KEY="gsk_..."
 ```
 
-**Language configuration** (`language.xml`):
-- Add a new `<language id="custom" name="..." visible="true">` block to enable the custom language slot.
-- Set `has_address_form="true"` for languages with formal/informal distinction.
+**Sprachkonfiguration** (`language.xml`):
+- Einen neuen `<language id="custom" name="..." visible="true">`-Block hinzufügen, um den benutzerdefinierten Sprachslot zu aktivieren.
+- `has_address_form="true"` für Sprachen mit formell/informell-Unterscheidung setzen.
 
 ### Deploy-Skripte
 
 | Skript | Funktion |
 |--------|----------|
-| `deploy.sh <user>` | Copies files from `/home/<user>/multi-llm-chat/var/www/deepseek-chat/` to `/var/www/deepseek-chat/`, sets ownership/permissions, reloads Apache |
-| `sync-back.sh <user>` | Copies changed files from production back to the source repo |
-| `install.sh` | Installs `deploy.sh` and `sync-back.sh` in the production directory |
-| `tag-release.sh` | Creates a new Git tag with auto-incremented version number (e.g. v0.80 → v0.81) and pushes it |
+| `deploy.sh <user>` | Kopiert Dateien von `/home/<user>/multi-llm-chat/var/www/deepseek-chat/` nach `/var/www/deepseek-chat/`, setzt Berechtigungen, lädt Apache neu |
+| `sync-back.sh <user>` | Kopiert geänderte Dateien aus der Produktion zurück ins Quell-Repo |
+| `install.sh` | Installiert `deploy.sh` und `sync-back.sh` im Produktionsverzeichnis |
+| `tag-release.sh` | Erstellt einen neuen Git-Tag mit automatisch inkrementierter Versionsnummer (z.B. v0.80 → v0.81) und pusht ihn |
 
 ---
 
@@ -719,35 +719,35 @@ export GRQ_API_KEY="gsk_..."
 │   ├── deepseek-chat.conf              (disabled — HTTP only, redirects to HTTPS)
 │   └── deepseek-chat-ssl.conf          (active — SSL, CGI, API key via envvars)
 ├── shell-scripts/
-│   ├── repo2text.sh                    Export entire repo as single text file
-│   ├── deploy.sh                       Copies source repo → production
-│   ├── sync-back.sh                    Copies production → source repo
-│   ├── install.sh                      Installs deploy/sync-back scripts
-│   └── tag-release.sh                  Creates and pushes Git version tags
+│   ├── repo2text.sh                    Gesamtes Repo als einzelne Textdatei exportieren
+│   ├── deploy.sh                       Kopiert Quell-Repo → Produktion
+│   ├── sync-back.sh                    Kopiert Produktion → Quell-Repo
+│   ├── install.sh                      Installiert deploy/sync-back-Skripte
+│   └── tag-release.sh                  Erstellt und pusht Git-Versions-Tags
 ├── var/www/deepseek-chat/
-│   ├── index.html                      Main application (all JS/CSS/HTML)
+│   ├── index.html                      Hauptanwendung (gesamtes JS/CSS/HTML)
 │   ├── language.xml                    Alle UI-Texte in allen Sprachen (EN, DE, ES, Custom)
-│   ├── manifest                        Design manifest (all conventions, ~20KB)
-│   ├── changelog                       Complete development history (68+ entries, ~44KB)
-│   ├── files-directorys                File overview / directory listing
+│   ├── manifest                        Design-Manifest (alle Konventionen, ~20KB)
+│   ├── changelog                       Vollständige Entwicklungshistorie (78+ Einträge, ~44KB)
+│   ├── files-directorys                Dateiübersicht / Verzeichnisliste
 │   ├── cgi-bin/
-│   │   ├── openai-api.py              Streaming proxy to OpenAI API
-│   │   ├── deepseek-api.py            Streaming proxy to DeepSeek API
-│   │   ├── google-api.py              Streaming proxy to Google Gemini API
-│   │   ├── hugging-api.py             Streaming proxy to Hugging Face Inference API
-│   │   ├── groq-api.py                Streaming proxy to GroqCloud API (LPU-accelerated)
-│   │   ├── deepseek-models.py         Queries /v1/models endpoint
-│   │   ├── save-session.py            Saves chat sessions (POST)
-│   │   ├── load-session.py            Loads session list (GET) or session (GET ?id=)
-│   │   ├── delete-session.py          Deletes session (DELETE)
-│   │   ├── export-pdf.py              PDF export with ReportLab
-│   │   ├── export-markdown.py         Markdown export
-│   │   ├── export-txt.py              TXT export
-│   │   ├── export-rtf.py              RTF export (no external library)
-│   │   ├── feedback-log.py            Like/Dislike logging
-│   │   ├── get-log.py                 Reads and returns log file
-│   │   └── deepseek-chat.log          Server log file (auto-created)
-│   └── sessions/                      Chat session JSON files (auto-created)
+│   │   ├── openai-api.py              Streaming-Proxy zur OpenAI API
+│   │   ├── deepseek-api.py            Streaming-Proxy zur DeepSeek API
+│   │   ├── google-api.py              Streaming-Proxy zur Google Gemini API
+│   │   ├── hugging-api.py             Streaming-Proxy zur Hugging Face Inference API
+│   │   ├── groq-api.py                Streaming-Proxy zur GroqCloud API (LPU-beschleunigt)
+│   │   ├── deepseek-models.py         Fragt /v1/models-Endpunkt ab
+│   │   ├── save-session.py            Speichert Chat-Sessions (POST)
+│   │   ├── load-session.py            Lädt Session-Liste (GET) oder Session (GET ?id=)
+│   │   ├── delete-session.py          Löscht Session (DELETE)
+│   │   ├── export-pdf.py              PDF-Export mit ReportLab
+│   │   ├── export-markdown.py         Markdown-Export
+│   │   ├── export-txt.py              TXT-Export
+│   │   ├── export-rtf.py              RTF-Export (keine externe Bibliothek)
+│   │   ├── feedback-log.py            Like/Dislike-Logging
+│   │   ├── get-log.py                 Liest und gibt Log-Datei zurück
+│   │   └── deepseek-chat.log          Server-Log-Datei (automatisch erstellt)
+│   └── sessions/                      Chat-Session-JSON-Dateien (automatisch erstellt)
 
 ```
 
@@ -797,15 +797,15 @@ Quellen: [OpenAI API Docs](https://platform.openai.com/docs), [DeepSeek API Docs
 
 Das Projekt enthält eine **`manifest`-Datei**, die alle Design-Entscheidungen und Konventionen dokumentiert. Jede Änderung am Projekt wird dort dokumentiert. Wichtige Regeln:
 
-- **All buttons**: Pill-style only (border-radius: 20px, height: 36px) — square buttons are forbidden.
-- **Button colors**: Blue (`#0056b3`) for actions, dark/blue toggle for modes, red (`#dc3545`) for destructive, green (`#28a745`) for constructive.
-- **Settings**: Toggle switches only — no radio buttons, no checkboxes.
-- **No emojis** in buttons or labels (exception: the DeepThink icon ✦).
-- **No PHP** — exclusively JavaScript and Python.
-- **No external JS frameworks** — no Node, no React, no Vue.
-- **Formatting preservation**: Existing indentation and formatting in `index.html` must never be changed.
+- **Alle Buttons**: Nur Pill-Style (border-radius: 20px, height: 36px) — eckige Buttons sind verboten.
+- **Button-Farben**: Blau (`#0056b3`) für Aktionen, Dunkel/Blau-Toggle für Modi, Rot (`#dc3545`) für destruktive, Grün (`#28a745`) für konstruktive.
+- **Einstellungen**: Nur Toggle-Schalter — keine Radio-Buttons, keine Checkboxen.
+- **Keine Emojis** in Buttons oder Labels (Ausnahme: das DeepThink-Icon ✦).
+- **Kein PHP** — ausschliesslich JavaScript und Python.
+- **Keine externen JS-Frameworks** — kein Node, kein React, kein Vue.
+- **Formatierungs-Beibehaltung**: Bestehende Einrückung und Formatierung in `index.html` darf niemals geändert werden.
 - **`AUDIO_CAPABLE_MODELS` nachführen**: Sobald ein Modell Audio-Unterstützung erhält oder verliert, muss die Konstante sofort aktualisiert werden (Manifest-Regel E.1).
-- The manifest is a **separate file** and must never be embedded in `index.html`.
+- Das Manifest ist eine **separate Datei** und darf nie in `index.html` eingebettet werden.
 
 ---
 
@@ -814,22 +814,22 @@ Das Projekt enthält eine **`manifest`-Datei**, die alle Design-Entscheidungen u
 ### „Lost in the Middle" — Eine bekannte KI-Einschränkung
 Alle aktuellen Sprachmodelle neigen dazu, Inhalte am **Anfang und Ende** eines langen Kontexts zuverlässig zu erinnern, aber Inhalte **in der Mitte** werden manchmal übersehen oder halluziniert. (Liu et al., 2023: „Lost in the Middle: How Language Models Use Long Contexts")
 
-**Practical impact on this project**:
-- A repository export of ~270,000 characters ≈ ~67,500 tokens.
-- DeepSeek context window: 100,000 tokens → ~67% utilization → content in the middle may be unreliable.
-- **Recommendation**: For specific tasks, upload only the relevant files individually rather than the entire repository export.
+**Praktische Auswirkung auf dieses Projekt**:
+- Ein Repository-Export von ~270.000 Zeichen ≈ ~67.500 Token.
+- DeepSeek-Kontextfenster: 100.000 Token → ~67% Auslastung → Inhalte in der Mitte könnten unzuverlässig sein.
+- **Empfehlung**: Für spezifische Aufgaben nur die relevanten Dateien einzeln hochladen statt des gesamten Repository-Exports.
 
 ### GitHub Raw URL Caching
 Nach einem `git push` ist die neue Version **nicht sofort** via `raw.githubusercontent.com`-URLs verfügbar — GitHub cached diese bis zu 10 Minuten. Das ist normal und kann nicht umgangen werden. Die Dateien sind korrekt auf GitHub gespeichert, sobald `git push` erfolgreich ist.
 
 ### Nano und Unicode — Kritische Warnung
-**Never** edit files containing Unicode escape sequences (like the umlaut functions) using `nano` or by copy-pasting into a terminal. Nano corrupts `\u00e4` to `M-CM-$` which is binary garbage for JavaScript.
+**Niemals** Dateien mit Unicode-Escape-Sequenzen (wie die Umlaut-Funktionen) mit `nano` oder durch Kopieren in ein Terminal bearbeiten. Nano korrumpiert `\u00e4` zu `M-CM-$`, was für JavaScript binärer Müll ist.
 
-**The only safe workflow**:
-1. Edit files locally (VS Code, gedit, kate, or any proper editor).
-2. `git add` / `git commit` / `git push` from the local machine.
+**Der einzig sichere Arbeitsablauf**:
+1. Dateien lokal bearbeiten (VS Code, gedit, kate oder ein geeigneter Editor).
+2. `git add` / `git commit` / `git push` von der lokalen Maschine.
 3. Auf dem Server: `git pull` (im Quell-Repo als Benutzer `source`).
-4. As root: `./deploy.sh source`.
+4. Als root: `./deploy.sh source`.
 
 ### Linux/X11/Firefox Einfüge-Verhalten
 Unter Linux mit X11 und Firefox blockiert `e.preventDefault()` in Paste-Event-Handlern nicht zuverlässig das browsernative Einfügeverhalten für Inhalte aus Dateimanagern. Die hier implementierte Lösung (Einfügen erlauben, Inhalt in `setTimeout(0)` prüfen, leeren wenn Dateipfade erkannt) ist der zuverlässige Workaround für diese plattformspezifische Einschränkung.
@@ -857,36 +857,36 @@ Unter Linux mit X11 und Firefox blockiert `e.preventDefault()` in Paste-Event-Ha
 
 Dieses Projekt demonstriert professionelle Webentwicklung in einem minimalistischen, sicherheitsorientierten Ansatz:
 
-**Architecture**:
-- Clean separation of client (pure HTML/JS) and server (Python CGI) with no blurring of responsibilities.
-- API key never exposed — even a full XSS compromise cannot leak it.
-- Single-file client (`index.html`) that is entirely self-contained yet highly modular internally.
+**Architektur**:
+- Saubere Trennung von Client (reines HTML/JS) und Server (Python CGI) ohne Vermischung der Verantwortlichkeiten.
+- API-Key nie exponiert — selbst ein vollständiger XSS-Kompromiss kann ihn nicht leaken.
+- Single-File-Client (`index.html`), vollständig eigenständig und intern hochmodular.
 
-**User experience**:
-- Streaming responses with sub-second first-token latency.
-- Unique flexible context management (delete any message + all subsequent).
-- Intelligent clipboard handling for text, images, and file path protection.
+**Benutzererfahrung**:
+- Streaming-Antworten mit Sub-Sekunden-Ersttoken-Latenz.
+- Einzigartiges flexibles Kontextmanagement (beliebige Nachricht + alle nachfolgenden löschen).
+- Intelligentes Zwischenablage-Handling für Text, Bilder und Dateipfad-Schutz.
 - **Audio-Aufnahme** direkt im Browser — Mikrofon-Input für Google Gemini (alle Modelle) und OpenAI gpt-4o / gpt-4.1.
-- Multi-language support with address form distinction, loaded from external XML.
+- Mehrsprachige Unterstützung mit Anredeformunterscheidung, aus externem XML geladen.
 
 **Engineering**:
-- Magic byte inspection that detects malware regardless of filename extension.
-- Umlaut placeholder system solving a fundamental DeepSeek API limitation.
-- Forward-compatible model capability map ready for image-supporting models.
-- Complete audit trail via Git and detailed changelog.
+- Magic-Byte-Prüfung, die Malware unabhängig von der Dateinamenserweiterung erkennt.
+- Umlaut-Platzhalter-System löst eine grundlegende DeepSeek API-Einschränkung.
+- Vorwärtskompatible Modell-Fähigkeits-Map, bereit für bildunterstützende Modelle.
+- Vollständige Audit-Trail via Git und detailliertem Changelog.
 
 **Tooling**:
-- `repo2text.sh` as a practical tool for AI-assisted development.
-- Deployment scripts ensuring consistent, permission-correct deployments.
-- Version tagging for clean release management.
+- `repo2text.sh` als praktisches Tool für KI-gestützte Entwicklung.
+- Deployment-Skripte für konsistente, berechtigungskorrekte Deployments.
+- Versions-Tagging für sauberes Release-Management.
 
 **Für einen professionellen Entwickler** demonstriert dieses Projekt:
-- **Security awareness** — API key protection, malware detection, secure session storage.
-- **Structured discipline** — manifest, version tags, strict design conventions, documented changelog.
-- **Problem-solving depth** — X11 paste behavior, umlaut corruption, PDF binary output, "Lost in the Middle".
-- **Complete documentation** — both inline and in dedicated files.
+- **Sicherheitsbewusstsein** — API-Key-Schutz, Malware-Erkennung, sichere Session-Speicherung.
+- **Strukturierte Disziplin** — Manifest, Versions-Tags, strikte Design-Konventionen, dokumentierter Changelog.
+- **Problemlösungstiefe** — X11-Einfügeverhalten, Umlaut-Korruption, PDF-Binärausgabe, „Lost in the Middle".
+- **Vollständige Dokumentation** — sowohl inline als auch in dedizierten Dateien.
 
-DeepSeek Chat is a **showcase for professional web development** — without unnecessary overhead, but with the highest standards for security, correctness, and user-friendliness.
+Multi-LLM Chat Client ist ein **Showcase für professionelle Webentwicklung** — ohne unnötigen Overhead, aber mit höchsten Ansprüchen an Sicherheit, Korrektheit und Benutzerfreundlichkeit.
 
 ---
 
