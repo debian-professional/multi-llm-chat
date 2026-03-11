@@ -991,5 +991,17 @@
            - Readme_DE.md: Exakte 1:1-Übersetzung von Readme_EN.md
            - Readme_ES.md: Exakte 1:1-Übersetzung von Readme_EN.md
 
+    76. [10.03.2026] - Multi-Datei-Upload
+	   - input#fileUpload: Attribut multiple hinzugefügt (mehrere Dateien gleichzeitig wählbar)
+           - Variable selectedFile (singular) ersetzt durch selectedFiles[] (Array)
+           - Variable uploadedFileName (singular) ersetzt durch uploadedFileNames[] (Array)
+           - handleFileUpload(): Komplette Überarbeitung auf Schleife über alle gewählten Dateien
+           - Sicherheitsprüfungen (Magic Bytes, Format, Image-Check) pro Datei
+           - Kombinierter Text aus mehreren Dateien via Trennzeichen [dateiname]\n
+           - fileInfo zeigt alle Dateien mit ' | ' getrennt in einer Zeile
+           - sendMessage(): displayMessage generiert File-Card pro Datei (uploadedFileNames.map)
+           - finally-Block in sendMessage(): Reset auf leere Arrays statt null
+           - Clipboard pasteAsFileBtn-Handler: uploadedFileName -> uploadedFileNames['clipboard.txt']
+
     ============================================================================
 
