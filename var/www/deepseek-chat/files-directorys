@@ -5,7 +5,7 @@ Verzeichnisse:
 
 archiv
 etc/apache2/sites-available/
-shell-scipts/
+shell-scripts/
 var/www/deepseek-chat/
 var/www/deepseek-chat/cgi-bin
 var/www/deepseek-chat/sessions
@@ -17,27 +17,32 @@ eingelesen werden können.
 https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/etc/apache2/sites-available/deepseek-chat.conf
 
 https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/.gitignore
+https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/overview-LLM.md
 https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/Readme_EN.md
 https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/Readme_DE.md
 https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/Readme_ES.md
 
-https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/shell-scipts/tag-release.sh
-https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/shell-scipts/install.sh
-https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/shell-scipts/sync-back.sh
-https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/shell-scipts/deploy.sh
-https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/shell-scipts/repo2text.sh 
+https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/shell-scripts/tag-release.sh
+https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/shell-scripts/install.sh
+https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/shell-scripts/sync-back.sh
+https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/shell-scripts/deploy.sh
+https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/shell-scripts/repo2text.sh 
 
 https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/var/www/deepseek-chat/cgi-bin/deepseek-api.py
-https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/var/www/deepseek-chat/cgi-bin/deepseek-models.py^
-https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/var/www/deepseek-chat/cgi-bin/get-log.py
-https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/var/www/deepseek-chat/cgi-bin/save-session.py
-https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/var/www/deepseek-chat/cgi-bin/load-session.py
+https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/var/www/deepseek-chat/cgi-bin/deepseek-models.py
 https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/var/www/deepseek-chat/cgi-bin/delete-session.py
-https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/var/www/deepseek-chat/cgi-bin/export-pdf.py
 https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/var/www/deepseek-chat/cgi-bin/export-markdown.py
-https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/var/www/deepseek-chat/cgi-bin/export-txt.py
-https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/var/www/deepseek-chat/cgi-bin/export-rtf.py
-https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/var/www/deepseek-chat/cgi-bin/feedback-log.py
+https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/var/www/deepseek-chat/cgi-bin/export-pdf.py  
+https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/var/www/deepseek-chat/cgi-bin/export-rtf.py  
+https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/var/www/deepseek-chat/cgi-bin/export-txt.py  
+https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/var/www/deepseek-chat/cgi-bin/feedback-log.py  
+https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/var/www/deepseek-chat/cgi-bin/get-log.py
+https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/var/www/deepseek-chat/cgi-bin/google-api.py
+https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/var/www/deepseek-chat/cgi-bin/groq-api.py
+https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/var/www/deepseek-chat/cgi-bin/hugging-api.py
+https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/var/www/deepseek-chat/cgi-bin/load-session.py
+https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/var/www/deepseek-chat/cgi-bin/openai-api.py
+https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/var/www/deepseek-chat/cgi-bin/save-session.py
 
 https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/var/www/deepseek-chat/index.html
 https://raw.githubusercontent.com/debian-professional/private-chatboot/refs/heads/main/var/www/deepseek-chat/language.xml
