@@ -1022,5 +1022,23 @@
            - openai-api.py: Audio als input_audio an letzte User-Message angehängt (OpenAI-Format)
            - Manifest Eintrag 76 + neue Pflicht-Regel: AUDIO_CAPABLE_MODELS nachführen
 
+
+    78. [11.03.2026] - Projekt-Umbenennung: private-chatboot -> multi-llm-chat
+           - GitHub Repository umbenannt: private-chatboot -> multi-llm-chat
+           - Remote-URL lokal und auf dem Server aktualisiert:
+             git remote set-url origin git@github.com:debian-professional/multi-llm-chat.git
+           - Lokales Verzeichnis umbenannt: ~/Desktop/ChatBoot/private-chatboot -> multi-llm-chat
+           - Server-Verzeichnis umbenannt: ~/private-chatboot -> ~/multi-llm-chat
+           - shell-scipts -> shell-scripts (Tippfehler im Verzeichnisnamen korrigiert)
+           - deploy.sh: SOURCE_DIR von /home/$1/private-chatboot/ auf /home/$1/multi-llm-chat/ geändert
+           - sync-back.sh: SOURCE_DIR von /home/$1/private-chatboot/ auf /home/$1/multi-llm-chat/ geändert
+           - files-directorys: alle RAW-URLs von private-chatboot auf multi-llm-chat aktualisiert
+           - overview-LLM.md: private-chatboot -> multi-llm-chat (1 Stelle)
+           - Readme_EN.md: private-chatboot -> multi-llm-chat (5 Stellen)
+           - Readme_DE.md: private-chatboot -> multi-llm-chat (5 Stellen)
+           - Readme_ES.md: private-chatboot -> multi-llm-chat (5 Stellen)
+           - install.sh auf dem Server ausgeführt: neue deploy.sh + sync-back.sh in Produktion installiert
+
+
     ============================================================================
 
