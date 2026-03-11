@@ -16,7 +16,7 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-SOURCE_DIR="/home/$1/private-chatboot/"
+SOURCE_DIR="/home/$1/multi-llm-chat/"
 PROD_DIR="/var/www/deepseek-chat"
 
 # Git-Verzeichnis-Pruefung

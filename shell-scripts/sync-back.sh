@@ -16,7 +16,7 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-SOURCE_DIR="/home/$1/private-chatboot/var/www/deepseek-chat"
+SOURCE_DIR="/home/$1/multi-llm-chat/var/www/deepseek-chat"
 PROD_DIR="/var/www/deepseek-chat"
 
 # Zielverzeichnis-Pruefung
