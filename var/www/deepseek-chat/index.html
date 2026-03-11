@@ -2890,7 +2890,7 @@
             inputField.disabled = true;
             let userMessage = message;
             if (fileTextContent) userMessage = `${t(12)}\n${encodeUmlautsForAI(fileTextContent)}\n\n${t(13)} ${message}`;
-            const hasFile = !!(fileTextContent || audioData);
+            const hasFile = !!fileTextContent;   // Audio wird direkt via API gesendet, nicht als Text
             const msgId = addUserMessageToContext(userMessage, currentMode, hasFile);
             const displayMessage = (hasFile && uploadedFileNames.length > 0)
                 ? uploadedFileNames.map(n => createFileCardHTML(n)).join('') + message
