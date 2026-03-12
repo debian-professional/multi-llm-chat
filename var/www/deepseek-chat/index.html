@@ -1847,7 +1847,7 @@
                 // Nachrichten ersetzen: Zusammenfassung als system-Eintrag
                 const summaryMsg = {
                     id:              'compressed_' + Date.now(),
-                    role:            'system',
+                    role:            'assistant',
                     content:         '[COMPRESSED CONTEXT]\n' + summary,
                     estimatedTokens: Math.ceil(summary.length * 0.25),
                     compressed:      true
