@@ -80,6 +80,10 @@ Adding a new language:
     <text id="43">Your data</text>
     <text id="44">Error loading chat history: {0}</text>
     <text id="45">Error deleting session: {0}</text>
+    <!-- Kompressor system messages -->
+    <text id="46">Compressor active – context compressed at {0}%</text>
+    <text id="47">Compressor error: {0}</text>
+    <text id="48">Compressing context...</text>
 
     <!-- 101-200: Settings texts -->
     <text id="101">Chat Settings</text>
@@ -125,6 +129,12 @@ Adding a new language:
     <text id="141">Form of address is not available for English.</text>
     <text id="142">Rate limit reached – waiting {0} seconds and retrying... (Attempt {1}/{2})</text>
     <text id="143">Rate limit reached – please wait a moment and try again.</text>
+    <!-- Kompressor settings texts -->
+    <text id="251">Compressor</text>
+    <text id="252">Enable context compression when the context window fills up.</text>
+    <text id="253">Compressor LLM</text>
+    <text id="254">LLM provider used for context compression.</text>
+    <text id="255">Compressor Model</text>
 
     <text id="241">Hugging Face</text>
     <text id="242">HF Plan</text>
@@ -242,6 +252,10 @@ Adding a new language:
     <text id="43">Ihre Daten</text>
     <text id="44">Fehler beim Laden des Chat-Verlaufs: {0}</text>
     <text id="45">Fehler beim Löschen der Session: {0}</text>
+    <!-- Kompressor Systemmeldungen -->
+    <text id="46">Kompressor aktiv – Kontext komprimiert bei {0}%</text>
+    <text id="47">Kompressor-Fehler: {0}</text>
+    <text id="48">Kontext wird komprimiert...</text>
 
     <!-- 101-200: Einstellungstexte -->
     <text id="101">Chat Einstellungen</text>
@@ -290,6 +304,12 @@ Adding a new language:
     <text id="141">Anredeform ist für Englisch nicht verfügbar.</text>
     <text id="142">Rate Limit erreicht – warte {0} Sekunden und versuche es erneut... (Versuch {1}/{2})</text>
     <text id="143">Rate Limit erreicht – bitte warte einen Moment und versuche es erneut.</text>
+    <!-- Kompressor Einstellungstexte -->
+    <text id="251">Kompressor</text>
+    <text id="252">Kontextkomprimierung aktivieren, wenn das Kontextfenster sich füllt.</text>
+    <text id="253">Kompressor LLM</text>
+    <text id="254">LLM-Anbieter für die Kontextkomprimierung.</text>
+    <text id="255">Kompressor Modell</text>
 
     <text id="241">Hugging Face</text>
     <text id="242">HF-Plan</text>
@@ -406,6 +426,10 @@ Adding a new language:
     <text id="43">Sus datos</text>
     <text id="44">Error al cargar el historial de chat: {0}</text>
     <text id="45">Error al eliminar la sesión: {0}</text>
+    <!-- Mensajes del sistema Compresor -->
+    <text id="46">Compresor activo – contexto comprimido al {0}%</text>
+    <text id="47">Error del compresor: {0}</text>
+    <text id="48">Comprimiendo contexto...</text>
 
     <!-- 101-200: Textos de configuración -->
     <text id="101">Configuración del Chat</text>
@@ -453,6 +477,12 @@ Adding a new language:
     <text id="141">El tratamiento no está disponible para el inglés.</text>
     <text id="142">Límite de tasa alcanzado – esperando {0} segundos y reintentando... (Intento {1}/{2})</text>
     <text id="143">Límite de tasa alcanzado – espera un momento e inténtalo de nuevo.</text>
+    <!-- Textos de configuración Compresor -->
+    <text id="251">Compresor</text>
+    <text id="252">Activar la compresión de contexto cuando la ventana de contexto se llene.</text>
+    <text id="253">LLM del Compresor</text>
+    <text id="254">Proveedor LLM utilizado para la compresión de contexto.</text>
+    <text id="255">Modelo del Compresor</text>
 
     <text id="241">Hugging Face</text>
     <text id="242">Plan HF</text>
@@ -566,6 +596,9 @@ Adding a new language:
     <text id="43">Your data</text>
     <text id="44">Error loading chat history: {0}</text>
     <text id="45">Error deleting session: {0}</text>
+    <text id="46">Compressor active – context compressed at {0}%</text>
+    <text id="47">Compressor error: {0}</text>
+    <text id="48">Compressing context...</text>
 
     <!-- 101-200: Settings texts -->
     <text id="101">Chat Settings</text>
@@ -611,6 +644,11 @@ Adding a new language:
     <text id="141">Form of address is not available for English.</text>
     <text id="142">Rate limit reached – waiting {0} seconds and retrying... (Attempt {1}/{2})</text>
     <text id="143">Rate limit reached – please wait a moment and try again.</text>
+    <text id="251">Compressor</text>
+    <text id="252">Enable context compression when the context window fills up.</text>
+    <text id="253">Compressor LLM</text>
+    <text id="254">LLM provider used for context compression.</text>
+    <text id="255">Compressor Model</text>
 
     <text id="241">Hugging Face</text>
     <text id="242">HF Plan</text>
@@ -667,7 +705,3 @@ Adding a new language:
   </language>
 
 </languages>
-
-
-
-

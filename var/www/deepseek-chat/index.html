@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -806,6 +805,7 @@
             <div class="server-info" id="serverInfo">IP: ...</div>
             <div class="context-info" id="contextInfo">Context: 0%</div>
             <div class="context-info" id="modelInfo">Model: ...</div>
+            <div class="context-info" id="compressorInfo" style="display:none;"></div>
         </div>
     </div>
     
@@ -1224,6 +1224,50 @@
                 </div>
             </div>
 
+            <!-- KOMPRESSOR GRUPPE -->
+            <div class="settings-group" id="kompressorGroup">
+                <div class="group-header">
+                    <div class="group-title" id="kompressorGroupTitle">Compressor</div>
+                    <div class="group-status" id="kompressorStatus">Active</div>
+                </div>
+                <div class="setting-item toggle-active" id="kompressorItem">
+                    <label class="toggle-label" for="kompressorToggle">
+                        <span class="setting-name" id="kompressorLabel">Compressor</span>
+                        <span class="toggle-switch">
+                            <input type="checkbox" id="kompressorToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </span>
+                    </label>
+                    <div class="setting-description" id="kompressorDescription">
+                        Enable context compression when the context window fills up.
+                    </div>
+                </div>
+                <div class="setting-item" id="kompressorServiceItem" style="margin-top:10px;">
+                    <div class="group-title" id="kompressorServiceTitle" style="font-size:13px;color:#aaa;margin-bottom:6px;">Compressor LLM</div>
+                    <div class="setting-description" id="kompressorServiceDescription" style="margin-bottom:8px;">
+                        LLM provider used for context compression.
+                    </div>
+                    <div class="model-select-wrapper">
+                        <select id="kompressorServiceSelect">
+                            <option value="deepseek">DeepSeek</option>
+                            <option value="openai">OpenAI</option>
+                            <option value="google">Google Gemini</option>
+                            <option value="huggingface">Hugging Face</option>
+                            <option value="groq">GroqCloud</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="setting-item" id="kompressorModelItem" style="margin-top:10px;">
+                    <div class="group-title" id="kompressorModelTitle" style="font-size:13px;color:#aaa;margin-bottom:6px;">Compressor Model</div>
+                    <div class="model-select-wrapper">
+                        <select id="kompressorModelSelect">
+                            <option value="deepseek-chat">deepseek-chat</option>
+                            <option value="deepseek-reasoner">deepseek-reasoner</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
             <div class="settings-info">
                 <div class="info-title" id="llmSettingsInfoTitle">Settings are saved automatically</div>
                 <div class="info-text" id="llmSettingsInfoText">
@@ -1289,6 +1333,7 @@
         const EXPORT_RTF_URL = '/cgi-bin/export-rtf.py';
         const GET_LOG_URL = '/cgi-bin/get-log.py';
         const FEEDBACK_LOG_URL = '/cgi-bin/feedback-log.py';
+        const COMPRESS_CONTEXT_URL = '/cgi-bin/compress-context.py';
         
         const SERVER_NAME = 'DeepSeek Chat Server';
 
@@ -1393,6 +1438,14 @@
             'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro', 'gemini-2.0-flash',
             'gpt-4o', 'gpt-4.1'
         ];
+        // Modelle je Kompressor-Anbieter
+        const COMPRESSOR_MODELS = {
+            deepseek:    ['deepseek-chat', 'deepseek-reasoner'],
+            openai:      ['gpt-4o-mini', 'gpt-5-mini', 'gpt-4o', 'gpt-4.1'],
+            google:      ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-2.5-pro'],
+            huggingface: ['Qwen/Qwen2.5-72B-Instruct', 'mistralai/Mistral-7B-Instruct-v0.3', 'microsoft/Phi-3.5-mini-instruct'],
+            groq:        ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768', 'gemma2-9b-it']
+        };
         // =====================================================================
 
 
@@ -1400,7 +1453,7 @@
         const MAX_FILE_CONTENT_LENGTH = 250000;
         const MAX_FILE_SIZE_MB = 10;
         const PDF_EXTRACTION_TIMEOUT = 30000;
-        const SETTINGS_VERSION = '1.6';
+        const SETTINGS_VERSION = '1.7';
         const SUPPORTED_FILE_FORMATS = ['.txt', '.pdf'];
         const ACCEPTED_FILE_FORMATS = ['.txt', '.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.csv', '.xlsx', '.pptx'];
         const IMAGE_FILE_FORMATS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
@@ -1594,6 +1647,25 @@
                 document.getElementById('addressFormStatus').textContent = '';
             }
 
+            // Kompressor-Panel
+            document.getElementById('kompressorGroupTitle').textContent        = t(251);
+            document.getElementById('kompressorLabel').textContent              = t(251);
+            document.getElementById('kompressorDescription').textContent        = t(252);
+            document.getElementById('kompressorServiceTitle').textContent       = t(253);
+            document.getElementById('kompressorServiceDescription').textContent = t(254);
+            document.getElementById('kompressorModelTitle').textContent         = t(255);
+            const compEnabled = settings ? (settings.compressorEnabled !== false) : true;
+            document.getElementById('kompressorStatus').textContent = compEnabled ? t(117) : t(118);
+            // Kompressor Toggle-Zustand und Dropdown
+            if (kompressorToggle) {
+                kompressorToggle.checked = compEnabled;
+                document.getElementById('kompressorItem').classList.toggle('toggle-active', compEnabled);
+            }
+            if (kompressorServiceSelect && settings && settings.compressorService) {
+                kompressorServiceSelect.value = settings.compressorService;
+                updateKompressorModelSelect();
+            }
+
             // LLM Settings panel
             document.getElementById('llmSettingsInfoTitle').textContent = t(121);
             document.getElementById('llmSettingsInfoText').textContent = t(122);
@@ -1714,6 +1786,138 @@
             return msgId;
         }
         
+        // =====================================================================
+        // KOMPRESSOR
+        // =====================================================================
+
+        /**
+         * Befüllt das Kompressor-Modell-Dropdown passend zum gewählten Anbieter.
+         */
+        function updateKompressorModelSelect() {
+            const svc = kompressorServiceSelect.value;
+            const models = COMPRESSOR_MODELS[svc] || COMPRESSOR_MODELS['deepseek'];
+            kompressorModelSelect.innerHTML = '';
+            models.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.textContent = m;
+                kompressorModelSelect.appendChild(opt);
+            });
+            // gespeichertes Modell wiederherstellen falls passend
+            if (models.includes(settings.compressorModel)) {
+                kompressorModelSelect.value = settings.compressorModel;
+            }
+        }
+
+        /**
+         * Führt die Kontextkomprimierung durch:
+         * Schickt die ältesten 50% der Nachrichten an LLM #2 und ersetzt sie durch
+         * eine einzelne system-Zusammenfassung.
+         */
+        async function runCompressor() {
+            if (!settings.compressorEnabled) return;
+            const msgs = contextHistory.messages;
+            if (msgs.length < 4) return;
+
+            const cutoff = Math.floor(msgs.length * 0.5);
+            const toCompress = msgs.slice(0, cutoff);
+            const toKeep     = msgs.slice(cutoff);
+
+            // Indikator anzeigen
+            if (compressorInfo) {
+                compressorInfo.textContent = t(48);
+                compressorInfo.style.display = '';
+                compressorInfo.classList.remove('warning');
+            }
+
+            try {
+                const response = await fetch(COMPRESS_CONTEXT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        messages:          toCompress,
+                        compressorService: settings.compressorService,
+                        compressorModel:   settings.compressorModel
+                    })
+                });
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                const data = await response.json();
+                const summary = data.summary || '';
+
+                // Nachrichten ersetzen: Zusammenfassung als system-Eintrag
+                const summaryMsg = {
+                    id:              'compressed_' + Date.now(),
+                    role:            'system',
+                    content:         '[COMPRESSED CONTEXT]\n' + summary,
+                    estimatedTokens: Math.ceil(summary.length * 0.25),
+                    compressed:      true
+                };
+                contextHistory.messages = [summaryMsg, ...toKeep];
+
+                // Schwellwerte zurücksetzen
+                compressorTriggered = { 70: false, 85: false, 95: false };
+
+                // Kontext neu berechnen
+                updateContextEstimation();
+
+                // Indikator aktualisieren
+                let modelName2;
+                if (settings.apiService === 'google' || settings.apiService === 'huggingface' ||
+                    settings.apiService === 'groq'   || settings.apiService === 'openai') {
+                    modelName2 = settings.selectedModel;
+                } else {
+                    modelName2 = (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
+                }
+                const config2 = MODEL_CONFIG[modelName2] || MODEL_CONFIG['deepseek-chat'];
+                const pct = Math.round(
+                    (contextHistory.totalEstimatedTokens / config2.maxContextTokens) * 100
+                );
+                if (compressorInfo) {
+                    compressorInfo.textContent = tf(46, pct);
+                    compressorInfo.style.display = '';
+                }
+
+                await saveSession();
+            } catch (err) {
+                console.error('Kompressor Fehler:', err);
+                if (compressorInfo) {
+                    compressorInfo.textContent = tf(47, err.message);
+                    compressorInfo.style.display = '';
+                    compressorInfo.classList.add('warning');
+                }
+            }
+        }
+
+        /**
+         * Prüft nach jeder Kontextberechnung ob ein Kompressor-Schwellwert
+         * erreicht wurde und löst ggf. die Komprimierung aus.
+         */
+        async function checkCompressorThresholds() {
+            if (!settings.compressorEnabled) return;
+            let modelName;
+            if (settings.apiService === 'google' || settings.apiService === 'huggingface' ||
+                settings.apiService === 'groq'   || settings.apiService === 'openai') {
+                modelName = settings.selectedModel;
+            } else {
+                modelName = (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
+            }
+            const config = MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-chat'];
+            const pct = Math.min(100, Math.round(
+                (contextHistory.totalEstimatedTokens / config.maxContextTokens) * 100
+            ));
+
+            if (pct >= 95 && !compressorTriggered[95]) {
+                compressorTriggered[95] = true;
+                await runCompressor();
+            } else if (pct >= 85 && !compressorTriggered[85]) {
+                compressorTriggered[85] = true;
+                await runCompressor();
+            } else if (pct >= 70 && !compressorTriggered[70]) {
+                compressorTriggered[70] = true;
+                await runCompressor();
+            }
+        }
+
         function updateContextEstimation() {
             let modelName;
             if (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq' || settings.apiService === 'openai') {
@@ -2262,6 +2466,7 @@
                 aiContainer.appendChild(rightButtons);
                 chat.appendChild(document.createElement('div')).className = 'message-divider';
                 await saveSession();
+                await checkCompressorThresholds();
             } catch (error) {
                 aiContainer.remove();
                 const errorDiv = document.createElement('div');
@@ -2327,7 +2532,7 @@
         // =====================================================================
         function migrateSettings(oldSettings) {
             if (!oldSettings || typeof oldSettings !== 'object') {
-                return { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', hfTier: 'free', groqTier: 'free', openaiTier: 'free', selectedModel: 'deepseek-chat' };
+                return { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', hfTier: 'free', groqTier: 'free', openaiTier: 'free', selectedModel: 'deepseek-chat', compressorEnabled: true, compressorService: 'deepseek', compressorModel: 'deepseek-chat' };
             }
             let defaultMode = oldSettings.defaultMode || 'chat';
             if (defaultMode === 'search') defaultMode = 'chat';
@@ -2342,12 +2547,17 @@
                 hfTier:        oldSettings.hfTier || 'free',
                 groqTier:      oldSettings.groqTier || 'free',
                 openaiTier:    oldSettings.openaiTier || 'free',
-                selectedModel: oldSettings.selectedModel || 'deepseek-chat'
+                selectedModel:       oldSettings.selectedModel || 'deepseek-chat',
+                compressorEnabled:   oldSettings.compressorEnabled !== undefined ? oldSettings.compressorEnabled : true,
+                compressorService:   oldSettings.compressorService || 'deepseek',
+                compressorModel:     oldSettings.compressorModel || 'deepseek-chat'
             };
         }
         
-        let settings = { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', hfTier: 'free', groqTier: 'free', openaiTier: 'free', selectedModel: 'deepseek-chat' };
+        let settings = { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', hfTier: 'free', groqTier: 'free', openaiTier: 'free', selectedModel: 'deepseek-chat', compressorEnabled: true, compressorService: 'deepseek', compressorModel: 'deepseek-chat' };
         let currentMode = 'chat';
+        // Kompressor: Schwellwert-Tracking (reset nach jeder Kompression)
+        let compressorTriggered = { 70: false, 85: false, 95: false };
 
         const sendButton = document.getElementById('sendButton');
         const settingsButton = document.getElementById('settingsButton');
@@ -2357,6 +2567,10 @@
         const saveLlmSettingsButton = document.getElementById('saveLlmSettings');
         const deepThinkButton = document.getElementById('deepThinkButton');
         const audioButton     = document.getElementById('audioButton');
+        const kompressorToggle        = document.getElementById('kompressorToggle');
+        const kompressorServiceSelect = document.getElementById('kompressorServiceSelect');
+        const kompressorModelSelect   = document.getElementById('kompressorModelSelect');
+        const compressorInfo          = document.getElementById('compressorInfo');
         const settingsOverlay = document.getElementById('settingsOverlay');
         const closeSettings = document.getElementById('closeSettings');
         const saveSettingsButton = document.getElementById('saveSettings');
@@ -3565,9 +3779,12 @@
 
             // --- LLM Save button ---
             const llmSaveHandler = function() {
-                settings.defaultMode   = deepthinkModeToggle.checked ? 'deepthink' : 'chat';
-                settings.noTraining    = noTrainingToggle.checked;
-                settings.selectedModel = modelSelect.value;
+                settings.defaultMode       = deepthinkModeToggle.checked ? 'deepthink' : 'chat';
+                settings.noTraining        = noTrainingToggle.checked;
+                settings.selectedModel     = modelSelect.value;
+                settings.compressorEnabled = kompressorToggle.checked;
+                settings.compressorService = kompressorServiceSelect.value;
+                settings.compressorModel   = kompressorModelSelect.value;
                 saveSettings();
                 setMode(settings.defaultMode);
                 updateSettingsUI();
@@ -3584,6 +3801,24 @@
             addEventListenerWithCleanup(modelSelect, 'change', () => {
                 settings.selectedModel = modelSelect.value;
                 updateAudioButtonVisibility();
+            });
+
+            // --- Kompressor Toggle ---
+            addEventListenerWithCleanup(kompressorToggle, 'change', () => {
+                const enabled = kompressorToggle.checked;
+                document.getElementById('kompressorItem').classList.toggle('toggle-active', enabled);
+                document.getElementById('kompressorStatus').textContent = enabled ? t(117) : t(118);
+            });
+            addEventListenerWithCleanup(document.getElementById('kompressorItem'), 'click', (e) => {
+                if (e.target !== kompressorToggle) {
+                    kompressorToggle.checked = !kompressorToggle.checked;
+                    kompressorToggle.dispatchEvent(new Event('change'));
+                }
+            });
+
+            // --- Kompressor Service Dropdown ---
+            addEventListenerWithCleanup(kompressorServiceSelect, 'change', () => {
+                updateKompressorModelSelect();
             });
 
             // --- Audio-Button ---
@@ -3622,5 +3857,8 @@
     </script>
 </body>
 </html>
+
+
+
 
 
