@@ -1413,15 +1413,15 @@
                 maxOutputTokens:   8192,
                 maxContextMessages: 80
             },
-            'mixtral-8x7b-32768': {
-                maxContextTokens:   32768,
-                maxOutputTokens:   32768,
-                maxContextMessages: 40
-            },
-            'gemma2-9b-it': {
-                maxContextTokens:   8192,
+            'meta-llama/llama-4-scout-17b-16e-instruct': {
+                maxContextTokens:  131072,
                 maxOutputTokens:    8192,
-                maxContextMessages: 50
+                maxContextMessages: 80
+            },
+            'qwen/qwen3-32b': {
+                maxContextTokens:  131072,
+                maxOutputTokens:   40960,
+                maxContextMessages: 80
             }
         };
         const DEEPSEEK_MODELS      = ['deepseek-chat', 'deepseek-reasoner'];
@@ -1431,8 +1431,8 @@
         const GOOGLE_MODELS_PAID   = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro', 'gemini-2.0-flash'];
         const HF_MODELS_FREE       = ['Qwen/Qwen2.5-72B-Instruct', 'mistralai/Mistral-7B-Instruct-v0.3', 'microsoft/Phi-3.5-mini-instruct'];
         const HF_MODELS_PAID       = ['meta-llama/Meta-Llama-3.1-70B-Instruct', 'meta-llama/Meta-Llama-3.1-405B-Instruct', 'Qwen/Qwen2.5-72B-Instruct', 'mistralai/Mixtral-8x7B-Instruct-v0.1'];
-        const GROQ_MODELS_FREE     = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
-        const GROQ_MODELS_PAID     = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
+        const GROQ_MODELS_FREE     = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'meta-llama/llama-4-scout-17b-16e-instruct', 'qwen/qwen3-32b'];
+        const GROQ_MODELS_PAID     = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'meta-llama/llama-4-scout-17b-16e-instruct', 'qwen/qwen3-32b', 'moonshotai/kimi-k2-instruct-0905'];
         const GOOGLE_MODELS        = GOOGLE_MODELS_FREE; // Fallback
         const AUDIO_CAPABLE_MODELS = [
             'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro', 'gemini-2.0-flash',
@@ -1444,7 +1444,7 @@
             openai:      ['gpt-4o-mini', 'gpt-5-mini', 'gpt-4o', 'gpt-4.1'],
             google:      ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-2.5-pro'],
             huggingface: ['Qwen/Qwen2.5-72B-Instruct', 'mistralai/Mistral-7B-Instruct-v0.3', 'microsoft/Phi-3.5-mini-instruct'],
-            groq:        ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768', 'gemma2-9b-it']
+            groq:        ['llama-3.1-8b-instant', 'llama-3.3-70b-versatile', 'meta-llama/llama-4-scout-17b-16e-instruct', 'qwen/qwen3-32b']
         };
         // =====================================================================
 
