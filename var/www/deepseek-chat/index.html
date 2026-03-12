@@ -1819,11 +1819,14 @@
             const msgs = contextHistory.messages;
             if (msgs.length < 4) return;
 
-            // Cutoff auf geradzahligen Index ausrichten (Ende eines user/assistant-Paars),
-            // damit toKeep immer mit einer user-Message beginnt.
+            // Cutoff so waehlen dass toKeep[0] immer role:'user' ist
             let cutoff = Math.floor(msgs.length * 0.5);
-            if (cutoff % 2 !== 0) cutoff--;
+            // Vorwaerts schieben bis toKeep mit user-Message beginnt
+            while (cutoff < msgs.length - 1 && msgs[cutoff].role !== 'user') cutoff++;
+            // Mindestens 2 Nachrichten komprimieren
             if (cutoff < 2) cutoff = 2;
+            // Nochmals sicherstellen dass toKeep[0] user ist
+            while (cutoff < msgs.length - 1 && msgs[cutoff].role !== 'user') cutoff++;
             const toCompress = msgs.slice(0, cutoff);
             const toKeep     = msgs.slice(cutoff);
 
