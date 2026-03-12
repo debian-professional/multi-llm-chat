@@ -331,9 +331,12 @@ def main():
             return
 
         # Komprimierungs-Messages fuer LLM #2 zusammenstellen
+        # HINWEIS: replace() statt format() — conversation_text kann
+        # geschweifte Klammern enthalten (JSON, Code etc.)
+        user_content = COMPRESS_USER_TEMPLATE.replace('{conversation}', conversation_text)
         compress_messages = [
             {'role': 'system',  'content': COMPRESS_SYSTEM_PROMPT},
-            {'role': 'user',    'content': COMPRESS_USER_TEMPLATE.format(conversation=conversation_text)}
+            {'role': 'user',    'content': user_content}
         ]
 
         # API-Aufruf je nach Anbieter
