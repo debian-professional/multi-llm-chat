@@ -2393,6 +2393,8 @@
             aiText.className = 'ai-message'; aiText.textContent = '';
             aiContainer.appendChild(aiText); chat.appendChild(aiContainer);
             chat.scrollTop = chat.scrollHeight;
+            // Kompressor VOR dem API-Aufruf prüfen — nicht danach!
+            await checkCompressorThresholds();
             try {
                 // Komprimierte Zusammenfassung in System-Prompt einbauen (nie als erste Message)
                 let effectiveSystem = processedSystem;
@@ -2476,7 +2478,6 @@
                 aiContainer.appendChild(rightButtons);
                 chat.appendChild(document.createElement('div')).className = 'message-divider';
                 await saveSession();
-                await checkCompressorThresholds();
             } catch (error) {
                 aiContainer.remove();
                 const errorDiv = document.createElement('div');
@@ -3140,6 +3141,8 @@
             aiText.className = 'ai-message'; aiText.textContent = '';
             aiContainer.appendChild(aiText); chat.appendChild(aiContainer);
             chat.scrollTop = chat.scrollHeight;
+            // Kompressor VOR dem API-Aufruf prüfen — nicht danach!
+            await checkCompressorThresholds();
             try {
                 // Komprimierte Zusammenfassung in System-Prompt einbauen (nie als erste Message)
                 let effectiveSystem = processedSystem;
@@ -3244,7 +3247,6 @@
                 aiContainer.appendChild(rightButtons);
                 chat.appendChild(document.createElement('div')).className = 'message-divider';
                 await saveSession();
-                await checkCompressorThresholds();
             } catch (error) {
                 aiContainer.remove();
                 const errorDiv = document.createElement('div');
