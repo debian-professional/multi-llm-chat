@@ -1239,8 +1239,6 @@
                             <option value="deepseek">DeepSeek</option>
                             <option value="openai">OpenAI</option>
                             <option value="google">Google Gemini</option>
-                            <option value="huggingface">Hugging Face</option>
-                            <option value="groq">GroqCloud</option>
                         </select>
                     </div>
                 </div>
@@ -1438,13 +1436,11 @@
             'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro', 'gemini-2.0-flash',
             'gpt-4o', 'gpt-4.1'
         ];
-        // Modelle je Kompressor-Anbieter
+        // Modelle je Kompressor-Anbieter (nur bezahlte Provider)
         const COMPRESSOR_MODELS = {
-            deepseek:    ['deepseek-chat', 'deepseek-reasoner'],
-            openai:      ['gpt-4o-mini', 'gpt-5-mini', 'gpt-4o', 'gpt-4.1'],
-            google:      ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-2.5-pro'],
-            huggingface: ['Qwen/Qwen2.5-72B-Instruct', 'mistralai/Mistral-7B-Instruct-v0.3', 'microsoft/Phi-3.5-mini-instruct'],
-            groq:        ['llama-3.1-8b-instant', 'llama-3.3-70b-versatile', 'meta-llama/llama-4-scout-17b-16e-instruct', 'qwen/qwen3-32b']
+            deepseek: ['deepseek-chat', 'deepseek-reasoner'],
+            openai:   ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1'],
+            google:   ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro']
         };
         // =====================================================================
 
