@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-feedback-log.py - Schreibt Like/Dislike Feedback in deepseek-chat.log
+feedback-log.py - Schreibt Like/Dislike Feedback in multi-llm-chat.log
 /var/www/deepseek-chat/cgi-bin/feedback-log.py
 """
 
@@ -11,7 +11,7 @@ import json
 import os
 from datetime import datetime
 
-LOG_PATH = '/var/www/deepseek-chat/cgi-bin/deepseek-chat.log'
+LOG_PATH = '/var/www/deepseek-chat/logs/multi-llm-chat.log'
 
 def send_response(status_code, data):
     print(f"Status: {status_code}")
@@ -43,6 +43,7 @@ def main():
 
         log_line = f"{timestamp} | IP: {ip} | FEEDBACK | {feedback_type} | msgId: {msg_id} | \"{preview}\"\n"
 
+        os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
         with open(LOG_PATH, 'a', encoding='utf-8') as f:
             f.write(log_line)
 

@@ -144,12 +144,6 @@
                            Qwen/Qwen2.5-72B-Instruct, mistralai/Mixtral-8x7B-Instruct-v0.1
        - Groq-Modelle Free:  llama-3.3-70b-versatile, llama-3.1-8b-instant, mixtral-8x7b-32768, gemma2-9b-it
        - Groq-Modelle Paid:  llama-3.3-70b-versatile, llama-3.1-8b-instant, mixtral-8x7b-32768, gemma2-9b-it
-       [13.03.2026] Groq-Modelle aktualisiert (gemma2-9b-it + mixtral-8x7b-32768 abgeschaltet):
-       - Groq-Modelle Free:  llama-3.3-70b-versatile, llama-3.1-8b-instant,
-                             meta-llama/llama-4-scout-17b-16e-instruct, qwen/qwen3-32b
-       - Groq-Modelle Paid:  llama-3.3-70b-versatile, llama-3.1-8b-instant,
-                             meta-llama/llama-4-scout-17b-16e-instruct, qwen/qwen3-32b,
-                             moonshotai/kimi-k2-instruct-0905
        - API-Key Google:   GOOGLE_API_KEY in /etc/apache2/envvars
        - API-Key HF:       HF_API_KEY in /etc/apache2/envvars (Write-Token mit "Make calls to Inference Providers")
        - API-Key GroqCloud: GRQ_API_KEY in /etc/apache2/envvars
@@ -203,19 +197,6 @@
        - Aktualisiert bei: jeder Nachricht, jedem Löschen, jedem Modellwechsel
        - Funktion: updateContextDisplay() - aufgerufen aus updateContextEstimation() und setMode()
     
-    10. KOMPRESSOR (Chat-Kontext-Komprimierung, 13.03.2026):
-        - Aktivierung: Toggle in LLM-Einstellungen ("Chat komprimieren")
-        - Schwellwerte: 70% / 85% / 95% Kontextauslastung
-        - Komprimierungstiefe: älteste 50% der Nachrichten
-        - LLM für Komprimierung: frei wählbar (nur bezahlte Provider)
-          * Erlaubt: DeepSeek, OpenAI, Google (bezahlt)
-          * Nicht erlaubt: Groq, HuggingFace (Free-Tier TPM zu niedrig)
-        - Standard: aktiv, DeepSeek / deepseek-chat
-        - Ergebnis wird in System-Prompt eingebaut (nicht als separate Message)
-        - Kompressor prüft VOR dem API-Aufruf
-        - Ergebnisdateien: /var/www/deepseek-chat/kompressor/kompressor_YYYYMMDD_HHMMSS.txt
-        - Dateiinhalt wird NICHT an Kompressor gesendet (nur reiner Text)
-
     C) LAYOUT-VORSCHRIFTEN:
     -----------------------
     1. TITEL-ANZEIGE:
@@ -289,7 +270,6 @@
        - Google Backend:         https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent
        - Hugging Face Backend:   https://router.huggingface.co/v1/chat/completions (OpenAI-kompatibler Router)
        - GroqCloud Backend:      https://api.groq.com/openai/v1/chat/completions (OpenAI-kompatibler Endpunkt)
-       - Kompressor Endpoint:    /cgi-bin/compress-context.py (lokaler Proxy, kein Streaming)
        - DeepSeek Modelle:       deepseek-chat (Chat) / deepseek-reasoner (DeepThink)
        - Google Modelle Free:    gemini-2.5-flash (20 RPD, 5 RPM)
        - Google Modelle Paid:    gemini-2.5-flash, gemini-2.5-pro, gemini-1.5-pro, gemini-2.0-flash
@@ -313,7 +293,6 @@
        - Key: 'deepseekSettings'
        - Struktur: {version, addressForm, defaultMode, noTraining}
        - SETTINGS_VERSION: 1.2
-       - SETTINGS_VERSION: 1.7 (Stand 13.03.2026)
        - Server-seitige Session-Speicherung in JSON-Format
        - Sessions-Verzeichnis: /var/www/deepseek-chat/sessions/
        - Session-Datei-Format: {sessionId}.json
@@ -333,7 +312,7 @@
     5. LOG-ANZEIGE-FUNKTION:
        - Button "Log-Dateien" in Zeile 1 (Pill-Style, blau)
        - Endpoint: /cgi-bin/get-log.py zum Abrufen der Log-Datei
-       - Log-Datei-Pfad: /var/www/deepseek-chat/cgi-bin/deepseek-chat.log
+       - Log-Datei-Pfad: /var/www/deepseek-chat/logs/multi-llm-chat.log
        - Alle Pfade und Dateien sind genau definiert in /var/www/deepseek-chat/files-directorys
        - Bei erfolgreichem Abruf: Anzeige im Log-Overlay
        - Bei Fehler: Anzeige einer benutzerfreundlichen Fehlermeldung
@@ -556,14 +535,6 @@
     - Regel festgelegt: Readme_EN.md ist primäre Referenzdatei; Readme_DE.md und
       Readme_ES.md sind stets exakte 1:1-Übersetzungen der englischen Version
 
-
-    [13.03.2026] - Eintrag 79: Kompressor (Chat-Kontext-Komprimierung)
-    - Abschnitt B.10: Neuer Abschnitt KOMPRESSOR hinzugefügt
-    - Abschnitt B.4b: Groq-Modelle aktualisiert (gemma2-9b-it + mixtral abgeschaltet)
-    - Abschnitt D.1: Kompressor-Endpoint compress-context.py dokumentiert
-    - Abschnitt D.2: SETTINGS_VERSION 1.6 -> 1.7
-    - Abschnitt E.3: Fortschrittsanzeige (blaue animierte Banner) als Pflicht dokumentiert
-    - Neue Regel: Kompressor-Provider-Liste (nur bezahlte Anbieter) nachführen
 
 ================================================================================
 
