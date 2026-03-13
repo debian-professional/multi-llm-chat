@@ -59,7 +59,6 @@
         }
         /* Kompressor-Banner */
         #kompressorBanner {
-            display: none;
             position: fixed;
             top: 120px; left: 0; right: 0;
             z-index: 9999;
@@ -1869,7 +1868,7 @@
             const bannerText = document.getElementById('kompressorBannerText');
             if (banner) {
                 bannerText.textContent = t(48);
-                banner.style.display = '';
+                banner.style.display = 'block';
             }
             if (compressorInfo) {
                 compressorInfo.textContent = t(48);
@@ -1919,7 +1918,7 @@
                 const pct = Math.round(
                     (contextHistory.totalEstimatedTokens / config2.maxContextTokens) * 100
                 );
-                if (banner) banner.style.display = 'none';
+                if (banner) { banner.style.display = 'none'; banner.style.setProperty('display', 'none', 'important'); }
                 if (compressorInfo) {
                     compressorInfo.textContent = tf(46, pct);
                     compressorInfo.style.display = '';
@@ -1928,7 +1927,7 @@
                 await saveSession();
             } catch (err) {
                 console.error('Kompressor Fehler:', err);
-                if (banner) banner.style.display = 'none';
+                if (banner) { banner.style.display = 'none'; banner.style.setProperty('display', 'none', 'important'); }
                 if (compressorInfo) {
                     compressorInfo.textContent = tf(47, err.message);
                     compressorInfo.style.display = '';
