@@ -1039,6 +1039,74 @@
            - Readme_ES.md: private-chatboot -> multi-llm-chat (5 Stellen)
            - install.sh auf dem Server ausgeführt: neue deploy.sh + sync-back.sh in Produktion installiert
 
+    79. [13.03.2026] - Kompressor (Chat-Kontext-Komprimierung)
+
+        NEUE FUNKTION: compress-context.py (CGI-Script)
+           - Neues CGI-Script: /cgi-bin/compress-context.py
+           - Empfängt die älteste Hälfte des contextHistory-Arrays (messages)
+           - Sendet diese an ein frei wählbares LLM (#2) zur Zusammenfassung
+           - Gibt komprimierten Text als JSON zurück: { "summary": "..." }
+           - Unterstützte Anbieter: DeepSeek, OpenAI, Google (nur bezahlte Tier)
+           - Groq und HuggingFace bewusst ausgeschlossen (Free-Tier TPM-Limits
+             zu niedrig für produktiven Einsatz)
+           - Kein Streaming — wartet auf vollständige Antwort
+           - extract_plain_text(): filtert Base64, Bilder und multimodale Inhalte
+             heraus — sendet nur reinen Text an den Kompressor
+           - Speichert Ergebnis in /var/www/deepseek-chat/kompressor/
+             kompressor_YYYYMMDD_HHMMSS.txt (Zeitpunkt, Anbieter, Modell,
+             Nachrichtenanzahl, Zusammenfassung)
+           - Verzeichnis wird automatisch erstellt (os.makedirs exist_ok=True)
+
+        INDEX.HTML — Kompressor-Integration:
+           - SETTINGS_VERSION: 1.6 → 1.7
+           - COMPRESS_CONTEXT_URL = '/cgi-bin/compress-context.py'
+           - compressorInfo div im Server-Header (Statusanzeige)
+           - Kompressor-Gruppe im LLM-Settings Panel:
+             Toggle (aktiv/inaktiv), LLM-Dropdown, Modell-Dropdown
+           - COMPRESSOR_MODELS Konstante (nur bezahlte Provider):
+             * deepseek: deepseek-chat, deepseek-reasoner
+             * openai:   gpt-4o-mini, gpt-4o, gpt-4.1
+             * google:   gemini-2.5-flash, gemini-2.5-pro, gemini-1.5-pro
+           - Schwellwerte: 70% / 85% / 95% Kontextauslastung
+           - Komprimierungstiefe: älteste 50% der Nachrichten
+           - compressorTriggered = { 70: false, 85: false, 95: false }
+           - Kompressor prüft VOR dem API-Aufruf (nicht danach)
+           - Mindestanzahl Nachrichten für Kompressor: 2
+           - Cutoff garantiert dass toKeep[0].role === 'user'
+           - Komprimierte Zusammenfassung wird in System-Prompt eingebaut
+             (nicht als separate Message → verhindert API-Fehler 400)
+           - migrateSettings(): compressorEnabled: true, compressorService:
+             'deepseek', compressorModel: 'deepseek-chat' als Defaults
+           - Neue JS-Funktionen: updateKompressorModelSelect(),
+             runCompressor(), checkCompressorThresholds()
+           - Event-Listener: kompressorToggle, kompressorServiceSelect
+
+        INDEX.HTML — Weitere Änderungen:
+           - updateApiServiceUI(): gespeichertes Modell wird nach Dropdown-
+             Befüllung korrekt wiederhergestellt (war: immer erster Eintrag)
+           - checkCompressorThresholds() wird nach jeder gesendeten Nachricht
+             aufgerufen (sendMessage + handleRegenerate)
+           - System-Prompt (hasFile): Dateiinhalt darf NICHT angezeigt werden
+             (STRICT INSTRUCTION — vorher war das Gegenteil der Fall)
+           - Groq-Modelle aktualisiert (gemma2-9b-it + mixtral-8x7b-32768
+             abgeschaltet, ersetzt durch llama-4-scout-17b + qwen3-32b)
+
+        INDEX.HTML — Animierte Banner:
+           - Kompressor-Banner (#kompressorBanner): blauer animierter Farbverlauf,
+             Spinner, fixed oben — erscheint während Kontextkomprimierung
+           - Sende-Banner (#sendeBanner): identisches Design, erscheint während
+             API-Anfrage (Daten werden übermittelt)
+           - Beide Banner verschwinden automatisch nach Abschluss oder Fehler
+
+        LANGUAGE.XML:
+           - ID 46:  "Kompressor aktiv – Kontext komprimiert bei {0}%"
+           - ID 47:  "Kompressor-Fehler: {0}"
+           - ID 48:  "Kontext wird komprimiert..."
+           - ID 251: "Chat komprimieren" / "Compress Chat" / "Comprimir Chat"
+           - ID 252: Beschreibung Chat-Komprimierung (alle 4 Sprachen)
+           - ID 253: "LLM für Chat-Komprimierung" / "LLM for Chat Compression"
+           - ID 254: LLM-Anbieter Beschreibung (alle 4 Sprachen)
+           - ID 255: "Modellauswahl Kompression" / "Model Selection for Compression"
 
     ============================================================================
 
