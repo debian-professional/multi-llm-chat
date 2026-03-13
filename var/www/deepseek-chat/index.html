@@ -2753,9 +2753,9 @@
                     base += (settings.addressForm === 'sie') ? t(31) : t(32);
                 }
             }
-            // === ABSOLUT ZWINGENDE ANWEISUNG FÜR DATEIANZEIGE ===
+            // === ANWEISUNG: DATEIINHALT NICHT ANZEIGEN ===
             if (hasFile) {
-                base += " STRICT INSTRUCTION: When asked to display the contents of a file, you MUST output the file content exactly as it is, without any modifications, additions, or formatting. Do NOT wrap the content in Markdown code blocks or any other formatting. Do NOT add any introductory or explanatory text. Start directly with the line 'FILE: [filename]' on its own line, followed immediately by a line containing exactly '---------------------------------------------------------' (60 hyphens), then the exact file content line by line, preserving all original line breaks and spaces. After the file content, add a single blank line. If multiple files are requested, repeat this pattern for each file, one after another, with no extra commentary. This is a strict requirement: any deviation will cause errors.";
+                base += " STRICT INSTRUCTION: The user has uploaded one or more files. You have access to their content for analysis and answering questions. However, you MUST NOT display, repeat, quote, or reproduce the file contents in your response under any circumstances — not even partially. Do NOT show the file text, do NOT quote passages from it. Only analyze, summarize, or answer specific questions about the content as instructed by the user.";
             }
             return base;
         }
