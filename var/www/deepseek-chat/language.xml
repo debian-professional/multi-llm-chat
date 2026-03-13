@@ -130,11 +130,11 @@ Adding a new language:
     <text id="142">Rate limit reached – waiting {0} seconds and retrying... (Attempt {1}/{2})</text>
     <text id="143">Rate limit reached – please wait a moment and try again.</text>
     <!-- Kompressor settings texts -->
-    <text id="251">Compressor</text>
+    <text id="251">Compress Chat</text>
     <text id="252">Enable context compression when the context window fills up.</text>
-    <text id="253">Compressor LLM</text>
-    <text id="254">LLM provider used for context compression.</text>
-    <text id="255">Compressor Model</text>
+    <text id="253">LLM for Chat Compression</text>
+    <text id="254">LLM provider used for chat compression.</text>
+    <text id="255">Model Selection for Compression</text>
 
     <text id="241">Hugging Face</text>
     <text id="242">HF Plan</text>
@@ -305,11 +305,11 @@ Adding a new language:
     <text id="142">Rate Limit erreicht – warte {0} Sekunden und versuche es erneut... (Versuch {1}/{2})</text>
     <text id="143">Rate Limit erreicht – bitte warte einen Moment und versuche es erneut.</text>
     <!-- Kompressor Einstellungstexte -->
-    <text id="251">Kompressor</text>
+    <text id="251">Chat komprimieren</text>
     <text id="252">Kontextkomprimierung aktivieren, wenn das Kontextfenster sich füllt.</text>
-    <text id="253">Kompressor LLM</text>
-    <text id="254">LLM-Anbieter für die Kontextkomprimierung.</text>
-    <text id="255">Kompressor Modell</text>
+    <text id="253">LLM für Chat-Komprimierung</text>
+    <text id="254">LLM-Anbieter für die Chat-Komprimierung.</text>
+    <text id="255">Modellauswahl Kompression</text>
 
     <text id="241">Hugging Face</text>
     <text id="242">HF-Plan</text>
@@ -478,11 +478,11 @@ Adding a new language:
     <text id="142">Límite de tasa alcanzado – esperando {0} segundos y reintentando... (Intento {1}/{2})</text>
     <text id="143">Límite de tasa alcanzado – espera un momento e inténtalo de nuevo.</text>
     <!-- Textos de configuración Compresor -->
-    <text id="251">Compresor</text>
+    <text id="251">Comprimir Chat</text>
     <text id="252">Activar la compresión de contexto cuando la ventana de contexto se llene.</text>
-    <text id="253">LLM del Compresor</text>
-    <text id="254">Proveedor LLM utilizado para la compresión de contexto.</text>
-    <text id="255">Modelo del Compresor</text>
+    <text id="253">LLM para Compresión de Chat</text>
+    <text id="254">Proveedor LLM utilizado para la compresión del chat.</text>
+    <text id="255">Selección de Modelo para Compresión</text>
 
     <text id="241">Hugging Face</text>
     <text id="242">Plan HF</text>
@@ -644,11 +644,11 @@ Adding a new language:
     <text id="141">Form of address is not available for English.</text>
     <text id="142">Rate limit reached – waiting {0} seconds and retrying... (Attempt {1}/{2})</text>
     <text id="143">Rate limit reached – please wait a moment and try again.</text>
-    <text id="251">Compressor</text>
+    <text id="251">Compress Chat</text>
     <text id="252">Enable context compression when the context window fills up.</text>
-    <text id="253">Compressor LLM</text>
-    <text id="254">LLM provider used for context compression.</text>
-    <text id="255">Compressor Model</text>
+    <text id="253">LLM for Chat Compression</text>
+    <text id="254">LLM provider used for chat compression.</text>
+    <text id="255">Model Selection for Compression</text>
 
     <text id="241">Hugging Face</text>
     <text id="242">HF Plan</text>

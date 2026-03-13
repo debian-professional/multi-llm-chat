@@ -1862,7 +1862,7 @@
                 contextHistory.messages = [summaryMsg, ...toKeep];
 
                 // Schwellwerte zurücksetzen
-                compressorTriggered = { 2: false, 3: false, 4: false }; // TEST
+                compressorTriggered = { 70: false, 85: false, 95: false };
 
                 // Kontext neu berechnen
                 updateContextEstimation();
@@ -1913,14 +1913,14 @@
                 (contextHistory.totalEstimatedTokens / config.maxContextTokens) * 100
             ));
 
-            if (pct >= 4 && !compressorTriggered[4]) {
-                compressorTriggered[4] = true;
+            if (pct >= 95 && !compressorTriggered[95]) {
+                compressorTriggered[95] = true;
                 await runCompressor();
-            } else if (pct >= 3 && !compressorTriggered[3]) {
-                compressorTriggered[3] = true;
+            } else if (pct >= 85 && !compressorTriggered[85]) {
+                compressorTriggered[85] = true;
                 await runCompressor();
-            } else if (pct >= 2 && !compressorTriggered[2]) {
-                compressorTriggered[2] = true;
+            } else if (pct >= 70 && !compressorTriggered[70]) {
+                compressorTriggered[70] = true;
                 await runCompressor();
             }
         }
@@ -2571,7 +2571,7 @@
         let settings = { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', hfTier: 'free', groqTier: 'free', openaiTier: 'free', selectedModel: 'deepseek-chat', compressorEnabled: true, compressorService: 'deepseek', compressorModel: 'deepseek-chat' };
         let currentMode = 'chat';
         // Kompressor: Schwellwert-Tracking (reset nach jeder Kompression)
-        let compressorTriggered = { 2: false, 3: false, 4: false }; // TEST
+        let compressorTriggered = { 70: false, 85: false, 95: false };
 
         const sendButton = document.getElementById('sendButton');
         const settingsButton = document.getElementById('settingsButton');
