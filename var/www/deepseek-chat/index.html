@@ -2082,12 +2082,15 @@
 
             if (pct >= 95 && !compressorTriggered[95]) {
                 compressorTriggered[95] = true;
+                lastTriggeredThreshold = 95;
                 await runCompressor();
             } else if (pct >= 85 && !compressorTriggered[85]) {
                 compressorTriggered[85] = true;
+                lastTriggeredThreshold = 85;
                 await runCompressor();
             } else if (pct >= 70 && !compressorTriggered[70]) {
                 compressorTriggered[70] = true;
+                lastTriggeredThreshold = 70;
                 await runCompressor();
             }
         }
@@ -2722,6 +2725,32 @@
             const msgIndex = contextHistory.messages.findIndex(m => m.id === msgId);
             if (msgIndex !== -1) contextHistory.messages = contextHistory.messages.slice(0, msgIndex);
             updateContextEstimation();
+
+            // Kompressor-Zusammenfassung verwerfen wenn Kontext unter den zuletzt
+            // ausgelösten Schwellwert gefallen ist (Option B: präzise Verwerfung)
+            if (lastTriggeredThreshold !== null) {
+                let modelName;
+                if (settings.apiService === 'google' || settings.apiService === 'huggingface' ||
+                    settings.apiService === 'groq'   || settings.apiService === 'openai') {
+                    modelName = settings.selectedModel;
+                } else {
+                    modelName = (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
+                }
+                const config = MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-chat'];
+                const pct = Math.min(100, Math.round(
+                    (contextHistory.totalEstimatedTokens / config.maxContextTokens) * 100
+                ));
+                if (pct < lastTriggeredThreshold) {
+                    // Zusammenfassung aus contextHistory entfernen
+                    contextHistory.messages = contextHistory.messages.filter(m => !m.compressed);
+                    // Schwellwert-Tracking zurücksetzen
+                    lastTriggeredThreshold = null;
+                    compressorTriggered = { 70: false, 85: false, 95: false };
+                    // Kontext neu berechnen
+                    updateContextEstimation();
+                }
+            }
+
             const container = document.querySelector(`[data-msg-id="${msgId}"]`);
             if (container) {
                 const elementsToRemove = [];
@@ -2763,6 +2792,8 @@
         let currentMode = 'chat';
         // Kompressor: Schwellwert-Tracking (reset nach jeder Kompression)
         let compressorTriggered = { 70: false, 85: false, 95: false };
+        // Zuletzt ausgelöster Schwellwert (für Zusammenfassungs-Verwerfung beim Löschen)
+        let lastTriggeredThreshold = null;
 
         const sendButton = document.getElementById('sendButton');
         const settingsButton = document.getElementById('settingsButton');
