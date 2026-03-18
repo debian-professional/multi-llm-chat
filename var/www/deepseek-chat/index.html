@@ -1,3 +1,4 @@
+---------------------------------------------------------
 <!DOCTYPE html>
 <html>
 <head>
@@ -115,6 +116,43 @@
         }
         @keyframes spin {
             to { transform: rotate(360deg); }
+        }
+        /* Guthaben-Banner (rot, dauerhaft bis Schliessen) */
+        #guthabenBanner {
+            position: fixed;
+            top: 120px; left: 0; right: 0;
+            z-index: 10000;
+            background: linear-gradient(90deg, #a80000, #dc3545, #a80000);
+            background-size: 200% 100%;
+            color: #fff;
+            font-size: 15px;
+            font-weight: bold;
+            text-align: center;
+            padding: 12px 50px 12px 20px;
+            letter-spacing: 0.5px;
+            box-shadow: 0 3px 15px rgba(220,53,69,0.6);
+        }
+        #guthabenBannerClose {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.6);
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+            transition: all 0.2s;
+        }
+        #guthabenBannerClose:hover {
+            background: rgba(255,255,255,0.35);
+            border-color: #fff;
         }
         #chat {
             min-height: 200px;
@@ -875,6 +913,10 @@
     <div id="kompressorBanner" style="display:none;">
         <span class="kompressor-spinner"></span>
         <span id="kompressorBannerText">Kontext wird komprimiert...</span>
+    </div>
+    <div id="guthabenBanner" style="display:none; position:fixed;">
+        <span id="guthabenBannerText"></span>
+        <button id="guthabenBannerClose">&times;</button>
     </div>
     <div id="chat"></div>
     
@@ -1637,6 +1679,13 @@
             // --- DeepThink button ---
             document.getElementById('deepThinkButtonLabel').textContent = t(229);
             document.getElementById('deepThinkIndicator').textContent = t(204);
+
+            // --- Guthaben-Banner Text aktualisieren (falls sichtbar) ---
+            const guthabenBanner = document.getElementById('guthabenBanner');
+            const guthabenBannerText = document.getElementById('guthabenBannerText');
+            if (guthabenBanner && guthabenBannerText && guthabenBanner.style.display !== 'none') {
+                guthabenBannerText.textContent = t(256);
+            }
 
             // --- Settings overlay ---
             document.getElementById('settingsTitleText').textContent = t(101);
@@ -2499,6 +2548,17 @@
                     body: JSON.stringify({ model: modelName, messages, max_tokens: maxTokens, no_training: settings.noTraining })
                 });
                 if (!response.ok) {
+                    if (settings.apiService === 'deepseek' || settings.apiService === 'openai') {
+                        try {
+                            const errData = await response.json();
+                            if (errData && errData.error_type === 'insufficient_quota') {
+                                showGuthabenBanner();
+                                throw new Error(t(256));
+                            }
+                        } catch (parseErr) {
+                            if (parseErr.message === t(256)) throw parseErr;
+                        }
+                    }
                     const errorText = await response.text();
                     throw new Error(tf(24, response.status, errorText));
                 }
@@ -3271,6 +3331,18 @@
                         } else {
                             throw new Error(t(143));
                         }
+                    } else if (settings.apiService === 'deepseek' || settings.apiService === 'openai') {
+                        // Guthaben-Prüfung für bezahlte Anbieter
+                        try {
+                            const errData = await response.json();
+                            if (errData && errData.error_type === 'insufficient_quota') {
+                                showGuthabenBanner();
+                                throw new Error(t(256));
+                            }
+                        } catch (parseErr) {
+                            if (parseErr.message === t(256)) throw parseErr;
+                        }
+                        throw new Error(tf(24, response.status, ''));
                     } else {
                         throw new Error(tf(24, response.status, ''));
                     }
@@ -3349,6 +3421,15 @@
             }
         }
         
+        function showGuthabenBanner() {
+            const banner = document.getElementById('guthabenBanner');
+            const bannerText = document.getElementById('guthabenBannerText');
+            if (banner) {
+                bannerText.textContent = t(256);
+                banner.style.display = 'block';
+            }
+        }
+
         function addMessageToChat(text, isUser, msgId, mode) {
             const messageContainer = document.createElement('div');
             messageContainer.className = 'message-container';
@@ -3934,6 +4015,15 @@
             addEventListenerWithCleanup(audioButton, 'click', () => {
                 if (isRecording) { stopAudioRecording(); } else { startAudioRecording(); }
             });
+
+            // --- Guthaben-Banner Schliessen-Button ---
+            const guthabenClose = document.getElementById('guthabenBannerClose');
+            if (guthabenClose) {
+                addEventListenerWithCleanup(guthabenClose, 'click', () => {
+                    const banner = document.getElementById('guthabenBanner');
+                    if (banner) banner.style.display = 'none';
+                });
+            }
         }
 
         /**
@@ -3966,6 +4056,9 @@
     </script>
 </body>
 </html>
+
+
+
 
 
 

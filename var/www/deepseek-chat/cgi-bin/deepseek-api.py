@@ -1,3 +1,4 @@
+---------------------------------------------------------
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
@@ -145,10 +146,18 @@ def main():
             response = urllib.request.urlopen(req, timeout=60)
         except urllib.error.HTTPError as e:
             error_body = e.read().decode('utf-8')
-            send_error(e.code, {
-                'error': f'DeepSeek API Fehler: {e.code}',
-                'details': error_body
-            })
+            # HTTP 402: Guthaben aufgebraucht
+            if e.code == 402:
+                send_error(e.code, {
+                    'error': f'DeepSeek API Fehler: {e.code}',
+                    'error_type': 'insufficient_quota',
+                    'details': error_body
+                })
+            else:
+                send_error(e.code, {
+                    'error': f'DeepSeek API Fehler: {e.code}',
+                    'details': error_body
+                })
             return
         except urllib.error.URLError as e:
             send_error(500, {
@@ -193,7 +202,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
-

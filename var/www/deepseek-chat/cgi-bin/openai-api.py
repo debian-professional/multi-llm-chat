@@ -1,3 +1,4 @@
+---------------------------------------------------------
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
@@ -190,10 +191,28 @@ def main():
             response = urllib.request.urlopen(req, timeout=60)
         except urllib.error.HTTPError as e:
             error_body = e.read().decode('utf-8')
-            send_error(e.code, {
-                'error': f'OpenAI API Fehler: {e.code}',
-                'details': error_body
-            })
+            # HTTP 429: prüfen ob Guthaben aufgebraucht (insufficient_quota)
+            # oder nur ein temporäres Rate-Limit
+            error_type = None
+            if e.code == 429:
+                try:
+                    error_json = json.loads(error_body)
+                    error_code = error_json.get('error', {}).get('code', '')
+                    if error_code == 'insufficient_quota':
+                        error_type = 'insufficient_quota'
+                except Exception:
+                    pass
+            if error_type:
+                send_error(e.code, {
+                    'error': f'OpenAI API Fehler: {e.code}',
+                    'error_type': error_type,
+                    'details': error_body
+                })
+            else:
+                send_error(e.code, {
+                    'error': f'OpenAI API Fehler: {e.code}',
+                    'details': error_body
+                })
             return
         except urllib.error.URLError as e:
             send_error(500, {
@@ -270,6 +289,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
