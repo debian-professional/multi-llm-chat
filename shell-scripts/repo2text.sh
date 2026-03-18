@@ -107,9 +107,9 @@ write_txt_file() {
     local file="$3"
     local md5="${4:-}"
     if [ -n "$md5" ]; then
-        { echo "FILE: $disp (MD5: $md5)"; echo "---------------------------------------------------------"; cat "$file"; echo -e "\n\n"; } >> "$out"
+        { echo "############ FILE: $disp (MD5: $md5) ############"; echo "---------------------------------------------------------"; cat "$file"; echo -e "\n\n"; } >> "$out"
     else
-        { echo "FILE: $disp"; echo "---------------------------------------------------------"; cat "$file"; echo -e "\n\n"; } >> "$out"
+        { echo "############ FILE: $disp ############"; echo "---------------------------------------------------------"; cat "$file"; echo -e "\n\n"; } >> "$out"
     fi
 }
 
@@ -251,7 +251,7 @@ while IFS= read -r -d '' full_path; do
         esac
         ((file_count++))
     fi
-done < <(find "$START_DIR" -type f \( -path "$TEMP_DIR/.gitignore" -o -path "$TEMP_DIR/.gitattributes" -o -not -path '*/.*' \) -print0 | pv -0 -p -t -e -r -s "$total_files" -l)
+done < <(find "$START_DIR" -type f \( -path "$TEMP_DIR/.gitignore" -o -path "$TEMP_DIR/.gitattributes" -o -not -path '*/.*' \) -print0 | sort -z -u | pv -0 -p -t -e -r -s "$total_files" -l)
 
 # Post-processing
 if [[ "$OUTPUT_FORMAT" == "json" ]]; then
