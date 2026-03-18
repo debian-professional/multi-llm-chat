@@ -14,6 +14,8 @@ fi
 
 cd "$REPO_DIR"
 
+git fetch --tags
+
 # Letzten Tag ermitteln
 LAST_TAG=$(git tag --sort=-v:refname | head -n 1)
 
