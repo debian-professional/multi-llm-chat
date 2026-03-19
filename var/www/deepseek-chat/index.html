@@ -2510,11 +2510,7 @@
             if (!dropdown) {
                 dropdown = document.createElement('div');
                 dropdown.className = 'single-export-dropdown';
-                dropdown.innerHTML = `
-                    <div class="single-export-item" data-format="txt">${t(225)}</div>
-                    <div class="single-export-item" data-format="md">${t(226)}</div>
-                    <div class="single-export-item" data-format="rtf">${t(227)}</div>
-                    <div class="single-export-item" data-format="pdf">${t(228)}</div>`;
+                dropdown.innerHTML = `<div class="single-export-item" data-format="txt">${t(225)}</div><div class="single-export-item" data-format="md">${t(226)}</div><div class="single-export-item" data-format="rtf">${t(227)}</div><div class="single-export-item" data-format="pdf">${t(228)}</div>`;
                 dropdown.querySelectorAll('.single-export-item').forEach(item => {
                     item.addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -4199,6 +4195,9 @@
     </script>
 </body>
 </html>
+
+
+
 
 
 
