@@ -1,3 +1,4 @@
+############ FILE: var/www/deepseek-chat/cgi-bin/hugging-api.py ############
 FILE: var/www/deepseek-chat/cgi-bin/hugging-api.py
 ---------------------------------------------------------
 #!/usr/bin/python3
@@ -184,6 +185,16 @@ def main():
                     'details': error_body
                 })
             else:
+                # HTTP 400/413: prüfen ob Kontextfenster überschritten
+                if e.code in (400, 413):
+                    context_keywords = ['token', 'context', 'length', 'maximum', 'too large', 'limit']
+                    if sum(1 for kw in context_keywords if kw.lower() in error_body.lower()) >= 2:
+                        send_error(e.code, {
+                            'error': f'Hugging Face API Fehler: {e.code}',
+                            'error_type': 'context_exceeded',
+                            'details': error_body
+                        })
+                        return
                 send_error(e.code, {
                     'error': f'Hugging Face API Fehler: {e.code}',
                     'details': error_body
@@ -265,4 +276,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
 

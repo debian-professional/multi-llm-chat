@@ -1,3 +1,4 @@
+############ FILE: var/www/deepseek-chat/cgi-bin/groq-api.py ############
 ---------------------------------------------------------
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
@@ -169,6 +170,27 @@ def main():
                     'details': error_body
                 })
             else:
+                # HTTP 400: prüfen ob Kontextfenster überschritten
+                if e.code == 400:
+                    try:
+                        error_json = json.loads(error_body)
+                        error_code = error_json.get('error', {}).get('code', '')
+                        if error_code == 'context_length_exceeded' or 'context_length_exceeded' in error_body:
+                            send_error(e.code, {
+                                'error': f'GroqCloud API Fehler: {e.code}',
+                                'error_type': 'context_exceeded',
+                                'details': error_body
+                            })
+                            return
+                    except Exception:
+                        context_keywords = ['context', 'length', 'token', 'maximum']
+                        if sum(1 for kw in context_keywords if kw.lower() in error_body.lower()) >= 2:
+                            send_error(e.code, {
+                                'error': f'GroqCloud API Fehler: {e.code}',
+                                'error_type': 'context_exceeded',
+                                'details': error_body
+                            })
+                            return
                 send_error(e.code, {
                     'error': f'GroqCloud API Fehler: {e.code}',
                     'details': error_body
@@ -279,3 +301,6 @@ def send_response(status_code, data, content_type='application/json'):
     if isinstance(data, bytes):
         # Für Binärdaten: alles über stdout.buffer schreiben
         headers = f"Status: {status_code}\r\n"
+
+
+

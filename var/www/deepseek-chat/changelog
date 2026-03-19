@@ -1128,5 +1128,24 @@
     - language.xml: IDs 256 ("Guthaben muss erneuert werden !") und 257
       ("Tageslimit erreicht !") in allen 4 Sprachen (DE, EN, ES, Custom) eingetragen
 
+    81. [19.03.2026] Context-Exceeded Box + In Zwischenablage kopieren
+    - Neues Feature: Kontextfenster-Überschreitung wird erkannt und im Chat als
+      interaktive Box angezeigt (blauer Rahmen, kein Overlay)
+    - Box enthält zwei Buttons:
+       * Grün: "Neuen Chat starten mit aktuellem Kontext" (Option C: letzte
+         Kompressor-Zusammenfassung + nachfolgende Nachrichten als vorbeladene Datei)
+       * Blau:  "Neuen Chat starten ohne Kontext" (sauberer Neustart)
+       * Beide Optionen speichern die aktuelle Session automatisch zuerst
+    - CGI-Scripts angepasst (alle 5): HTTP 400 (+ 413 bei HF) mit Body-Analyse →
+      error_type: 'context_exceeded' bei Keyword-Treffer (context/length/token/maximum)
+    - index.html: Neue Funktionen showContextExceededBox(), startNewChatWithContext(),
+      startNewChatWithoutContext(), resetChat()
+    - context_exceeded in sendMessage() und handleRegenerate() für alle 5 Anbieter
+    - Neues Export-Feature: "In Zwischenablage kopieren" im globalen Export-Dropdown
+      (client-seitig, kein Server-Roundtrip, Format identisch TXT-Export)
+    - Abschnitt B.7: Export-Optionsliste aktualisiert
+    - language.xml: IDs 258 ("In Zwischenablage kopieren"), 259 (Context-Exceeded Text),
+      260 (Mit Kontext), 261 (Ohne Kontext) in allen 4 Sprachen eingetragen
+
     ============================================================================
 

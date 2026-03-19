@@ -1,3 +1,4 @@
+############ FILE: var/www/deepseek-chat/language.xml ############
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 ==============================================================================
@@ -138,6 +139,9 @@ Adding a new language:
     <text id="256">Credit must be renewed !</text>
     <text id="257">Daily limit reached !</text>
     <text id="258">Copy to clipboard</text>
+    <text id="259">The maximum chat size of the current LLM has been reached.</text>
+    <text id="260">Start new chat with current context</text>
+    <text id="261">Start new chat without context</text>
 
     <text id="241">Hugging Face</text>
     <text id="242">HF Plan</text>
@@ -316,6 +320,9 @@ Adding a new language:
     <text id="256">Guthaben muss erneuert werden !</text>
     <text id="257">Tageslimit erreicht !</text>
     <text id="258">In Zwischenablage kopieren</text>
+    <text id="259">Die maximale Chat-Grösse des aktuellen LLM's wurde erreicht.</text>
+    <text id="260">Neuen Chat starten mit aktuellem Kontext</text>
+    <text id="261">Neuen Chat starten ohne Kontext</text>
 
     <text id="241">Hugging Face</text>
     <text id="242">HF-Plan</text>
@@ -492,6 +499,9 @@ Adding a new language:
     <text id="256">¡El crédito debe renovarse !</text>
     <text id="257">¡Límite diario alcanzado !</text>
     <text id="258">Copiar al portapapeles</text>
+    <text id="259">Se ha alcanzado el tamaño máximo del chat del LLM actual.</text>
+    <text id="260">Iniciar nuevo chat con contexto actual</text>
+    <text id="261">Iniciar nuevo chat sin contexto</text>
 
     <text id="241">Hugging Face</text>
     <text id="242">Plan HF</text>
@@ -661,6 +671,9 @@ Adding a new language:
     <text id="256">Credit must be renewed !</text>
     <text id="257">Daily limit reached !</text>
     <text id="258">Copy to clipboard</text>
+    <text id="259">The maximum chat size of the current LLM has been reached.</text>
+    <text id="260">Start new chat with current context</text>
+    <text id="261">Start new chat without context</text>
 
     <text id="241">Hugging Face</text>
     <text id="242">HF Plan</text>
@@ -717,6 +730,9 @@ Adding a new language:
   </language>
 
 </languages>
+
+
+
 
 
 

@@ -153,6 +153,26 @@
             background: rgba(255,255,255,0.35);
             border-color: #fff;
         }
+        /* Context-Exceeded Box im Chat */
+        .context-exceeded-box {
+            background: #1a2e3a;
+            border: 2px solid #0077ff;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin: 10px 0;
+            color: #f0f0f0;
+        }
+        .context-exceeded-box .context-exceeded-text {
+            font-size: 15px;
+            font-weight: bold;
+            color: #4dabf7;
+            margin-bottom: 14px;
+        }
+        .context-exceeded-box .context-exceeded-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
         /* Tageslimit-Banner (blau, dauerhaft bis Schliessen) */
         #tageslimitBanner {
             position: fixed;
@@ -2510,7 +2530,11 @@
             if (!dropdown) {
                 dropdown = document.createElement('div');
                 dropdown.className = 'single-export-dropdown';
-                dropdown.innerHTML = `<div class="single-export-item" data-format="txt">${t(225)}</div><div class="single-export-item" data-format="md">${t(226)}</div><div class="single-export-item" data-format="rtf">${t(227)}</div><div class="single-export-item" data-format="pdf">${t(228)}</div>`;
+                dropdown.innerHTML = `
+                    <div class="single-export-item" data-format="txt">${t(225)}</div>
+                    <div class="single-export-item" data-format="md">${t(226)}</div>
+                    <div class="single-export-item" data-format="rtf">${t(227)}</div>
+                    <div class="single-export-item" data-format="pdf">${t(228)}</div>`;
                 dropdown.querySelectorAll('.single-export-item').forEach(item => {
                     item.addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -2643,8 +2667,12 @@
                                 showGuthabenBanner();
                                 throw new Error(t(256));
                             }
+                            if (errData && errData.error_type === 'context_exceeded') {
+                                showContextExceededBox();
+                                throw new Error(t(259));
+                            }
                         } catch (parseErr) {
-                            if (parseErr.message === t(256)) throw parseErr;
+                            if (parseErr.message === t(256) || parseErr.message === t(259)) throw parseErr;
                         }
                     } else if (settings.apiService === 'google' || settings.apiService === 'groq' || settings.apiService === 'huggingface') {
                         try {
@@ -2653,8 +2681,12 @@
                                 showTageslimitBanner();
                                 throw new Error(t(257));
                             }
+                            if (errData && errData.error_type === 'context_exceeded') {
+                                showContextExceededBox();
+                                throw new Error(t(259));
+                            }
                         } catch (parseErr) {
-                            if (parseErr.message === t(257)) throw parseErr;
+                            if (parseErr.message === t(257) || parseErr.message === t(259)) throw parseErr;
                         }
                     }
                     const errorText = await response.text();
@@ -3434,8 +3466,12 @@
                                     showTageslimitBanner();
                                     throw new Error(t(257));
                                 }
+                                if (errData && errData.error_type === 'context_exceeded') {
+                                    showContextExceededBox();
+                                    throw new Error(t(259));
+                                }
                             } catch (parseErr) {
-                                if (parseErr.message === t(257)) throw parseErr;
+                                if (parseErr.message === t(257) || parseErr.message === t(259)) throw parseErr;
                             }
                             throw new Error(t(143));
                         }
@@ -3447,8 +3483,12 @@
                                 showGuthabenBanner();
                                 throw new Error(t(256));
                             }
+                            if (errData && errData.error_type === 'context_exceeded') {
+                                showContextExceededBox();
+                                throw new Error(t(259));
+                            }
                         } catch (parseErr) {
-                            if (parseErr.message === t(256)) throw parseErr;
+                            if (parseErr.message === t(256) || parseErr.message === t(259)) throw parseErr;
                         }
                         throw new Error(tf(24, response.status, ''));
                     } else if (settings.apiService === 'groq' || settings.apiService === 'huggingface') {
@@ -3459,8 +3499,12 @@
                                 showTageslimitBanner();
                                 throw new Error(t(257));
                             }
+                            if (errData && errData.error_type === 'context_exceeded') {
+                                showContextExceededBox();
+                                throw new Error(t(259));
+                            }
                         } catch (parseErr) {
-                            if (parseErr.message === t(257)) throw parseErr;
+                            if (parseErr.message === t(257) || parseErr.message === t(259)) throw parseErr;
                         }
                         throw new Error(tf(24, response.status, ''));
                     } else {
@@ -3557,6 +3601,92 @@
                 bannerText.textContent = t(257);
                 banner.style.display = 'block';
             }
+        }
+
+        function showContextExceededBox() {
+            const box = document.createElement('div');
+            box.className = 'context-exceeded-box';
+            const textDiv = document.createElement('div');
+            textDiv.className = 'context-exceeded-text';
+            textDiv.textContent = t(259);
+            box.appendChild(textDiv);
+            const btnDiv = document.createElement('div');
+            btnDiv.className = 'context-exceeded-buttons';
+            const btnWith = document.createElement('button');
+            btnWith.className = 'pill-button';
+            btnWith.style.background = '#28a745';
+            btnWith.style.borderColor = '#28a745';
+            btnWith.textContent = t(260);
+            btnWith.onclick = () => startNewChatWithContext();
+            const btnWithout = document.createElement('button');
+            btnWithout.className = 'pill-button';
+            btnWithout.textContent = t(261);
+            btnWithout.onclick = () => startNewChatWithoutContext();
+            btnDiv.appendChild(btnWith);
+            btnDiv.appendChild(btnWithout);
+            box.appendChild(btnDiv);
+            const chat = document.getElementById('chat');
+            chat.appendChild(box);
+            chat.appendChild(document.createElement('div')).className = 'message-divider';
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        async function startNewChatWithContext() {
+            // Session speichern
+            await saveSession();
+            // Option C: letzte Kompressor-Zusammenfassung + nachfolgende Nachrichten
+            let contextText = '';
+            const firstMsg = contextHistory.messages[0];
+            if (firstMsg && firstMsg.compressed) {
+                contextText = firstMsg.content;
+                const subsequent = contextHistory.messages.slice(1);
+                if (subsequent.length > 0) {
+                    contextText += '\n\n[Nachfolgende Nachrichten]\n';
+                    subsequent.forEach(msg => {
+                        const role = msg.role === 'user' ? 'USER' : 'AI';
+                        contextText += `\n${role}: ${msg.content}`;
+                    });
+                }
+            } else {
+                // Kein Kompressor gelaufen — alle Nachrichten als Text
+                contextHistory.messages.forEach(msg => {
+                    const role = msg.role === 'user' ? 'USER' : 'AI';
+                    contextText += `\n${role}: ${msg.content}`;
+                });
+            }
+            // Neuen Chat starten
+            resetChat();
+            // Kontext als Datei-Inhalt vorbelegen
+            if (contextText.trim()) {
+                fileTextContent = contextText.trim();
+                uploadedFileNames = ['kontext.txt'];
+                fileInfo.innerHTML = `${t(36).replace('{0}', 'kontext.txt').replace('{1}', fileTextContent.length)} <button id="removeFile">${t(222)}</button>`;
+                fileInfo.classList.add('visible');
+                const removeBtn = document.getElementById('removeFile');
+                if (removeBtn) {
+                    removeBtn.addEventListener('click', () => {
+                        selectedFiles = []; fileTextContent = null; uploadedFileNames = [];
+                        fileInfo.innerHTML = ''; fileInfo.classList.remove('visible');
+                        fileUpload.value = '';
+                    });
+                }
+            }
+        }
+
+        async function startNewChatWithoutContext() {
+            // Session speichern
+            await saveSession();
+            // Neuen Chat starten
+            resetChat();
+        }
+
+        function resetChat() {
+            contextHistory = { messages: [], totalEstimatedTokens: 0, systemPromptTokens: 0 };
+            compressorTriggered = { 70: false, 85: false, 95: false };
+            lastTriggeredThreshold = null;
+            currentSessionId = generateSessionId();
+            document.getElementById('chat').innerHTML = '';
+            updateContextEstimation();
         }
 
         function addMessageToChat(text, isUser, msgId, mode) {

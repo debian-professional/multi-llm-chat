@@ -1,3 +1,4 @@
+############ FILE: var/www/deepseek-chat/cgi-bin/openai-api.py ############
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
@@ -203,6 +204,17 @@ def main():
                         error_type = 'daily_limit_exceeded'
                 except Exception:
                     pass
+            # HTTP 400: prüfen ob Kontextfenster überschritten
+            elif e.code == 400:
+                try:
+                    error_json = json.loads(error_body)
+                    error_code = error_json.get('error', {}).get('code', '')
+                    if error_code == 'context_length_exceeded' or 'context_length_exceeded' in error_body:
+                        error_type = 'context_exceeded'
+                except Exception:
+                    context_keywords = ['context', 'length', 'token', 'maximum']
+                    if sum(1 for kw in context_keywords if kw.lower() in error_body.lower()) >= 2:
+                        error_type = 'context_exceeded'
             if error_type:
                 send_error(e.code, {
                     'error': f'OpenAI API Fehler: {e.code}',
@@ -290,3 +302,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
