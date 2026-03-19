@@ -3794,6 +3794,21 @@
                             reader.onerror = reject;
                             reader.readAsText(file);
                         });
+                        // Kontextfenster-Prüfung VOR der Kürzung auf MAX_FILE_CONTENT_LENGTH
+                        const estimatedFileTokens = Math.ceil(text.length * 0.25);
+                        let modelNameCtx;
+                        if (settings.apiService === 'google' || settings.apiService === 'huggingface' ||
+                            settings.apiService === 'groq'   || settings.apiService === 'openai') {
+                            modelNameCtx = settings.selectedModel;
+                        } else {
+                            modelNameCtx = (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
+                        }
+                        const ctxConfig = MODEL_CONFIG[modelNameCtx] || MODEL_CONFIG['deepseek-chat'];
+                        if (estimatedFileTokens > ctxConfig.maxContextTokens) {
+                            alert(tf(262, estimatedFileTokens.toLocaleString(), ctxConfig.maxContextTokens.toLocaleString()));
+                            fileUpload.value = '';
+                            return;
+                        }
                         if (text.length > MAX_FILE_CONTENT_LENGTH) text = text.substring(0, MAX_FILE_CONTENT_LENGTH);
                         infoLines.push(tf(36, file.name, text.length));
                     } else {
@@ -3808,27 +3823,6 @@
             }
 
             if (!uploadedFileNames.length) return;
-
-            // Kontextfenster-Prüfung: Token-Schätzung des Dateiinhalts gegen Modell-Limit
-            if (combinedText) {
-                const estimatedFileTokens = Math.ceil(combinedText.length * 0.25);
-                let modelName;
-                if (settings.apiService === 'google' || settings.apiService === 'huggingface' ||
-                    settings.apiService === 'groq'   || settings.apiService === 'openai') {
-                    modelName = settings.selectedModel;
-                } else {
-                    modelName = (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
-                }
-                const config = MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-chat'];
-                if (estimatedFileTokens > config.maxContextTokens) {
-                    alert(tf(262, estimatedFileTokens.toLocaleString(), config.maxContextTokens.toLocaleString()));
-                    selectedFiles = []; fileTextContent = null; uploadedFileNames = [];
-                    fileInfo.innerHTML = ''; fileInfo.classList.remove('visible');
-                    fileUpload.value = '';
-                    return;
-                }
-            }
-
             fileTextContent = combinedText || null;
 
             fileInfo.innerHTML += `${infoLines.join(' | ')} <button id="removeFile">${t(222)}</button>`;
