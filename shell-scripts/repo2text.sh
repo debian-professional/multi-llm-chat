@@ -107,9 +107,9 @@ write_txt_file() {
     local file="$3"
     local md5="${4:-}"
     if [ -n "$md5" ]; then
-        { echo "############ FILE: $disp (MD5: $md5) ############"; echo "---------------------------------------------------------"; cat "$file"; echo -e "\n\n"; } >> "$out"
+        { echo "############ FILE: $disp (MD5: $md5) ############"; cat "$file";  echo -e "\n\n"; } >> "$out"
     else
-        { echo "############ FILE: $disp ############"; echo "---------------------------------------------------------"; cat "$file"; echo -e "\n\n"; } >> "$out"
+        { echo "############ FILE: $disp ############"; cat "$file"; echo -e "\n\n"; } >> "$out"
     fi
 }
 
