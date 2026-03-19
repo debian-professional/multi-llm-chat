@@ -9,9 +9,12 @@ Key highlights:
 - **Unique context management** – Delete individual messages along with all subsequent ones. The chat remains consistent and token usage is dynamically updated.
 - **Maximum security** – The API key is never visible on the client side, uploads are protected against executable files via magic byte inspection, and sessions are stored with restrictive file permissions.
 - **No exotic frameworks** – Everything is based on Apache, Python, Bash, and plain HTML/JS.
-- **Professional export functions** – PDF, Markdown, TXT, RTF for the entire chat or individual messages.
+- **Professional export functions** – PDF, Markdown, TXT, RTF for the entire chat or individual messages, plus direct copy to clipboard.
 - **Multi-language support** – Full UI translation via external `language.xml` (English, German, Spanish, extensible with custom languages).
 - **Audio recording** – Built-in microphone button (MediaRecorder API) for direct voice input. Automatically visible only when an audio-capable model is active (all Gemini models, OpenAI gpt-4o and gpt-4.1). Audio is transmitted as base64 WebM/MP4 — no transcription, the model processes speech natively.
+- **Kompressor (context compression)** – Intelligent automatic compression of the chat history when the context window fills up. A second LLM summarizes the oldest 50% of messages and injects the summary into the system prompt — the conversation can continue indefinitely without losing the thread. Configurable thresholds (70%/85%/95%), animated banner as visual feedback, result files saved to disk. The summary is automatically discarded if the context drops below the last triggered threshold after manual message deletion.
+- **Quota & limit banners** – Persistent visual banners for exhausted credit (red, paid providers) and daily limits (blue, free tier providers), each with a close button.
+- **Context window exceeded handling** – When the maximum context size is reached, an interactive box appears directly in the chat offering two choices: start a new chat carrying the current context forward (Option C: last compression summary + subsequent messages), or start a clean new chat. The current session is saved automatically in both cases.
 - **Clipboard integration** – Ctrl+V handler with dialog for text, images, and protection against accidentally pasting file paths.
 - **Streaming responses** – AI answers appear token by token, just like ChatGPT or Claude.
 - **429 Rate limit handling** – Automatic retry with countdown display for Google Gemini Free Tier limits.
@@ -40,6 +43,9 @@ Key highlights:
   - [Dynamic Context Display](#dynamic-context-display)
   - [File Card Display](#file-card-display)
   - [Audio Recording](#audio-recording)
+  - [Kompressor — Intelligent Context Compression](#kompressor--intelligent-context-compression)
+  - [Quota & Limit Banners](#quota--limit-banners)
+  - [Context Window Exceeded Handling](#context-window-exceeded-handling)
 - [The Helper Script `repo2text.sh`](#the-helper-script-repo2textsh)
 - [Security Architecture in Detail](#security-architecture-in-detail)
 - [Deployment & Usage](#deployment--usage)
@@ -60,7 +66,7 @@ Key highlights:
 
 Multi-LLM Chat Client is a **local web application** that communicates via various APIs. Developed for a private server environment (Debian), it can run on any system with Apache and Python 3. The goal was to create a **secure, extensible, and user-friendly** chat client that operates without cloud dependencies and offers full control over data.
 
-The project has grown continuously over several weeks of active development, adding features like streaming, session management, export functions, multilingual support, clipboard integration, and robust security measures — all without ever introducing external JavaScript frameworks.
+The project has grown continuously over several weeks of active development, adding features like streaming, session management, export functions, multilingual support, clipboard integration, intelligent context compression, and robust security measures — all without ever introducing external JavaScript frameworks.
 
 ---
 
@@ -82,6 +88,7 @@ The architecture is intentionally simple but well thought out:
   - Communication with the Google Gemini API (`google-api.py`) — converts OpenAI format to Gemini format
   - Communication with the Hugging Face Inference API (`hugging-api.py`) — OpenAI-compatible router endpoint
   - Communication with the GroqCloud API (`groq-api.py`) — OpenAI-compatible endpoint, hardware-accelerated inference (LPU)
+  - Context compression (`compress-context.py`) — summarizes the oldest 50% of messages via a second LLM call when context thresholds are reached
   - Model discovery (`deepseek-models.py`) — queries `/v1/models` at startup
   - Session storage and retrieval (`save-session.py`, `load-session.py`, `delete-session.py`)
   - Exports in various formats (`export-pdf.py`, `export-markdown.py`, `export-txt.py`, `export-rtf.py`)
@@ -92,7 +99,8 @@ The architecture is intentionally simple but well thought out:
 
 ### 3. Data Storage
 - **Sessions** are stored as JSON files in `/var/www/deepseek-chat/sessions/` with `chmod 700`.
-- **Logs** are written to `/var/www/deepseek-chat/cgi-bin/deepseek-chat.log` (without API key or session contents).
+- **Logs** are written to `/var/www/deepseek-chat/logs/multi-llm-chat.log` (without API key or session contents).
+- **Kompressor results** are written to `/var/www/deepseek-chat/kompressor/` — one file per compression round.
 - **Settings** remain locally in the browser (`localStorage`) with version control.
 - **Language data** is loaded from `language.xml` at page load via `fetch()`.
 
@@ -110,6 +118,7 @@ One of the standout features is the ability to **delete individual messages alon
 - Each message (user & AI) receives a unique `id` (format: `msg_N`) and is stored in an array `contextHistory.messages`.
 - The `deleteMessage(msgId)` function determines the index of the message, truncates the array from `index` onwards, and removes all following elements from the DOM (including dividers).
 - The token estimate (`updateContextEstimation()`) is immediately recalculated, as is the percentage context utilization in the header.
+- If the context drops below the last triggered compressor threshold after deletion, the compression summary is automatically discarded and the threshold tracking is reset.
 - The modified session is then automatically saved (`saveSession()`).
 
 **Why is this unique?**
@@ -137,14 +146,14 @@ Many chat clients only allow deletion of the last message or no history manipula
 
 AI responses are received and displayed **token by token** using Server-Sent Events (SSE):
 
-- `deepseek-api.py` sends requests to DeepSeek with `stream: True` and forwards the event stream directly.
+- All five CGI proxy scripts send requests to their respective APIs with `stream: True` and forward the event stream directly.
 - `index.html` reads the stream via `ReadableStream` API and `TextDecoder`.
 - Each received token is appended to the message element in real time.
 - The psychological effect is significant: the first tokens appear within ~0.3 seconds instead of waiting 8+ seconds for a complete response.
 - Both `sendMessage()` and `handleRegenerate()` use identical streaming logic.
 - Auto-scroll remains active during streaming.
 
-**Technical headers** set by `deepseek-api.py` for correct streaming:
+**Technical headers** set by all CGI proxy scripts for correct streaming:
 ```
 Content-Type: text/event-stream
 X-Accel-Buffering: no
@@ -189,7 +198,6 @@ The client supports Hugging Face Inference Providers as a third AI provider via 
 - The model dropdown updates automatically based on the selected tier.
 - The DeepThink button and DeepThink indicator are hidden when Hugging Face is active.
 
-
 ### GroqCloud Integration
 
 The client supports GroqCloud as a fourth AI provider via `groq-api.py`:
@@ -198,7 +206,7 @@ The client supports GroqCloud as a fourth AI provider via `groq-api.py`:
 - **Endpoint**: `https://api.groq.com/openai/v1/chat/completions`
 - **API key**: `GRQ_API_KEY` in `/etc/apache2/envvars`.
 - **Note**: A `User-Agent` header is required to bypass Cloudflare protection (error code 1010 without it).
-- **Free & Paid Tier**: `llama-3.3-70b-versatile`, `llama-3.1-8b-instant`, `mixtral-8x7b-32768`, `gemma2-9b-it`.
+- **Free & Paid Tier**: `llama-3.3-70b-versatile`, `llama-3.1-8b-instant`, `meta-llama/llama-4-scout-17b-16e-instruct`, `qwen/qwen3-32b`. Paid only: `moonshotai/kimi-k2-instruct-0905`.
 - The model dropdown updates automatically based on the selected tier.
 - The DeepThink button and DeepThink indicator are hidden when GroqCloud is active.
 - All models run on GroqCloud's LPU (Language Processing Unit) hardware for very low latency.
@@ -213,6 +221,7 @@ A dedicated **LLM Settings** panel (separate from the main Settings panel) keeps
 - **Google options**: Free / Paid plan selection with automatic model list update.
 - **Hugging Face options**: Free / Paid plan selection with automatic model list update.
 - **GroqCloud options**: Free / Paid plan selection with automatic model list update.
+- **Kompressor options**: Enable/disable toggle, compression LLM provider selection (paid providers only), compression model selection. Default: enabled, DeepSeek / `deepseek-chat`.
 - **Model dropdown**: Always visible, content updates automatically based on the active provider and plan.
 - All settings are saved to `localStorage` and persist after page reload.
 
@@ -222,7 +231,7 @@ The Google Gemini Free Tier enforces strict rate limits (5 RPM, 20 RPD). The cli
 
 - On a 429 response, the client automatically retries up to **3 times** with **15-second intervals**.
 - During the wait, a countdown is displayed directly in the chat: *"Rate limit reached – waiting 15 seconds and retrying... (Attempt 1/3)"*
-- After 3 failed attempts, a final error message is shown.
+- After 3 failed attempts, the daily limit check triggers the blue Tageslimit banner if applicable.
 - Verbose error details are written to the server log for diagnosis.
 - The retry logic distinguishes between temporary RPM limits (retryable) and exhausted daily quota (not retryable).
 
@@ -369,7 +378,7 @@ All settings use **toggle switches** (sliding left-to-right), never radio button
 
 **Privacy toggle**: Sets the header `X-No-Training: true` in API requests (supported by DeepSeek's opt-out mechanism).
 
-**Settings persistence**: All settings are stored in `localStorage` under key `deepseekSettings`. Current `SETTINGS_VERSION: 1.3`. The `migrateSettings()` function provides backward compatibility with older stored settings (e.g. the removed "search" mode is automatically migrated to "chat").
+**Settings persistence**: All settings are stored in `localStorage` under key `deepseekSettings`. Current `SETTINGS_VERSION: 1.7`. The `migrateSettings()` function provides backward compatibility with older stored settings.
 
 ### Session Management
 
@@ -397,6 +406,7 @@ Each conversation is automatically managed as a named session:
 | Markdown | Server-side | Identical structure to PDF, with Markdown anchors |
 | TXT | Server-side | Plain text with separators |
 | RTF | Server-side | RTF format, umlauts as RTF codes (no external library) |
+| **Copy to clipboard** | **Client-side (no server roundtrip)** | **Plain text, identical format to TXT export** |
 
 **Per-message export** (hover button on each message):
 
@@ -414,6 +424,8 @@ Each conversation is automatically managed as a named session:
 - Full chat history with timestamps and mode indicators
 - Color coding by message role and mode
 
+**Copy to clipboard**: The entire chat is assembled client-side in plain text format and written directly to the system clipboard via `navigator.clipboard.writeText()`. A brief "Copied!" confirmation appears in the Export button for 2 seconds.
+
 **PDF technical note**: Binary PDF data is written exclusively via `sys.stdout.buffer` with HTTP headers encoded as bytes — avoiding the "Bad header" error that occurs when mixing `print()` (text mode) with binary output.
 
 ### Feedback Buttons & Logging
@@ -425,10 +437,10 @@ Four buttons appear on hover for each AI response (left side, bottom):
 - **Dislike** — Marks the response negatively (red highlight); sends a DISLIKE entry. Like and Dislike are mutually exclusive.
 - **Regenerate** — Removes the current AI response from context and DOM, then calls the API again with the same user message and full preceding history.
 
-**Server-side log format** (`deepseek-chat.log`):
+**Server-side log format** (`multi-llm-chat.log`):
 ```
-2026-02-17 17:30:00 | 192.168.1.x | FEEDBACK | LIKE | msg_5 | "First 60 chars of message..."
-2026-02-17 17:30:00 | 192.168.1.x | POST | /cgi-bin/deepseek-api.py | 200
+2026-02-17 17:30:00 | IP: 192.168.1.x | POST /cgi-bin/deepseek-api.py | Status: 200
+2026-02-17 17:30:00 | IP: 192.168.1.x | FEEDBACK | LIKE | msg_5 | "First 60 chars of message..."
 ```
 **Never logged**: API keys, session contents, or message text beyond the 60-character feedback preview.
 
@@ -487,25 +499,104 @@ The client includes a built-in **microphone recording button** that enables dire
   - **OpenAI**: `gpt-4o`, `gpt-4.1`
 - **Recording flow**: `getUserMedia()` → `MediaRecorder` API → chunked recording → `Blob` assembled on stop → base64-encoded.
 - **MIME type**: `audio/webm` (Chrome/Firefox) or `audio/mp4` (Safari) — auto-detected at runtime.
-- **After recording**: The audio data is shown in the `fileInfo` box with an AUDIO badge card. The label is pulled from `language.xml` (`t(250)` — "Audio recording" in all four languages).
+- **After recording**: The audio data is shown in the `fileInfo` box with an AUDIO badge card.
 - **Sending**: `audio_data` (base64 string) and `audio_mime_type` are included in the JSON request body alongside the text message. The `hasFile` flag is **not** set for audio — no file-processing system prompt is injected.
 - **Mutual exclusivity**: File upload and audio recording are mutually exclusive. Starting a recording clears any pending file attachment and vice versa.
 - **Backend — Google (`google-api.py`)**: Audio is appended to the last user message as an `inline_data` block in Gemini's native format. The model receives and processes the audio directly.
 - **Backend — OpenAI (`openai-api.py`)**: Audio is appended to the last user message as an `input_audio` block in OpenAI's format (`format: webm` or `mp4`).
 - **Maintenance rule** (documented in manifest): Whenever an integrated LLM provider adds or removes audio support for a model, `AUDIO_CAPABLE_MODELS` in `index.html` **must** be updated immediately.
 
-**Language IDs added** (all four languages):
+### Kompressor — Intelligent Context Compression
 
-| ID | Content |
-|----|---------|
-| 247 | Record Audio / Audio aufnehmen / Grabar audio |
-| 248 | Stop |
-| 249 | Audio recorded / Audio aufgenommen / Audio grabado |
-| 250 | Audio recording / Audioaufnahme / Grabación de audio |
+Every language model has a finite context window. In long sessions — especially with large file uploads, extensive analysis workflows, or multi-hour conversations — the context fills up and causes API errors (400/413), forcing the user to start a new chat and lose the entire conversation thread.
 
+The **Kompressor** solves this problem automatically and transparently.
+
+#### Core Concept
+
+Instead of blindly truncating old messages or forcing a manual restart, the Kompressor **summarizes** the oldest half of the conversation via a dedicated second LLM call. This summary is injected into the system prompt of subsequent requests. The active model "remembers" the past through the summary — the conversation can continue indefinitely without context loss.
+
+#### Activation Thresholds
+
+| Threshold | Action |
+|-----------|--------|
+| **70%** context utilization | First compression round |
+| **85%** context utilization | Second compression round |
+| **95%** context utilization | Third compression round |
+
+Each threshold fires at most once per session. After each compression, the counter resets so that thresholds can fire again as context fills up again.
+
+#### Compression Process
+
+1. The client estimates context utilization after each sent message.
+2. If a threshold is exceeded, `compress-context.py` is called **before** the main API call.
+3. The oldest 50% of messages are extracted. The cutoff advances to the next user message to ensure API compatibility (context always starts with a user turn).
+4. Base64 data, images, and multimedia content are filtered out — only plain text is sent to the compression LLM.
+5. The compression LLM returns a structured summary.
+6. Old messages are replaced by a single summary entry (flag `compressed: true`).
+7. The summary is added to the effective system prompt for all subsequent calls — never sent as a standalone message (which would cause 400 errors in most APIs).
+8. The updated context is saved. The main API call proceeds with the compressed context.
+
+#### Smart Summary Discard on Manual Deletion
+
+When the user manually deletes messages, the Kompressor tracks whether the context percentage drops below the **last triggered threshold** (not just below 70%). If it does, the compression summary is automatically removed and all threshold tracking is reset — ensuring the compression state always matches the actual conversation content.
+
+#### Provider Restriction (paid only)
+
+The Kompressor requires a separate LLM call that may involve large token counts. The free-tier rate limits of Groq (6,000–12,000 TPM) and Hugging Face are insufficient for reliable compression of real conversations. Only paid providers are offered:
+
+| Provider | Compression Models |
+|----------|-------------------|
+| DeepSeek | `deepseek-chat`, `deepseek-reasoner` |
+| OpenAI | `gpt-4o-mini`, `gpt-4o`, `gpt-4.1` |
+| Google | `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-1.5-pro` |
+
+**Recommended default**: DeepSeek + `deepseek-chat` — no rate limits, lowest cost, most reliable results.
+
+#### Result Files
+
+Each compression round is saved to:
+```
+/var/www/deepseek-chat/kompressor/kompressor_YYYYMMDD_HHMMSS.txt
+```
+
+### Quota & Limit Banners
+
+The client provides clear, persistent visual feedback when API quotas are exhausted:
+
+**Red Banner — "Credit must be renewed !"** (paid providers):
+- Displayed when a paid API reports exhausted credit
+- **DeepSeek**: triggered by HTTP 402
+- **OpenAI**: triggered by HTTP 429 + `insufficient_quota` in the JSON response body
+- Stays visible until manually closed via the × button
+
+**Blue Banner — "Daily limit reached !"** (free tier providers):
+- Displayed when a free-tier API reports an exhausted daily quota
+- **Google Gemini**: triggered by HTTP 429 + daily keywords in response body
+- **GroqCloud**: triggered by HTTP 429
+- **Hugging Face**: triggered by HTTP 429
+- Stays visible until manually closed via the × button
+
+Both banners are implemented as fixed-position elements at the top of the browser window with a close button (×) following the standard pill-style convention.
+
+### Context Window Exceeded Handling
+
+When the context window of the active model is completely full and the API returns an error (HTTP 400 with context-related keywords), the client does not show a generic error message. Instead, an **interactive box** appears directly in the chat:
+
+- **Blue-bordered box** with the message: *"The maximum chat size of the current LLM has been reached."*
+- **Green button**: "Start new chat with current context" — implements **Option C**:
+  1. The current session is saved automatically
+  2. The last compression summary (if available) is combined with all subsequent messages as plain text
+  3. A new chat starts with this combined context preloaded as a file attachment — the conversation continues seamlessly
+- **Blue button**: "Start new chat without context" — clean restart:
+  1. The current session is saved automatically
+  2. A new chat starts with an empty context
+
+This approach allows for **chained conversations** across multiple sessions — theoretically unlimited in length.
+
+All five CGI proxy scripts detect context overflow via HTTP status code analysis and keyword matching in the response body, returning `error_type: 'context_exceeded'` to the client.
 
 ---
-
 
 ### API Proxy Infoblock (as of 08.03.2026)
 
@@ -527,6 +618,8 @@ This Bash script was specifically developed to **export the entire source code o
 **How it works**:
 - Clones the repository with `git clone --depth 1`.
 - Analyzes all text files (MIME type + `grep -Iq .`) and writes them with separators into an output file.
+- Uses `sort -z -u` to deduplicate file paths before processing — prevents duplicate file entries.
+- Uses a unique delimiter (`############ FILE: ... ############`) that cannot appear in source code, avoiding false splits.
 - Explicitly respects `.gitignore` and `.gitattributes`.
 - Supports TXT, JSON, and Markdown output formats.
 - Creates a ZIP archive of the export file.
@@ -569,10 +662,10 @@ This Bash script was specifically developed to **export the entire source code o
 Security was the top priority throughout this project. Here are all key measures:
 
 ### 1. API Key — Never Exposed to the Client
-- The key is held **exclusively** in the Apache environment variable `DEEPSEEK_API_KEY` (set in `/etc/apache2/envvars`).
-- `deepseek-api.py` retrieves it via `os.environ.get('DEEPSEEK_API_KEY')`.
-- The client communicates only with `/cgi-bin/deepseek-api.py` (local proxy) — never directly with the DeepSeek API.
-- Even in the event of an XSS attack, the key could not be read from the page.
+- All API keys are held **exclusively** in Apache environment variables (set in `/etc/apache2/envvars`).
+- Each CGI script retrieves its key via `os.environ.get('..._API_KEY')`.
+- The client communicates only with local CGI proxies — never directly with external APIs.
+- Even in the event of an XSS attack, the keys could not be read from the page.
 
 ### 2. Magic Byte Inspection Against Executable Files
 - Before reading any uploaded file, the first 20 bytes are checked against a comprehensive signature database (see [File Upload with Security Check](#file-upload-with-security-check)).
@@ -612,7 +705,7 @@ Security was the top priority throughout this project. Here are all key measures
 - Apache with CGI module (`a2enmod cgi`) and SSL (`a2enmod ssl`)
 - Python 3 with packages: `reportlab`
 - For `repo2text.sh`: `jq`, `pv`, `zip`, `git`
-- A valid DeepSeek API key from [platform.deepseek.com](https://platform.deepseek.com)
+- A valid API key for at least one of the supported providers
 
 ### Installation
 
@@ -621,10 +714,14 @@ Security was the top priority throughout this project. Here are all key measures
 git clone https://github.com/debian-professional/multi-llm-chat.git /home/source/multi-llm-chat
 ```
 
-**2. Configure the API key**:
+**2. Configure the API keys**:
 ```bash
 # Add to /etc/apache2/envvars:
 export DEEPSEEK_API_KEY="your-deepseek-api-key-here"
+export OPENAI_API_KEY="your-openai-api-key-here"
+export GOOGLE_API_KEY="your-google-api-key-here"
+export HF_API_KEY="your-huggingface-token-here"
+export GRQ_API_KEY="your-groqcloud-api-key-here"
 ```
 
 **3. Enable Apache configuration**:
@@ -656,23 +753,34 @@ chmod 700 /var/www/deepseek-chat/sessions
 **Model configuration** (`MODEL_CONFIG` in `index.html`):
 ```javascript
 const MODEL_CONFIG = {
+    // OpenAI
+    'gpt-5.4':              { maxContextTokens: 1050000, maxOutputTokens: 16384, maxContextMessages: 100 },
+    'gpt-5.2-chat-latest':  { maxContextTokens: 128000,  maxOutputTokens: 16384, maxContextMessages: 80  },
+    'gpt-4o':               { maxContextTokens: 128000,  maxOutputTokens: 16384, maxContextMessages: 80  },
+    'gpt-4.1':              { maxContextTokens: 1048576, maxOutputTokens: 32768, maxContextMessages: 100 },
+    'gpt-4o-mini':          { maxContextTokens: 128000,  maxOutputTokens: 16384, maxContextMessages: 80  },
+    'gpt-5-mini':           { maxContextTokens: 128000,  maxOutputTokens: 16384, maxContextMessages: 80  },
+    // DeepSeek
     'deepseek-chat':     { maxContextTokens: 100000,  maxOutputTokens: 8192,  maxContextMessages: 50  },
     'deepseek-reasoner': { maxContextTokens: 65000,   maxOutputTokens: 32768, maxContextMessages: 30  },
+    // Google Gemini
     'gemini-2.5-flash':  { maxContextTokens: 1048576, maxOutputTokens: 8192,  maxContextMessages: 100 },
     'gemini-2.5-pro':    { maxContextTokens: 1048576, maxOutputTokens: 65536, maxContextMessages: 100 },
     'gemini-1.5-pro':    { maxContextTokens: 2097152, maxOutputTokens: 8192,  maxContextMessages: 100 },
     'gemini-2.0-flash':  { maxContextTokens: 1048576, maxOutputTokens: 8192,  maxContextMessages: 100 },
-    'Qwen/Qwen2.5-72B-Instruct':              { maxContextTokens: 128000, maxOutputTokens: 8192, maxContextMessages: 80 },
-    'mistralai/Mistral-7B-Instruct-v0.3':     { maxContextTokens: 32768,  maxOutputTokens: 4096, maxContextMessages: 40 },
-    'microsoft/Phi-3.5-mini-instruct':        { maxContextTokens: 128000, maxOutputTokens: 4096, maxContextMessages: 60 },
-    'meta-llama/Meta-Llama-3.1-70B-Instruct': { maxContextTokens: 128000, maxOutputTokens: 8192, maxContextMessages: 80 },
-    'meta-llama/Meta-Llama-3.1-405B-Instruct':{ maxContextTokens: 128000, maxOutputTokens: 8192, maxContextMessages: 80 },
-    'mistralai/Mixtral-8x7B-Instruct-v0.1':   { maxContextTokens: 32768,  maxOutputTokens: 4096, maxContextMessages: 40 },
+    // Hugging Face
+    'Qwen/Qwen2.5-72B-Instruct':               { maxContextTokens: 128000, maxOutputTokens: 8192, maxContextMessages: 80 },
+    'mistralai/Mistral-7B-Instruct-v0.3':      { maxContextTokens: 32768,  maxOutputTokens: 4096, maxContextMessages: 40 },
+    'microsoft/Phi-3.5-mini-instruct':         { maxContextTokens: 128000, maxOutputTokens: 4096, maxContextMessages: 60 },
+    'meta-llama/Meta-Llama-3.1-70B-Instruct':  { maxContextTokens: 128000, maxOutputTokens: 8192, maxContextMessages: 80 },
+    'meta-llama/Meta-Llama-3.1-405B-Instruct': { maxContextTokens: 128000, maxOutputTokens: 8192, maxContextMessages: 80 },
+    'mistralai/Mixtral-8x7B-Instruct-v0.1':    { maxContextTokens: 32768,  maxOutputTokens: 4096, maxContextMessages: 40 },
     // GroqCloud
-    'llama-3.3-70b-versatile': { maxContextTokens: 128000, maxOutputTokens: 8192,  maxContextMessages: 80 },
-    'llama-3.1-8b-instant':    { maxContextTokens: 131072, maxOutputTokens: 8192,  maxContextMessages: 80 },
-    'mixtral-8x7b-32768':      { maxContextTokens: 32768,  maxOutputTokens: 32768, maxContextMessages: 40 },
-    'gemma2-9b-it':            { maxContextTokens: 8192,   maxOutputTokens: 8192,  maxContextMessages: 50 }
+    'llama-3.3-70b-versatile':                   { maxContextTokens: 128000, maxOutputTokens: 8192, maxContextMessages: 80 },
+    'llama-3.1-8b-instant':                      { maxContextTokens: 131072, maxOutputTokens: 8192, maxContextMessages: 80 },
+    'meta-llama/llama-4-scout-17b-16e-instruct': { maxContextTokens: 131072, maxOutputTokens: 8192, maxContextMessages: 80 },
+    'qwen/qwen3-32b':                            { maxContextTokens: 131072, maxOutputTokens: 8192, maxContextMessages: 80 },
+    'moonshotai/kimi-k2-instruct-0905':          { maxContextTokens: 131072, maxOutputTokens: 8192, maxContextMessages: 80 }
 };
 const OPENAI_MODELS_FREE = ['gpt-4o-mini', 'gpt-5-mini'];
 const OPENAI_MODELS_PAID = ['gpt-5.4', 'gpt-5.2-chat-latest', 'gpt-4o', 'gpt-4.1', 'gpt-4o-mini'];
@@ -681,8 +789,8 @@ const GOOGLE_MODELS_FREE = ['gemini-2.5-flash'];
 const GOOGLE_MODELS_PAID = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro', 'gemini-2.0-flash'];
 const HF_MODELS_FREE     = ['Qwen/Qwen2.5-72B-Instruct', 'mistralai/Mistral-7B-Instruct-v0.3', 'microsoft/Phi-3.5-mini-instruct'];
 const HF_MODELS_PAID     = ['meta-llama/Meta-Llama-3.1-70B-Instruct', 'meta-llama/Meta-Llama-3.1-405B-Instruct', 'Qwen/Qwen2.5-72B-Instruct', 'mistralai/Mixtral-8x7B-Instruct-v0.1'];
-const GROQ_MODELS_FREE   = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
-const GROQ_MODELS_PAID   = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
+const GROQ_MODELS_FREE   = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'meta-llama/llama-4-scout-17b-16e-instruct', 'qwen/qwen3-32b'];
+const GROQ_MODELS_PAID   = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'meta-llama/llama-4-scout-17b-16e-instruct', 'qwen/qwen3-32b', 'moonshotai/kimi-k2-instruct-0905'];
 // Models with native audio input support (microphone recording button)
 const AUDIO_CAPABLE_MODELS = ['gemini-2.5-flash','gemini-2.5-pro','gemini-1.5-pro','gemini-2.0-flash','gpt-4o','gpt-4.1'];
 ```
@@ -707,7 +815,7 @@ export GRQ_API_KEY="gsk_..."
 | `deploy.sh <user>` | Copies files from `/home/<user>/multi-llm-chat/var/www/deepseek-chat/` to `/var/www/deepseek-chat/`, sets ownership/permissions, reloads Apache |
 | `sync-back.sh <user>` | Copies changed files from production back to the source repo |
 | `install.sh` | Installs `deploy.sh` and `sync-back.sh` in the production directory |
-| `tag-release.sh` | Creates a new Git tag with auto-incremented version number (e.g. v0.80 → v0.81) and pushes it |
+| `tag-release.sh` | Creates a new Git tag with auto-incremented version number (e.g. v0.93 → v0.94) and pushes it. Runs `git fetch --tags` automatically to avoid conflicts with existing remote tags. |
 
 ---
 
@@ -727,8 +835,8 @@ export GRQ_API_KEY="gsk_..."
 ├── var/www/deepseek-chat/
 │   ├── index.html                      Main application (all JS/CSS/HTML)
 │   ├── language.xml                    All UI texts in all languages (EN, DE, ES, Custom)
-│   ├── manifest                        Design manifest (all conventions, ~20KB)
-│   ├── changelog                       Complete development history (68+ entries, ~44KB)
+│   ├── manifest                        Design manifest (all conventions)
+│   ├── changelog                       Complete development history
 │   ├── files-directorys                File overview / directory listing
 │   ├── cgi-bin/
 │   │   ├── openai-api.py              Streaming proxy to OpenAI API
@@ -736,6 +844,7 @@ export GRQ_API_KEY="gsk_..."
 │   │   ├── google-api.py              Streaming proxy to Google Gemini API
 │   │   ├── hugging-api.py             Streaming proxy to Hugging Face Inference API
 │   │   ├── groq-api.py                Streaming proxy to GroqCloud API (LPU-accelerated)
+│   │   ├── compress-context.py        Context compression via second LLM call
 │   │   ├── deepseek-models.py         Queries /v1/models endpoint
 │   │   ├── save-session.py            Saves chat sessions (POST)
 │   │   ├── load-session.py            Loads session list (GET) or session (GET ?id=)
@@ -745,51 +854,19 @@ export GRQ_API_KEY="gsk_..."
 │   │   ├── export-txt.py              TXT export
 │   │   ├── export-rtf.py              RTF export (no external library)
 │   │   ├── feedback-log.py            Like/Dislike logging
-│   │   ├── get-log.py                 Reads and returns log file
-│   │   └── deepseek-chat.log          Server log file (auto-created)
+│   │   └── get-log.py                 Reads and returns log file
+│   ├── logs/                          Server log files (auto-created)
+│   ├── kompressor/                    Compression result files (auto-created)
 │   └── sessions/                      Chat session JSON files (auto-created)
-
 ```
 
 ---
 
 ## Model Configuration
 
-The `MODEL_CONFIG` object in `index.html` is the single point of truth for all model-specific limits. It covers all five providers:
+The `MODEL_CONFIG` object in `index.html` is the single point of truth for all model-specific limits. It covers all five providers (see Configuration section above for the full object).
 
-```javascript
-const MODEL_CONFIG = {
-    // OpenAI
-    'gpt-5.4':              { maxContextTokens: 1050000, maxOutputTokens: 16384, maxContextMessages: 100 },
-    'gpt-5.2-chat-latest':  { maxContextTokens: 128000,  maxOutputTokens: 16384, maxContextMessages: 80  },
-    'gpt-4o':               { maxContextTokens: 128000,  maxOutputTokens: 16384, maxContextMessages: 80  },
-    'gpt-4.1':              { maxContextTokens: 1048576, maxOutputTokens: 32768, maxContextMessages: 100 },
-    'gpt-4o-mini':          { maxContextTokens: 128000,  maxOutputTokens: 16384, maxContextMessages: 80  },
-    'gpt-5-mini':           { maxContextTokens: 128000,  maxOutputTokens: 16384, maxContextMessages: 80  },
-    // DeepSeek
-    'deepseek-chat':     { maxContextTokens: 100000,  maxOutputTokens: 8192,  maxContextMessages: 50  },
-    'deepseek-reasoner': { maxContextTokens: 65000,   maxOutputTokens: 32768, maxContextMessages: 30  },
-    // Google Gemini
-    'gemini-2.5-flash':  { maxContextTokens: 1048576, maxOutputTokens: 8192,  maxContextMessages: 100 },
-    'gemini-2.5-pro':    { maxContextTokens: 1048576, maxOutputTokens: 65536, maxContextMessages: 100 },
-    'gemini-1.5-pro':    { maxContextTokens: 2097152, maxOutputTokens: 8192,  maxContextMessages: 100 },
-    'gemini-2.0-flash':  { maxContextTokens: 1048576, maxOutputTokens: 8192,  maxContextMessages: 100 },
-    // Hugging Face
-    'Qwen/Qwen2.5-72B-Instruct':               { maxContextTokens: 128000, maxOutputTokens: 8192, maxContextMessages: 80 },
-    'mistralai/Mistral-7B-Instruct-v0.3':      { maxContextTokens: 32768,  maxOutputTokens: 4096, maxContextMessages: 40 },
-    'microsoft/Phi-3.5-mini-instruct':         { maxContextTokens: 128000, maxOutputTokens: 4096, maxContextMessages: 60 },
-    'meta-llama/Meta-Llama-3.1-70B-Instruct':  { maxContextTokens: 128000, maxOutputTokens: 8192, maxContextMessages: 80 },
-    'meta-llama/Meta-Llama-3.1-405B-Instruct': { maxContextTokens: 128000, maxOutputTokens: 8192, maxContextMessages: 80 },
-    'mistralai/Mixtral-8x7B-Instruct-v0.1':    { maxContextTokens: 32768,  maxOutputTokens: 4096, maxContextMessages: 40 },
-    // GroqCloud
-    'llama-3.3-70b-versatile': { maxContextTokens: 128000, maxOutputTokens: 8192,  maxContextMessages: 80 },
-    'llama-3.1-8b-instant':    { maxContextTokens: 131072, maxOutputTokens: 8192,  maxContextMessages: 80 },
-    'mixtral-8x7b-32768':      { maxContextTokens: 32768,  maxOutputTokens: 32768, maxContextMessages: 40 },
-    'gemma2-9b-it':            { maxContextTokens: 8192,   maxOutputTokens: 8192,  maxContextMessages: 50 }
-};
-```
-
-Sources: [OpenAI API Docs](https://platform.openai.com/docs), [DeepSeek API Docs](https://api-docs.deepseek.com), [Google Gemini Docs](https://ai.google.dev/gemini-api/docs), [Hugging Face Inference Providers](https://huggingface.co/docs/inference-providers), [GroqCloud Docs](https://console.groq.com/docs/models) (as of 10.03.2026).
+Sources: [OpenAI API Docs](https://platform.openai.com/docs), [DeepSeek API Docs](https://api-docs.deepseek.com), [Google Gemini Docs](https://ai.google.dev/gemini-api/docs), [Hugging Face Inference Providers](https://huggingface.co/docs/inference-providers), [GroqCloud Docs](https://console.groq.com/docs/models) (as of 19.03.2026).
 
 ---
 
@@ -805,6 +882,7 @@ The project includes a **`manifest` file** that documents all design decisions a
 - **No external JS frameworks** — no Node, no React, no Vue.
 - **Formatting preservation**: Existing indentation and formatting in `index.html` must never be changed.
 - **`AUDIO_CAPABLE_MODELS` must be updated**: Whenever a model gains or loses audio support, the constant must be updated immediately (Manifest rule E.1).
+- **Quota/limit banners must be implemented**: When adding a new LLM provider, the appropriate banner (red for paid, blue for free) must be implemented in the CGI script and client (Manifest rule E.1).
 - The manifest is a **separate file** and must never be embedded in `index.html`.
 
 ---
@@ -812,7 +890,7 @@ The project includes a **`manifest` file** that documents all design decisions a
 ## Known Limitations & Technical Notes
 
 ### "Lost in the Middle" — A Known AI Limitation
-All current language models (including DeepSeek) tend to remember content at the **beginning and end** of a long context reliably, but content **in the middle** is sometimes overlooked or hallucinated. (Liu et al., 2023: "Lost in the Middle: How Language Models Use Long Contexts")
+All current language models tend to remember content at the **beginning and end** of a long context reliably, but content **in the middle** is sometimes overlooked or hallucinated. (Liu et al., 2023: "Lost in the Middle: How Language Models Use Long Contexts")
 
 **Practical impact on this project**:
 - A repository export of ~270,000 characters ≈ ~67,500 tokens.
@@ -833,6 +911,9 @@ After a `git push`, the new version is **not immediately available** via `raw.gi
 
 ### Linux/X11/Firefox Paste Behavior
 On Linux with X11 and Firefox, `e.preventDefault()` in paste event handlers does not reliably block browser-native paste behavior for content coming from file managers. The solution implemented here (allow paste, check content in `setTimeout(0)`, clear if file paths detected) is the reliable workaround for this platform-specific limitation.
+
+### Context Exceeded Detection
+The context overflow detection in all five CGI scripts uses HTTP status code analysis combined with keyword matching in the API response body. While the keywords are broad enough to catch most API responses, edge cases with unusual error messages from provider infrastructure changes may not be caught immediately and would fall back to a generic error message.
 
 ---
 
@@ -867,32 +948,32 @@ This project demonstrates professional-level web development in a minimalist, se
 - Unique flexible context management (delete any message + all subsequent).
 - Intelligent clipboard handling for text, images, and file path protection.
 - **Audio recording** directly in the browser — microphone input for Google Gemini (all models) and OpenAI gpt-4o / gpt-4.1.
+- **Kompressor** — automatic context compression enables indefinitely long conversations, regardless of the model's context window size.
+- **Context exceeded handling** — interactive in-chat box with smart context carry-over across sessions (Option C).
+- **Quota banners** — clear, persistent visual feedback for exhausted credit or daily limits.
+- **Copy to clipboard** — the entire chat exported directly to the system clipboard with a single click.
 - Multi-language support with address form distinction, loaded from external XML.
 
 **Engineering**:
 - Magic byte inspection that detects malware regardless of filename extension.
 - Umlaut placeholder system solving a fundamental DeepSeek API limitation.
 - Forward-compatible model capability map ready for image-supporting models.
+- Precise compressor summary discard: summary is invalidated when context drops below the last triggered threshold after manual deletion.
 - Complete audit trail via Git and detailed changelog.
 
 **Tooling**:
-- `repo2text.sh` as a practical tool for AI-assisted development.
+- `repo2text.sh` as a practical tool for AI-assisted development, with unique delimiter and deduplication via `sort -z -u`.
 - Deployment scripts ensuring consistent, permission-correct deployments.
-- Version tagging for clean release management.
+- Version tagging for clean release management, with automatic remote tag synchronization.
 
 **For a professional developer**, this project demonstrates:
 - **Security awareness** — API key protection, malware detection, secure session storage.
 - **Structured discipline** — manifest, version tags, strict design conventions, documented changelog.
-- **Problem-solving depth** — X11 paste behavior, umlaut corruption, PDF binary output, "Lost in the Middle".
+- **Problem-solving depth** — X11 paste behavior, umlaut corruption, PDF binary output, "Lost in the Middle", context overflow handling.
 - **Complete documentation** — both inline and in dedicated files.
 
 Multi-LLM Chat Client is a **showcase for professional web development** — without unnecessary overhead, but with the highest standards for security, correctness, and user-friendliness.
 
 ---
 
-*Last updated: 11.03.2026*
-
-
-
-
-
+*Last updated: 19.03.2026*
