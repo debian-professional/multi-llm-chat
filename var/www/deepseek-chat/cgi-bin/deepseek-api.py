@@ -1,26 +1,29 @@
-############ FILE: var/www/deepseek-chat/cgi-bin/deepseek-api.py ############
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 # =============================================================================
 # DEEPSEEK API PROXY
-# Importiert / aktualisiert: 08.03.2026
+# Importiert / aktualisiert: 11.05.2026
 # =============================================================================
 #
 # Unterstuetzte Modelle:
 #
-#   deepseek-chat  (DeepSeek V3)
-#     Version      : V3 (Stand 08.03.2026)
-#     Kontext      : 64.000 Token Input / 8.192 Token Output
+#   deepseek-v4-flash  (DeepSeek V4 Flash)
+#     Version      : V4 Preview (Stand 11.05.2026)
+#     Kontext      : 1.048.576 Token Input / 8.192 Token Output
 #     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
+#                    Thinking- und Non-Thinking-Mode verfuegbar
 #
-#   deepseek-reasoner  (DeepSeek R1)
-#     Version      : R1 (Stand 08.03.2026)
-#     Kontext      : 64.000 Token Input / 32.768 Token Output
+#   deepseek-v4-pro  (DeepSeek V4 Pro)
+#     Version      : V4 Preview (Stand 11.05.2026)
+#     Kontext      : 1.048.576 Token Input / 32.768 Token Output
 #     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
-#                    Internes Chain-of-Thought Reasoning (DeepThink)
+#                    Thinking- und Non-Thinking-Mode verfuegbar
 #
-# Quelle: https://api-docs.deepseek.com (Stand 08.03.2026)
+# Hinweis: deepseek-chat und deepseek-reasoner werden ab 24.07.2026
+#          abgeschaltet (routen aktuell auf deepseek-v4-flash).
+#
+# Quelle: https://api-docs.deepseek.com (Stand 11.05.2026)
 # =============================================================================
 
 import json
@@ -103,7 +106,7 @@ def main():
         request_data = json.loads(post_data)
 
         # Validierung
-        model = request_data.get('model', 'deepseek-chat')
+        model = request_data.get('model', 'deepseek-v4-flash')
         messages = request_data.get('messages', [])
         max_tokens = request_data.get('max_tokens', 2000)
         no_training = request_data.get('no_training', True)
