@@ -1211,5 +1211,44 @@
     - MAX_FILE_CONTENT_LENGTH = 250.000 bleibt als Fallback-Konstante erhalten
     - Datei: index.html
 
+
+    85. [11.05.2026] Migration auf DeepSeek V4 — Modellnamen und Kontextgrössen
+    - Hintergrund: DeepSeek V4 Preview released am 24.04.2026. Alte Modellnamen
+      deepseek-chat und deepseek-reasoner werden ab 24.07.2026 abgeschaltet.
+      Beide neuen Modelle unterstützen 1M Token Kontext und Thinking/Non-Thinking-Mode.
+    - MODEL_CONFIG: deepseek-chat (100k/8k) → deepseek-v4-flash (1.048.576/8.192)
+      deepseek-reasoner (65k/32k) → deepseek-v4-pro (1.048.576/32.768)
+      maxContextMessages: deepseek-reasoner 30 → deepseek-v4-pro 50
+    - MODEL_CAPABILITIES: deepseek-chat, deepseek-reasoner, deepseek-v4 (anticipated)
+      ersetzt durch deepseek-v4-flash, deepseek-v4-pro
+    - DEEPSEEK_MODELS: ['deepseek-chat', 'deepseek-reasoner']
+      → ['deepseek-v4-flash', 'deepseek-v4-pro']
+    - COMPRESSOR_MODELS.deepseek: analog aktualisiert
+    - Dropdowns (Modell-Auswahl + Kompressor): Optionen auf V4-Namen umgestellt
+    - DeepThink-Logik (8 Stellen): beide Modi → deepseek-v4-flash
+      (deepseek-v4-pro per Dropdown manuell wählbar)
+    - Default-Settings: selectedModel + compressorModel → deepseek-v4-flash
+    - Tooltip-Texte: Modellnamen in Beschreibungen aktualisiert
+    - Kommentar-Header MODEL_CONFIG: V3.2 → V4, Datum 19.02.2026 → 11.05.2026
+    - getDynamicMaxFileChars()-Beispiele im Changelog 84 bleiben korrekt:
+      deepseek-v4-flash/pro mit 1M Token → max. ~3.145.000 Zeichen
+    - Datei: index.html
+
+    86. [11.05.2026] deepseek-api.py: V4-Update + Frontend-Fehlerhandler-Fix
+    - deepseek-api.py: Header-Kommentar auf V4-Modelle aktualisiert
+        * deepseek-v4-flash: 1.048.576 Token Input / 8.192 Output, Thinking-Mode
+        * deepseek-v4-pro:   1.048.576 Token Input / 32.768 Output, Thinking-Mode
+        * Deprecation-Hinweis: deepseek-chat/reasoner ab 24.07.2026 abgeschaltet
+        * Default-Fallback: 'deepseek-chat' → 'deepseek-v4-flash'
+        * Datum aktualisiert: 08.03.2026 → 11.05.2026
+    - deepseek-models.py: Keine Änderung nötig — holt Modelle live von der API,
+      liefert bereits korrekt deepseek-v4-flash und deepseek-v4-pro
+    - Frontend-Bug behoben: response.json() konsumiert den Response-Body,
+      nachfolgendes response.text() lieferte leeren String → Fehlermeldung
+      war immer leer ("API-Fehler (500):"). Fix: fallbackErrorText speichert
+      errData.message || errData.error || errData.details vor dem Body-Verbrauch,
+      wird als Fallback für response.text() verwendet (beide Provider-Branches).
+    - Dateien: deepseek-api.py, index.html
+
     ============================================================================
 
