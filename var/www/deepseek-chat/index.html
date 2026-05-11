@@ -1226,7 +1226,7 @@
                             </span>
                         </label>
                         <div class="setting-description" id="chatModeDescription">
-                            Standard conversation mode for general questions. (deepseek-chat)
+                            Standard conversation mode for general questions. (deepseek-v4-flash)
                         </div>
                     </div>
                     <div class="setting-item" id="deepthinkModeItem">
@@ -1238,7 +1238,7 @@
                             </span>
                         </label>
                         <div class="setting-description" id="deepthinkModeDescription">
-                            In-depth analysis with reasoning. (deepseek-reasoner)
+                            In-depth analysis with reasoning. (deepseek-v4-flash)
                         </div>
                     </div>
                 </div>
@@ -1415,8 +1415,8 @@
                     <div class="group-title" id="kompressorModelTitle" style="font-size:13px;color:#aaa;margin-bottom:6px;">Compressor Model</div>
                     <div class="model-select-wrapper">
                         <select id="kompressorModelSelect">
-                            <option value="deepseek-chat">deepseek-chat</option>
-                            <option value="deepseek-reasoner">deepseek-reasoner</option>
+                            <option value="deepseek-v4-flash">deepseek-v4-flash</option>
+                            <option value="deepseek-v4-pro">deepseek-v4-pro</option>
                         </select>
                     </div>
                 </div>
@@ -1429,8 +1429,8 @@
                 </div>
                 <div class="model-select-wrapper">
                     <select id="modelSelect">
-                        <option value="deepseek-chat">deepseek-chat</option>
-                        <option value="deepseek-reasoner">deepseek-reasoner</option>
+                        <option value="deepseek-v4-flash">deepseek-v4-flash</option>
+                        <option value="deepseek-v4-pro">deepseek-v4-pro</option>
                     </select>
                 </div>
             </div>
@@ -1485,9 +1485,8 @@
 
         // MODEL CAPABILITY MAP: which file types each model supports
         const MODEL_CAPABILITIES = {
-            'deepseek-chat':     { images: false, text: true },   // V3
-            'deepseek-reasoner': { images: false, text: true },   // V3 DeepThink
-            'deepseek-v4':       { images: true,  text: true },   // V4 (anticipated)
+            'deepseek-v4-flash': { images: false, text: true },   // V4 Flash
+            'deepseek-v4-pro':   { images: false, text: true },   // V4 Pro
             'default':           { images: false, text: true },
         };
         let detectedModels = [];   // filled on first API call
@@ -1505,20 +1504,20 @@
         const SERVER_NAME = 'DeepSeek Chat Server';
 
         // =====================================================================
-        // MODELL-KONFIGURATION: DeepSeek V3.2 (Stand: 19.02.2026)
+        // MODELL-KONFIGURATION: DeepSeek V4 (Stand: 11.05.2026)
         // Quelle: https://api-docs.deepseek.com
         // Bei Modellwechsel NUR diesen Block anpassen!
         // =====================================================================
         const MODEL_CONFIG = {
-            'deepseek-chat': {
-                maxContextTokens:  100000,
+            'deepseek-v4-flash': {
+                maxContextTokens:  1048576,
                 maxOutputTokens:   8192,
                 maxContextMessages: 50
             },
-            'deepseek-reasoner': {
-                maxContextTokens:  65000,
+            'deepseek-v4-pro': {
+                maxContextTokens:  1048576,
                 maxOutputTokens:   32768,
-                maxContextMessages: 30
+                maxContextMessages: 50
             },
             'gemini-2.5-flash': {
                 maxContextTokens:  1048576,
@@ -1591,7 +1590,7 @@
                 maxContextMessages: 80
             }
         };
-        const DEEPSEEK_MODELS      = ['deepseek-chat', 'deepseek-reasoner'];
+        const DEEPSEEK_MODELS      = ['deepseek-v4-flash', 'deepseek-v4-pro'];
         const OPENAI_MODELS_FREE   = ['gpt-4o-mini', 'gpt-5-mini'];
         const OPENAI_MODELS_PAID   = ['gpt-5.4', 'gpt-5.2-chat-latest', 'gpt-4o', 'gpt-4.1', 'gpt-4o-mini'];
         const GOOGLE_MODELS_FREE   = ['gemini-2.5-flash'];
@@ -1607,7 +1606,7 @@
         ];
         // Modelle je Kompressor-Anbieter (nur bezahlte Provider)
         const COMPRESSOR_MODELS = {
-            deepseek: ['deepseek-chat', 'deepseek-reasoner'],
+            deepseek: ['deepseek-v4-flash', 'deepseek-v4-pro'],
             openai:   ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1'],
             google:   ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro']
         };
@@ -2059,9 +2058,9 @@
                     settings.apiService === 'groq'   || settings.apiService === 'openai') {
                     modelName2 = settings.selectedModel;
                 } else {
-                    modelName2 = (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
+                    modelName2 = (currentMode === 'deepthink') ? 'deepseek-v4-flash' : 'deepseek-v4-flash';
                 }
-                const config2 = MODEL_CONFIG[modelName2] || MODEL_CONFIG['deepseek-chat'];
+                const config2 = MODEL_CONFIG[modelName2] || MODEL_CONFIG['deepseek-v4-flash'];
                 const pct = Math.round(
                     (contextHistory.totalEstimatedTokens / config2.maxContextTokens) * 100
                 );
@@ -2094,9 +2093,9 @@
                 settings.apiService === 'groq'   || settings.apiService === 'openai') {
                 modelName = settings.selectedModel;
             } else {
-                modelName = (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
+                modelName = (currentMode === 'deepthink') ? 'deepseek-v4-flash' : 'deepseek-v4-flash';
             }
-            const config = MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-chat'];
+            const config = MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-v4-flash'];
             const pct = Math.min(100, Math.round(
                 (contextHistory.totalEstimatedTokens / config.maxContextTokens) * 100
             ));
@@ -2118,9 +2117,9 @@
             if (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq' || settings.apiService === 'openai') {
                 modelName = settings.selectedModel;
             } else {
-                modelName = (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
+                modelName = (currentMode === 'deepthink') ? 'deepseek-v4-flash' : 'deepseek-v4-flash';
             }
-            const config = MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-chat'];
+            const config = MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-v4-flash'];
             const maxMessages = config.maxContextMessages;
             const recentMessages = contextHistory.messages.slice(-maxMessages);
             const totalTokens = recentMessages.reduce((sum, msg) => sum + (msg.estimatedTokens || 0), 0);
@@ -2133,9 +2132,9 @@
             if (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq' || settings.apiService === 'openai') {
                 modelName = settings.selectedModel;
             } else {
-                modelName = (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
+                modelName = (currentMode === 'deepthink') ? 'deepseek-v4-flash' : 'deepseek-v4-flash';
             }
-            const config = MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-chat'];
+            const config = MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-v4-flash'];
             const pct = Math.min(100, Math.round((contextHistory.totalEstimatedTokens / config.maxContextTokens) * 100));
             const contextInfoEl = document.getElementById('contextInfo');
             contextInfoEl.textContent = t(2) + ' ' + pct + '% (' + modelName + ')';
@@ -2305,9 +2304,9 @@
                 settings.apiService === 'groq'   || settings.apiService === 'openai') {
                 modelName = settings.selectedModel;
             } else {
-                modelName = (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
+                modelName = (currentMode === 'deepthink') ? 'deepseek-v4-flash' : 'deepseek-v4-flash';
             }
-            const config = MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-chat'];
+            const config = MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-v4-flash'];
             return Math.floor(config.maxContextTokens * 4 * 0.75);
         }
 
@@ -2660,14 +2659,14 @@
                 });
                 const modelName = (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq' || settings.apiService === 'openai')
                     ? (settings.selectedModel || (settings.apiService === 'google' ? 'gemini-2.5-flash' : (settings.apiService === 'groq' ? 'llama-3.3-70b-versatile' : (settings.apiService === 'openai' ? 'gpt-4o-mini' : 'Qwen/Qwen2.5-72B-Instruct'))))
-                    : (userMsg.mode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
+                    : (userMsg.mode === 'deepthink') ? 'deepseek-v4-flash' : 'deepseek-v4-flash';
                 let activeApiUrl;
                 if (settings.apiService === 'google') activeApiUrl = GOOGLE_API_URL;
                 else if (settings.apiService === 'huggingface') activeApiUrl = HF_API_URL;
                 else if (settings.apiService === 'groq') activeApiUrl = GROQ_API_URL;
                 else if (settings.apiService === 'openai') activeApiUrl = OPENAI_API_URL;
                 else activeApiUrl = API_URL;
-                const maxTokens = (MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-chat']).maxOutputTokens;
+                const maxTokens = (MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-v4-flash']).maxOutputTokens;
                 const response = await fetch(activeApiUrl, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ model: modelName, messages, max_tokens: maxTokens, no_training: settings.noTraining })
@@ -2823,7 +2822,7 @@
         // =====================================================================
         function migrateSettings(oldSettings) {
             if (!oldSettings || typeof oldSettings !== 'object') {
-                return { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', hfTier: 'free', groqTier: 'free', openaiTier: 'free', selectedModel: 'deepseek-chat', compressorEnabled: true, compressorService: 'deepseek', compressorModel: 'deepseek-chat' };
+                return { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', hfTier: 'free', groqTier: 'free', openaiTier: 'free', selectedModel: 'deepseek-v4-flash', compressorEnabled: true, compressorService: 'deepseek', compressorModel: 'deepseek-v4-flash' };
             }
             let defaultMode = oldSettings.defaultMode || 'chat';
             if (defaultMode === 'search') defaultMode = 'chat';
@@ -2838,14 +2837,14 @@
                 hfTier:        oldSettings.hfTier || 'free',
                 groqTier:      oldSettings.groqTier || 'free',
                 openaiTier:    oldSettings.openaiTier || 'free',
-                selectedModel:       oldSettings.selectedModel || 'deepseek-chat',
+                selectedModel:       oldSettings.selectedModel || 'deepseek-v4-flash',
                 compressorEnabled:   oldSettings.compressorEnabled !== undefined ? oldSettings.compressorEnabled : true,
                 compressorService:   oldSettings.compressorService || 'deepseek',
-                compressorModel:     oldSettings.compressorModel || 'deepseek-chat'
+                compressorModel:     oldSettings.compressorModel || 'deepseek-v4-flash'
             };
         }
         
-        let settings = { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', hfTier: 'free', groqTier: 'free', openaiTier: 'free', selectedModel: 'deepseek-chat', compressorEnabled: true, compressorService: 'deepseek', compressorModel: 'deepseek-chat' };
+        let settings = { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', hfTier: 'free', groqTier: 'free', openaiTier: 'free', selectedModel: 'deepseek-v4-flash', compressorEnabled: true, compressorService: 'deepseek', compressorModel: 'deepseek-v4-flash' };
         let currentMode = 'chat';
         // Kompressor: Schwellwert-Tracking (reset nach jeder Kompression)
         let compressorTriggered = { 70: false, 85: false, 95: false };
@@ -3441,14 +3440,14 @@
                 });
                 const modelName = (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq' || settings.apiService === 'openai')
                     ? (settings.selectedModel || (settings.apiService === 'google' ? 'gemini-2.5-flash' : (settings.apiService === 'groq' ? 'llama-3.3-70b-versatile' : (settings.apiService === 'openai' ? 'gpt-4o-mini' : 'Qwen/Qwen2.5-72B-Instruct'))))
-                    : (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
+                    : (currentMode === 'deepthink') ? 'deepseek-v4-flash' : 'deepseek-v4-flash';
                 let activeApiUrl;
                 if (settings.apiService === 'google') activeApiUrl = GOOGLE_API_URL;
                 else if (settings.apiService === 'huggingface') activeApiUrl = HF_API_URL;
                 else if (settings.apiService === 'groq') activeApiUrl = GROQ_API_URL;
                 else if (settings.apiService === 'openai') activeApiUrl = OPENAI_API_URL;
                 else activeApiUrl = API_URL;
-                const maxTokens = (MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-chat']).maxOutputTokens;
+                const maxTokens = (MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-v4-flash']).maxOutputTokens;
                 const requestPayload = { model: modelName, messages, max_tokens: maxTokens, no_training: settings.noTraining };
                 if (audioData) { requestPayload.audio_data = audioData; requestPayload.audio_mime_type = audioMimeType; }
                 const requestBody = JSON.stringify(requestPayload);
@@ -3815,9 +3814,9 @@
                             settings.apiService === 'groq'   || settings.apiService === 'openai') {
                             modelNameCtx = settings.selectedModel;
                         } else {
-                            modelNameCtx = (currentMode === 'deepthink') ? 'deepseek-reasoner' : 'deepseek-chat';
+                            modelNameCtx = (currentMode === 'deepthink') ? 'deepseek-v4-flash' : 'deepseek-v4-flash';
                         }
-                        const ctxConfig = MODEL_CONFIG[modelNameCtx] || MODEL_CONFIG['deepseek-chat'];
+                        const ctxConfig = MODEL_CONFIG[modelNameCtx] || MODEL_CONFIG['deepseek-v4-flash'];
                         if (estimatedFileTokens > ctxConfig.maxContextTokens) {
                             alert(tf(262, estimatedFileTokens.toLocaleString(), ctxConfig.maxContextTokens.toLocaleString()));
                             fileUpload.value = '';
@@ -4354,6 +4353,9 @@
     </script>
 </body>
 </html>
+
+
+
 
 
 
