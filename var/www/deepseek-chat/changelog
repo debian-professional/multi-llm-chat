@@ -1250,5 +1250,110 @@
       wird als Fallback für response.text() verwendet (beide Provider-Branches).
     - Dateien: deepseek-api.py, index.html
 
+    87. [19.07.2026] DeepSeek-Modellauswahl-Bug behoben + Kontext-/Modell-Header korrigiert
+    - index.html: Kritischer Bug behoben — deepseek-v4-pro war über das Modell-
+      Dropdown nie erreichbar. An 8 Stellen stand die Modellwahl-Logik für
+      DeepSeek fest auf:
+        (currentMode === 'deepthink') ? 'deepseek-v4-flash' : 'deepseek-v4-flash'
+      Beide Ternary-Zweige lieferten denselben String — settings.selectedModel
+      wurde für DeepSeek komplett ignoriert.
+        * Fix: settings.selectedModel || 'deepseek-v4-flash'
+          (konsistent zum Muster der anderen Provider)
+        * Betroffen: sendMessage() (Haupt-Sendepfad), handleRegenerate(),
+          Indikator-Update, updateContextEstimation(), updateContextDisplay(),
+          getDynamicMaxFileChars(), Datei-Kontext-Berechnung
+    - llmSaveHandler: expliziter updateContextDisplay()-Aufruf am Ende ergänzt,
+      damit der Kontext-Header sofort nach "Apply Settings" aktualisiert wird
+    - modelInfo-Header ("Modell: ..."): zeigte für DeepSeek bisher immer die
+      komplette von deepseek-models.py gemeldete Modell-Liste (z.B.
+      "deepseek-v4-flash, deepseek-v4-pro") statt des tatsächlich ausgewählten
+      Modells — inkonsistent zu Google/OpenAI/Groq/HuggingFace.
+        * Fix in updateApiServiceUI() und allgemeiner UI-Update-Stelle: zeigt
+          jetzt überall settings.selectedModel bzw. modelSelect.value
+        * fetchDeepSeekModels() überschreibt den Header nicht mehr
+    - Datei: index.html
+
+    88. [19.07.2026] DeepSeek-Pro-Bug, Modell-Header-Fixes, Log-Erweiterung,
+        veraltete Modelle bereinigt, Bild-Pipeline aufgebaut
+    - index.html: Kritischer Bug behoben — deepseek-v4-pro war über das
+      Modell-Dropdown nie erreichbar. An 8 Stellen stand die Modellwahl-
+      Logik für DeepSeek fest auf:
+        (currentMode === 'deepthink') ? 'deepseek-v4-flash' : 'deepseek-v4-flash'
+      Beide Ternary-Zweige lieferten denselben String — settings.selectedModel
+      wurde für DeepSeek komplett ignoriert.
+        * Fix: settings.selectedModel || 'deepseek-v4-flash'
+          (konsistent zum Muster der anderen Provider)
+        * Betroffen: sendMessage(), handleRegenerate(), Indikator-Update,
+          updateContextEstimation(), updateContextDisplay(),
+          getDynamicMaxFileChars(), Datei-Kontext-Berechnung
+    - llmSaveHandler: expliziter updateContextDisplay()-Aufruf am Ende
+      ergänzt, damit der Kontext-Header sofort nach "Apply Settings"
+      aktualisiert wird
+    - modelInfo-Header ("Modell: ..."): zeigte für DeepSeek bisher immer die
+      komplette von deepseek-models.py gemeldete Modell-Liste statt des
+      tatsächlich ausgewählten Modells — inkonsistent zu Google/OpenAI/
+      Groq/HuggingFace.
+        * Fix in updateApiServiceUI() und allgemeiner UI-Update-Stelle:
+          zeigt jetzt überall settings.selectedModel bzw. modelSelect.value
+        * fetchDeepSeekModels() überschreibt den Header nicht mehr
+    - deepseek-api.py: log_to_file() und send_error() um optionalen model-
+      Parameter erweitert
+        * Loggt jetzt zusätzlich "| Model: <name>" bei Erfolg und allen
+          Fehlerfällen ab dem Punkt, an dem das Modell aus dem Request
+          geparst ist — Zweck: serverseitige Verifikation, welches Modell
+          tatsächlich bei der DeepSeek-API ankommt
+    - google-api.py: Default-Fallback 'gemini-2.0-flash' (abgeschaltet seit
+      01.06.2026) → 'gemini-2.5-flash'. Kommentar-Header bereinigt:
+      gemini-2.0-flash und gemini-1.5-pro (beide nicht mehr erreichbar)
+      entfernt, Abschaltdatum für gemini-2.5-flash (16.10.2026) vermerkt
+    - index.html: GOOGLE_MODELS_PAID, MODEL_CONFIG, AUDIO_CAPABLE_MODELS,
+      COMPRESSOR_MODELS.google um gemini-2.0-flash/gemini-1.5-pro bereinigt
+    - hugging-api.py: mistralai/Mixtral-8x7B-Instruct-v0.1 aus Kommentar
+      entfernt (wird von keinem Inference Provider mehr gehostet);
+      index.html: HF_MODELS_PAID entsprechend bereinigt
+    - groq-api.py: Kommentar-Header korrigiert — mixtral-8x7b-32768
+      (deprecated seit 20.03.2025) und gemma2-9b-it (deprecated seit
+      08.10.2025) entfernt, tatsächlich aktive Modelle (inkl.
+      moonshotai/kimi-k2-instruct-0905) ergänzt
+    - index.html: fehlenden MODEL_CONFIG-Eintrag für
+      moonshotai/kimi-k2-instruct-0905 ergänzt (131.072 Token Input /
+      8.192 Output) — war in GROQ_MODELS_PAID gelistet, fiel bisher mangels
+      Config-Eintrag auf DeepSeek-Limits zurück
+    - MODEL_CAPABILITIES: bisher nur DeepSeek-Einträge (beide images:false),
+      alle anderen Modelle fielen auf 'default' (images:false) zurück.
+      Jetzt korrekt befüllt für Gemini 2.5 Flash/Pro und alle OpenAI-
+      Modelle (images:true); Groq/HuggingFace bleiben laut eigener Doku
+      bei images:false
+    - currentModelSupportsImages(): prüfte bisher detectedModels (nur von
+      DeepSeek's /v1/models befüllt) statt settings.selectedModel — dadurch
+      war Bild-Upload/-Paste für JEDEN Provider und JEDES Modell blockiert.
+        * Fix: prüft jetzt settings.selectedModel gegen MODEL_CAPABILITIES
+    - Datei-Upload: Bild-Dateien wurden bisher nur als File-Objekt
+      referenziert, nie gelesen. Jetzt per FileReader als Base64
+      eingelesen → imageData/imageMimeType
+    - Zwischenablage-Paste: Base64 wurde bisher nur für die Thumbnail-
+      Vorschau genutzt. Jetzt zusätzlich in imageData/imageMimeType
+      übernommen
+    - sendMessage(): image_data/image_mime_type werden jetzt im Request-
+      Payload mitgeschickt (analog zum bestehenden audio_data-Muster),
+      inkl. Reset nach dem Senden bzw. beim Entfernen der Datei
+      (6 Reset-Stellen)
+    - google-api.py: convert_messages_to_gemini() hängt Bild-Daten jetzt
+      als inline_data-Part an die letzte User-Message an (gleiches Muster
+      wie Audio)
+    - openai-api.py: content-Array wird jetzt korrekt aus Text + optional
+      input_audio + optional image_url (Data-URL, Base64) zusammengebaut —
+      vorher hätte gleichzeitiges Audio+Bild den jeweils anderen Teil
+      überschrieben
+    - Verifiziert: Bild-Upload getestet mit gemini-2.5-flash und
+      gpt-4o-mini, beide beschreiben den übertragenen Screenshot korrekt
+      und akkurat
+    - Bekannte Einschränkung: Bild-Anhänge ohne begleitende Text-Datei
+      erzeugen in der Chat-Anzeige noch keine eigene Dateikarte (gleiches
+      Verhalten wie das bereits bestehende Audio-Feature) — rein
+      kosmetisch, Übertragung selbst funktioniert unabhängig davon
+    - Dateien: index.html, deepseek-api.py,
+
+
     ============================================================================
 
