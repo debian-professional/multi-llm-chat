@@ -3546,8 +3546,9 @@
                         }
                     } else if (settings.apiService === 'deepseek' || settings.apiService === 'openai') {
                         // Guthaben-Prüfung für bezahlte Anbieter
+                        let errData = null;
                         try {
-                            const errData = await response.json();
+                            errData = await response.json();
                             if (errData && errData.error_type === 'insufficient_quota') {
                                 showGuthabenBanner();
                                 throw new Error(t(256));
@@ -3559,11 +3560,13 @@
                         } catch (parseErr) {
                             if (parseErr.message === t(256) || parseErr.message === t(259)) throw parseErr;
                         }
-                        throw new Error(tf(24, response.status, ''));
+                        const errDetail = (errData && (errData.details || errData.error || errData.message)) || '';
+                        throw new Error(tf(24, response.status, errDetail));
                     } else if (settings.apiService === 'groq' || settings.apiService === 'huggingface') {
                         // Tageslimit-Prüfung für Free Tier Anbieter
+                        let errData = null;
                         try {
-                            const errData = await response.json();
+                            errData = await response.json();
                             if (errData && errData.error_type === 'daily_limit') {
                                 showTageslimitBanner();
                                 throw new Error(t(257));
@@ -3575,7 +3578,8 @@
                         } catch (parseErr) {
                             if (parseErr.message === t(257) || parseErr.message === t(259)) throw parseErr;
                         }
-                        throw new Error(tf(24, response.status, ''));
+                        const errDetail = (errData && (errData.details || errData.error || errData.message)) || '';
+                        throw new Error(tf(24, response.status, errDetail));
                     } else {
                         throw new Error(tf(24, response.status, ''));
                     }
