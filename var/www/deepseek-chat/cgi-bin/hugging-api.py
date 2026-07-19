@@ -1,6 +1,3 @@
-############ FILE: var/www/deepseek-chat/cgi-bin/hugging-api.py ############
-FILE: var/www/deepseek-chat/cgi-bin/hugging-api.py
----------------------------------------------------------
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
@@ -45,12 +42,11 @@ FILE: var/www/deepseek-chat/cgi-bin/hugging-api.py
 #     Kontext      : 128.000 Token Input / 8.192 Token Output
 #     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
 #
-#   mistralai/Mixtral-8x7B-Instruct-v0.1  [Paid]
-#     Version      : Mixtral 8x7B Instruct v0.1 (Stand 08.03.2026)
-#     Kontext      : 32.768 Token Input / 4.096 Token Output
-#     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
+# ENTFERNT (nicht mehr erreichbar, Stand 19.07.2026):
+#   mistralai/Mixtral-8x7B-Instruct-v0.1 — wird von keinem Inference Provider
+#   mehr gehostet (Anfragen ueber router.huggingface.co schlagen fehl)
 #
-# Quelle: https://huggingface.co/docs/inference-providers (Stand 08.03.2026)
+# Quelle: https://huggingface.co/docs/inference-providers (Stand 19.07.2026)
 # =============================================================================
 
 import json
@@ -276,6 +272,9 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
 
 
 

@@ -1524,16 +1524,6 @@
                 maxOutputTokens:   8192,
                 maxContextMessages: 100
             },
-            'gemini-2.0-flash': {
-                maxContextTokens:  1048576,
-                maxOutputTokens:   8192,
-                maxContextMessages: 100
-            },
-            'gemini-1.5-pro': {
-                maxContextTokens:  2097152,
-                maxOutputTokens:   8192,
-                maxContextMessages: 100
-            },
             'gemini-2.5-pro': {
                 maxContextTokens:  1048576,
                 maxOutputTokens:   65536,
@@ -1588,27 +1578,32 @@
                 maxContextTokens:  131072,
                 maxOutputTokens:   40960,
                 maxContextMessages: 80
+            },
+            'moonshotai/kimi-k2-instruct-0905': {
+                maxContextTokens:  131072,
+                maxOutputTokens:   8192,
+                maxContextMessages: 80
             }
         };
         const DEEPSEEK_MODELS      = ['deepseek-v4-flash', 'deepseek-v4-pro'];
         const OPENAI_MODELS_FREE   = ['gpt-4o-mini', 'gpt-5-mini'];
         const OPENAI_MODELS_PAID   = ['gpt-5.4', 'gpt-5.2-chat-latest', 'gpt-4o', 'gpt-4.1', 'gpt-4o-mini'];
         const GOOGLE_MODELS_FREE   = ['gemini-2.5-flash'];
-        const GOOGLE_MODELS_PAID   = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro', 'gemini-2.0-flash'];
+        const GOOGLE_MODELS_PAID   = ['gemini-2.5-flash', 'gemini-2.5-pro'];
         const HF_MODELS_FREE       = ['Qwen/Qwen2.5-72B-Instruct', 'mistralai/Mistral-7B-Instruct-v0.3', 'microsoft/Phi-3.5-mini-instruct'];
-        const HF_MODELS_PAID       = ['meta-llama/Meta-Llama-3.1-70B-Instruct', 'meta-llama/Meta-Llama-3.1-405B-Instruct', 'Qwen/Qwen2.5-72B-Instruct', 'mistralai/Mixtral-8x7B-Instruct-v0.1'];
+        const HF_MODELS_PAID       = ['meta-llama/Meta-Llama-3.1-70B-Instruct', 'meta-llama/Meta-Llama-3.1-405B-Instruct', 'Qwen/Qwen2.5-72B-Instruct'];
         const GROQ_MODELS_FREE     = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'meta-llama/llama-4-scout-17b-16e-instruct', 'qwen/qwen3-32b'];
         const GROQ_MODELS_PAID     = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'meta-llama/llama-4-scout-17b-16e-instruct', 'qwen/qwen3-32b', 'moonshotai/kimi-k2-instruct-0905'];
         const GOOGLE_MODELS        = GOOGLE_MODELS_FREE; // Fallback
         const AUDIO_CAPABLE_MODELS = [
-            'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro', 'gemini-2.0-flash',
+            'gemini-2.5-flash', 'gemini-2.5-pro',
             'gpt-4o', 'gpt-4.1'
         ];
         // Modelle je Kompressor-Anbieter (nur bezahlte Provider)
         const COMPRESSOR_MODELS = {
             deepseek: ['deepseek-v4-flash', 'deepseek-v4-pro'],
             openai:   ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1'],
-            google:   ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro']
+            google:   ['gemini-2.5-flash', 'gemini-2.5-pro']
         };
         // =====================================================================
 
@@ -2058,7 +2053,7 @@
                     settings.apiService === 'groq'   || settings.apiService === 'openai') {
                     modelName2 = settings.selectedModel;
                 } else {
-                    modelName2 = (currentMode === 'deepthink') ? 'deepseek-v4-flash' : 'deepseek-v4-flash';
+                    modelName2 = settings.selectedModel || 'deepseek-v4-flash';
                 }
                 const config2 = MODEL_CONFIG[modelName2] || MODEL_CONFIG['deepseek-v4-flash'];
                 const pct = Math.round(
@@ -2093,7 +2088,7 @@
                 settings.apiService === 'groq'   || settings.apiService === 'openai') {
                 modelName = settings.selectedModel;
             } else {
-                modelName = (currentMode === 'deepthink') ? 'deepseek-v4-flash' : 'deepseek-v4-flash';
+                modelName = settings.selectedModel || 'deepseek-v4-flash';
             }
             const config = MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-v4-flash'];
             const pct = Math.min(100, Math.round(
@@ -2117,7 +2112,7 @@
             if (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq' || settings.apiService === 'openai') {
                 modelName = settings.selectedModel;
             } else {
-                modelName = (currentMode === 'deepthink') ? 'deepseek-v4-flash' : 'deepseek-v4-flash';
+                modelName = settings.selectedModel || 'deepseek-v4-flash';
             }
             const config = MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-v4-flash'];
             const maxMessages = config.maxContextMessages;
@@ -2132,7 +2127,7 @@
             if (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq' || settings.apiService === 'openai') {
                 modelName = settings.selectedModel;
             } else {
-                modelName = (currentMode === 'deepthink') ? 'deepseek-v4-flash' : 'deepseek-v4-flash';
+                modelName = settings.selectedModel || 'deepseek-v4-flash';
             }
             const config = MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-v4-flash'];
             const pct = Math.min(100, Math.round((contextHistory.totalEstimatedTokens / config.maxContextTokens) * 100));
@@ -2304,7 +2299,7 @@
                 settings.apiService === 'groq'   || settings.apiService === 'openai') {
                 modelName = settings.selectedModel;
             } else {
-                modelName = (currentMode === 'deepthink') ? 'deepseek-v4-flash' : 'deepseek-v4-flash';
+                modelName = settings.selectedModel || 'deepseek-v4-flash';
             }
             const config = MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-v4-flash'];
             return Math.floor(config.maxContextTokens * 4 * 0.75);
@@ -2659,7 +2654,7 @@
                 });
                 const modelName = (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq' || settings.apiService === 'openai')
                     ? (settings.selectedModel || (settings.apiService === 'google' ? 'gemini-2.5-flash' : (settings.apiService === 'groq' ? 'llama-3.3-70b-versatile' : (settings.apiService === 'openai' ? 'gpt-4o-mini' : 'Qwen/Qwen2.5-72B-Instruct'))))
-                    : (userMsg.mode === 'deepthink') ? 'deepseek-v4-flash' : 'deepseek-v4-flash';
+                    : (settings.selectedModel || 'deepseek-v4-flash');
                 let activeApiUrl;
                 if (settings.apiService === 'google') activeApiUrl = GOOGLE_API_URL;
                 else if (settings.apiService === 'huggingface') activeApiUrl = HF_API_URL;
@@ -3440,7 +3435,7 @@
                 });
                 const modelName = (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq' || settings.apiService === 'openai')
                     ? (settings.selectedModel || (settings.apiService === 'google' ? 'gemini-2.5-flash' : (settings.apiService === 'groq' ? 'llama-3.3-70b-versatile' : (settings.apiService === 'openai' ? 'gpt-4o-mini' : 'Qwen/Qwen2.5-72B-Instruct'))))
-                    : (currentMode === 'deepthink') ? 'deepseek-v4-flash' : 'deepseek-v4-flash';
+                    : (settings.selectedModel || 'deepseek-v4-flash');
                 let activeApiUrl;
                 if (settings.apiService === 'google') activeApiUrl = GOOGLE_API_URL;
                 else if (settings.apiService === 'huggingface') activeApiUrl = HF_API_URL;
@@ -3814,7 +3809,7 @@
                             settings.apiService === 'groq'   || settings.apiService === 'openai') {
                             modelNameCtx = settings.selectedModel;
                         } else {
-                            modelNameCtx = (currentMode === 'deepthink') ? 'deepseek-v4-flash' : 'deepseek-v4-flash';
+                            modelNameCtx = settings.selectedModel || 'deepseek-v4-flash';
                         }
                         const ctxConfig = MODEL_CONFIG[modelNameCtx] || MODEL_CONFIG['deepseek-v4-flash'];
                         if (estimatedFileTokens > ctxConfig.maxContextTokens) {
@@ -4353,6 +4348,9 @@
     </script>
 </body>
 </html>
+
+
+
 
 
 

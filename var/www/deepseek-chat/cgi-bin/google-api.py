@@ -1,37 +1,34 @@
-############ FILE: var/www/deepseek-chat/cgi-bin/google-api.py ############
----------------------------------------------------------
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 # =============================================================================
 # GOOGLE GEMINI API PROXY
-# Importiert / aktualisiert: 08.03.2026
+# Importiert / aktualisiert: 19.07.2026
 # =============================================================================
 #
 # Unterstuetzte Modelle:
 #
 #   gemini-2.5-flash  [Free + Paid]
-#     Version      : Gemini 2.5 Flash (Stand 08.03.2026)
+#     Version      : Gemini 2.5 Flash (Stand 19.07.2026)
 #     Kontext      : 1.048.576 Token Input / 8.192 Token Output
 #     Faehigkeiten : Text, Bilder, Audio, Video
 #     Free-Limit   : 20 Anfragen/Tag, 5 Anfragen/Minute
+#     Achtung      : Abschaltung angekuendigt fuer 16.10.2026 (Nachfolger: gemini-3.5-flash)
 #
 #   gemini-2.5-pro  [Paid]
-#     Version      : Gemini 2.5 Pro (Stand 08.03.2026)
+#     Version      : Gemini 2.5 Pro (Stand 19.07.2026)
 #     Kontext      : 1.048.576 Token Input / 65.536 Token Output
 #     Faehigkeiten : Text, Bilder, Audio, Video
 #
-#   gemini-2.0-flash  [Paid]
-#     Version      : Gemini 2.0 Flash (Stand 08.03.2026)
-#     Kontext      : 1.048.576 Token Input / 8.192 Token Output
-#     Faehigkeiten : Text, Bilder, Audio, Video
+# ENTFERNT (nicht mehr erreichbar, Stand 19.07.2026):
+#   gemini-2.0-flash  — abgeschaltet 01.06.2026
+#   gemini-1.5-pro    — bereits laenger abgeschaltet (liefert 404)
 #
-#   gemini-1.5-pro  [Paid]
-#     Version      : Gemini 1.5 Pro (Stand 08.03.2026)
-#     Kontext      : 2.097.152 Token Input / 8.192 Token Output
-#     Faehigkeiten : Text, Bilder, Audio, Video
+# Hinweis: Google hat mit gemini-3.5-flash / gemini-3.1-pro-preview bereits eine
+#          neuere Modell-Generation veroeffentlicht. Perspektivisch pruefen, ob
+#          diese hier ergaenzt werden sollen.
 #
-# Quelle: https://ai.google.dev/gemini-api/docs (Stand 08.03.2026)
+# Quelle: https://ai.google.dev/gemini-api/docs/deprecations (Stand 19.07.2026)
 # =============================================================================
 
 import json
@@ -145,7 +142,7 @@ def main():
         request_data = json.loads(post_data)
 
         # Validierung
-        model = request_data.get('model', 'gemini-2.0-flash')
+        model = request_data.get('model', 'gemini-2.5-flash')
         messages = request_data.get('messages', [])
         max_tokens = request_data.get('max_tokens', 2000)
         audio_data = request_data.get('audio_data', None)
@@ -298,6 +295,9 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
 
 
 

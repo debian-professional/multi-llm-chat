@@ -1,41 +1,51 @@
-############ FILE: var/www/deepseek-chat/cgi-bin/groq-api.py ############
----------------------------------------------------------
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 # =============================================================================
 # GROQCLOUD API PROXY
-# Importiert / aktualisiert: 08.03.2026
+# Importiert / aktualisiert: 19.07.2026
 # =============================================================================
 #
-# Unterstuetzte Modelle:
+# Unterstuetzte Modelle (siehe MODEL_CONFIG / GROQ_MODELS_FREE / GROQ_MODELS_PAID
+# in index.html fuer die tatsaechlich im Frontend angebotenen Modelle):
 #
 #   --- FREE PLAN ---
 #
 #   llama-3.3-70b-versatile  [Free + Paid]
-#     Version      : Llama 3.3 70B Versatile (Stand 08.03.2026)
+#     Version      : Llama 3.3 70B Versatile (Stand 19.07.2026)
 #     Kontext      : 128.000 Token Input / 8.192 Token Output
 #     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
 #
 #   llama-3.1-8b-instant  [Free + Paid]
-#     Version      : Llama 3.1 8B Instant (Stand 08.03.2026)
+#     Version      : Llama 3.1 8B Instant (Stand 19.07.2026)
 #     Kontext      : 131.072 Token Input / 8.192 Token Output
 #     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
 #
-#   mixtral-8x7b-32768  [Free + Paid]
-#     Version      : Mixtral 8x7B Instruct v0.1 (Stand 08.03.2026)
-#     Kontext      : 32.768 Token Input / 32.768 Token Output
+#   meta-llama/llama-4-scout-17b-16e-instruct  [Free + Paid]
+#     Version      : Llama 4 Scout 17B (Stand 19.07.2026)
+#     Kontext      : 131.072 Token Input / 8.192 Token Output
 #     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
 #
-#   gemma2-9b-it  [Free + Paid]
-#     Version      : Gemma 2 9B IT (Stand 08.03.2026)
-#     Kontext      : 8.192 Token Input / 8.192 Token Output
+#   qwen/qwen3-32b  [Free + Paid]
+#     Version      : Qwen 3 32B (Stand 19.07.2026)
+#     Kontext      : 131.072 Token Input / 40.960 Token Output
 #     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
+#
+#   --- PAID PLAN (zusaetzlich) ---
+#
+#   moonshotai/kimi-k2-instruct-0905  [Paid]
+#     Version      : Kimi K2 Instruct 0905 (Stand 19.07.2026)
+#     Kontext      : 131.072 Token Input / 8.192 Token Output (siehe MODEL_CONFIG)
+#     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
+#
+# ENTFERNT (nicht mehr erreichbar, Stand 19.07.2026):
+#   mixtral-8x7b-32768 — deprecated seit 20.03.2025
+#   gemma2-9b-it       — deprecated seit 08.10.2025
 #
 # Hinweis: Alle Groq-Modelle profitieren von Hardware-beschleunigter Inferenz
 #          (LPU - Language Processing Unit) fuer sehr geringe Latenz.
 #
-# Quelle: https://console.groq.com/docs/models (Stand 08.03.2026)
+# Quelle: https://console.groq.com/docs/models (Stand 19.07.2026)
 # =============================================================================
 
 import json
@@ -272,35 +282,6 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
-
-
-
-FILE: var/www/deepseek-chat/cgi-bin/export-pdf.py
----------------------------------------------------------
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
-
-import json
-import sys
-import os
-from io import BytesIO
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import cm
-from reportlab.lib.colors import HexColor
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak, Table, TableStyle
-from reportlab.lib.enums import TA_LEFT, TA_CENTER
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-
-def send_response(status_code, data, content_type='application/json'):
-    """Sendet HTTP-Response zurück."""
-    if isinstance(data, bytes):
-        # Für Binärdaten: alles über stdout.buffer schreiben
-        headers = f"Status: {status_code}\r\n"
 
 
 
