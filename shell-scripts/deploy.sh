@@ -42,6 +42,16 @@ chown www-data:www-data "$PROD_DIR/cgi-bin/"*.py
 chown www-data:www-data "$PROD_DIR/language.xml"
 chmod 755 "$PROD_DIR/cgi-bin/"*.py
 
+echo ""
+echo "=== MD5-Summen der kopierten Dateien (Produktion) ==="
+md5sum \
+    "$PROD_DIR/index.html" \
+    "$PROD_DIR/manifest" \
+    "$PROD_DIR/files-directorys" \
+    "$PROD_DIR/cgi-bin/"*.py \
+    "$PROD_DIR/language.xml"
+echo ""
+
 systemctl reload apache2 > /dev/null 2>&1
 if [ $? -ne 0 ]; then
     echo "FEHLER: Apache reload fehlgeschlagen! (RC: $?)"
@@ -59,4 +69,3 @@ fi
 echo "Apache status: OK"
 
 echo "=== Deploy abgeschlossen ==="
-
