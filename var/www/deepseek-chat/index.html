@@ -1493,11 +1493,13 @@
             'gemini-2.5-pro':    { images: true,  text: true },
             // OpenAI: alle aktuell angebotenen Modelle unterstuetzen Bilder (siehe openai-api.py Header)
             'gpt-4o-mini':          { images: true,  text: true },
-            'gpt-5-mini':           { images: true,  text: true },
-            'gpt-5.4':              { images: true,  text: true },
-            'gpt-5.2-chat-latest':  { images: true,  text: true },
             'gpt-4o':               { images: true,  text: true },
             'gpt-4.1':              { images: true,  text: true },
+            'gpt-5.4':              { images: true,  text: true },
+            'gpt-5.5':              { images: true,  text: true },
+            'gpt-5.6-sol':          { images: true,  text: true },
+            'gpt-5.6-terra':        { images: true,  text: true },
+            'gpt-5.6-luna':         { images: true,  text: true },
             // GroqCloud: aktuell nur Text (siehe groq-api.py Header)
             'llama-3.3-70b-versatile':                    { images: false, text: true },
             'llama-3.1-8b-instant':                       { images: false, text: true },
@@ -1577,11 +1579,6 @@
                 maxOutputTokens:    8192,
                 maxContextMessages: 80
             },
-            'mistralai/Mixtral-8x7B-Instruct-v0.1': {
-                maxContextTokens:   32768,
-                maxOutputTokens:    4096,
-                maxContextMessages: 40
-            },
             'llama-3.3-70b-versatile': {
                 maxContextTokens:  128000,
                 maxOutputTokens:   8192,
@@ -1606,11 +1603,52 @@
                 maxContextTokens:  131072,
                 maxOutputTokens:   8192,
                 maxContextMessages: 80
+            },
+            // OpenAI (bisher komplett gefehlt — Requests fielen auf DeepSeek-Limits zurueck)
+            'gpt-4o-mini': {
+                maxContextTokens:  128000,
+                maxOutputTokens:   16384,
+                maxContextMessages: 80
+            },
+            'gpt-4o': {
+                maxContextTokens:  128000,
+                maxOutputTokens:   16384,
+                maxContextMessages: 80
+            },
+            'gpt-4.1': {
+                maxContextTokens:  1048576,
+                maxOutputTokens:   32768,
+                maxContextMessages: 100
+            },
+            'gpt-5.4': {
+                maxContextTokens:  1048576,
+                maxOutputTokens:   16384,
+                maxContextMessages: 100
+            },
+            'gpt-5.5': {
+                maxContextTokens:  1048576,
+                maxOutputTokens:   128000,
+                maxContextMessages: 100
+            },
+            'gpt-5.6-sol': {
+                maxContextTokens:  1048576,
+                maxOutputTokens:   128000,
+                maxContextMessages: 100
+            },
+            'gpt-5.6-terra': {
+                maxContextTokens:  1048576,
+                maxOutputTokens:   128000,
+                maxContextMessages: 100
+            },
+            'gpt-5.6-luna': {
+                maxContextTokens:  1048576,
+                maxOutputTokens:   128000,
+                maxContextMessages: 100
             }
         };
         const DEEPSEEK_MODELS      = ['deepseek-v4-flash', 'deepseek-v4-pro'];
-        const OPENAI_MODELS_FREE   = ['gpt-4o-mini', 'gpt-5-mini'];
-        const OPENAI_MODELS_PAID   = ['gpt-5.4', 'gpt-5.2-chat-latest', 'gpt-4o', 'gpt-4.1', 'gpt-4o-mini'];
+        const OPENAI_MODELS_FREE   = ['gpt-4o-mini', 'gpt-5.6-luna'];
+        const OPENAI_MODELS_PAID   = ['gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-5.4', 'gpt-4o', 'gpt-4.1', 'gpt-4o-mini'];
         const GOOGLE_MODELS_FREE   = ['gemini-2.5-flash'];
         const GOOGLE_MODELS_PAID   = ['gemini-2.5-flash', 'gemini-2.5-pro'];
         const HF_MODELS_FREE       = ['Qwen/Qwen2.5-72B-Instruct', 'mistralai/Mistral-7B-Instruct-v0.3', 'microsoft/Phi-3.5-mini-instruct'];
@@ -1625,7 +1663,7 @@
         // Modelle je Kompressor-Anbieter (nur bezahlte Provider)
         const COMPRESSOR_MODELS = {
             deepseek: ['deepseek-v4-flash', 'deepseek-v4-pro'],
-            openai:   ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1'],
+            openai:   ['gpt-4o-mini', 'gpt-5.6-luna', 'gpt-4o', 'gpt-4.1'],
             google:   ['gemini-2.5-flash', 'gemini-2.5-pro']
         };
         // =====================================================================

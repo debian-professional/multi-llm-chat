@@ -4,40 +4,56 @@
 # =============================================================================
 # OPENAI API PROXY
 # Erstellt: 10.03.2026
-# Aktualisiert: 19.07.2026 (Bild-Uebertragung ergaenzt: image_data/image_mime_type, image_url-Format)
+# Aktualisiert: 19.07.2026 (Bild-Uebertragung ergaenzt; Modelle auf GPT-5.5/5.6 aktualisiert)
 # =============================================================================
 #
 # Unterstuetzte Modelle:
 #
-#   --- FREE PLAN ---
+#   --- FREE PLAN (guenstige Einstiegs-Modelle; OpenAI selbst bietet aktuell
+#                   keinen echten kostenlosen API-Tier — siehe Hinweis unten) ---
 #
 #   gpt-4o-mini  [Free]
 #     Version      : GPT-4o Mini (Stand 10.03.2026)
 #     Kontext      : 128.000 Token Input / 16.384 Token Output
 #     Faehigkeiten : Text, Bilder (Vision), JSON-Mode, Function Calling
+#     Achtung      : Abschaltung angekuendigt fuer 23.10.2026 (mit GPT-4o,
+#                    GPT-4, GPT-4 Turbo, GPT-3.5 Turbo u.a.)
 #
-#   gpt-5-mini  [Free]
-#     Version      : GPT-5 Mini (Stand 10.03.2026)
-#     Kontext      : 128.000 Token Input / 16.384 Token Output
-#     Faehigkeiten : Text, Bilder, Function Calling
+#   gpt-5.6-luna  [Free]
+#     Version      : GPT-5.6 Luna (Veroeffentlicht 09.07.2026)
+#     Kontext      : 1.050.000 Token Input / 128.000 Token Output
+#     Faehigkeiten : Text, Bilder, Function Calling — guenstigste/schnellste
+#                    Stufe der GPT-5.6-Familie (entspricht der frueheren "nano"-Stufe)
 #
 #   --- PAID PLAN ---
+#
+#   gpt-5.6-sol  [Paid]
+#     Version      : GPT-5.6 Sol (Veroeffentlicht 09.07.2026)
+#     Kontext      : 1.050.000 Token Input / 128.000 Token Output
+#     Faehigkeiten : Text, Bilder, Computer Use, Function Calling, Tool Search
+#     Hinweis      : Aktuelles Flaggschiff-Modell (Alias 'gpt-5.6' zeigt auf Sol)
+#
+#   gpt-5.6-terra  [Paid]
+#     Version      : GPT-5.6 Terra (Veroeffentlicht 09.07.2026)
+#     Kontext      : 1.050.000 Token Input / 128.000 Token Output
+#     Faehigkeiten : Text, Bilder, Function Calling — ausgewogen zwischen
+#                    Leistung und Kosten
+#
+#   gpt-5.5  [Paid]
+#     Version      : GPT-5.5 (Veroeffentlicht 23.04.2026)
+#     Kontext      : 1.050.000 Token Input / 128.000 Token Output
+#     Faehigkeiten : Text, Bilder, Function Calling
 #
 #   gpt-5.4  [Paid]
 #     Version      : GPT-5.4 (Veroeffentlicht 05.03.2026)
 #     Kontext      : 1.050.000 Token Input / 16.384 Token Output
 #     Faehigkeiten : Text, Bilder, Computer Use, Function Calling, Tool Search
-#     Hinweis      : Flaggschiff-Modell fuer komplexe professionelle Aufgaben
-#
-#   gpt-5.2-chat-latest  [Paid]
-#     Version      : GPT-5.2 Chat Latest (Stand 10.03.2026)
-#     Kontext      : 128.000 Token Input / 16.384 Token Output
-#     Faehigkeiten : Text, Bilder, Function Calling
 #
 #   gpt-4o  [Paid]
 #     Version      : GPT-4o (Stand 10.03.2026)
 #     Kontext      : 128.000 Token Input / 16.384 Token Output
 #     Faehigkeiten : Text, Bilder, Audio, Function Calling
+#     Achtung      : Abschaltung angekuendigt fuer 23.10.2026
 #
 #   gpt-4.1  [Paid]
 #     Version      : GPT-4.1 (Stand 10.03.2026)
@@ -47,10 +63,16 @@
 #   gpt-4o-mini  [Paid]
 #     (auch im Free Plan verfuegbar)
 #
-# Hinweis: GPT-5.4 pro ist ausschliesslich ueber die Responses API verfuegbar
-#          und wird hier nicht unterstuetzt (Chat Completions API only).
+# ENTFERNT (nicht mehr auf OpenAIs offizieller Modell-/Preisliste gefuehrt,
+# Stand 19.07.2026): gpt-5-mini, gpt-5.2-chat-latest
 #
-# Quelle: https://platform.openai.com/docs/models (Stand 10.03.2026)
+# Hinweis: GPT-5.4/5.5/5.6 Pro-Varianten sind ausschliesslich ueber die
+#          Responses API verfuegbar und werden hier nicht unterstuetzt
+#          (Chat Completions API only). Fuer GPT-5.4/5.5/5.6 existiert kein
+#          offizieller kostenloser API-Tier (Stand 19.07.2026) — die "Free"-
+#          Einstufung hier bezeichnet lediglich die guenstigsten Modelle.
+#
+# Quelle: https://platform.openai.com/docs/models (Stand 19.07.2026)
 # =============================================================================
 
 import json
