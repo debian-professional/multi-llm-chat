@@ -1883,8 +1883,8 @@
             if (modelInfoEl) {
                 if (settings && (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq' || settings.apiService === 'openai')) {
                     modelInfoEl.textContent = t(238) + ' ' + (settings.selectedModel || '');
-                } else if (detectedModels.length > 0) {
-                    modelInfoEl.textContent = t(238) + ' ' + detectedModels.join(', ');
+                } else if (settings && settings.selectedModel) {
+                    modelInfoEl.textContent = t(238) + ' ' + settings.selectedModel;
                 } else {
                     modelInfoEl.textContent = t(238) + ' ...';
                 }
@@ -3224,10 +3224,8 @@
                 if (service === 'google' || service === 'huggingface' || service === 'groq' || service === 'openai') {
                     const selModel = modelSelect.value;
                     modelInfoEl.textContent = t(238) + ' ' + selModel;
-                } else if (detectedModels.length > 0) {
-                    modelInfoEl.textContent = t(238) + ' ' + detectedModels.join(', ');
                 } else {
-                    modelInfoEl.textContent = t(238) + ' ...';
+                    modelInfoEl.textContent = t(238) + ' ' + (modelSelect.value || '...');
                 }
             }
         }
@@ -3860,10 +3858,9 @@
                 const data = await response.json();
                 if (data && data.data && Array.isArray(data.data)) {
                     detectedModels = data.data.map(m => m.id);
-                    const modelEl = document.getElementById('modelInfo');
-                    if (modelEl && settings.apiService === 'deepseek') {
-                        modelEl.textContent = t(238) + ' ' + detectedModels.join(', ');
-                    }
+                    // Hinweis: modelInfo-Header zeigt bewusst weiterhin das AUSGEWAEHLTE
+                    // Modell (siehe updateApiServiceUI/updateSettingsUI), nicht die
+                    // komplette von der API gemeldete Modell-Liste.
                 }
             } catch (e) {
                 const modelEl = document.getElementById('modelInfo');
@@ -4261,6 +4258,10 @@
                 saveSettings();
                 setMode(settings.defaultMode);
                 updateSettingsUI();
+                // Explizit am Ende: stellt sicher, dass der Kontext-Header IMMER das
+                // gerade gespeicherte settings.selectedModel zeigt, unabhaengig davon,
+                // was setMode()/updateSettingsUI() zwischenzeitlich intern anfassen.
+                updateContextDisplay();
                 llmSettingsOverlay.style.display = 'none';
             };
             addEventListenerWithCleanup(saveLlmSettingsButton, 'click', llmSaveHandler);
