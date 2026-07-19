@@ -3,7 +3,7 @@
 
 # =============================================================================
 # GOOGLE GEMINI API PROXY
-# Importiert / aktualisiert: 19.07.2026
+# Importiert / aktualisiert: 19.07.2026 (Bild-Uebertragung ergaenzt: image_data/image_mime_type)
 # =============================================================================
 #
 # Unterstuetzte Modelle:
@@ -80,7 +80,8 @@ def send_error(status_code, data):
     sys.stdout.flush()
     log_to_file(status_code, data)
 
-def convert_messages_to_gemini(messages, audio_data=None, audio_mime_type=None):
+def convert_messages_to_gemini(messages, audio_data=None, audio_mime_type=None,
+                                image_data=None, image_mime_type=None):
     """Konvertiert OpenAI-Format messages in Gemini-Format."""
     system_instruction = None
     contents = []
@@ -101,6 +102,16 @@ def convert_messages_to_gemini(messages, audio_data=None, audio_mime_type=None):
                 'inline_data': {
                     'mime_type': audio_mime_type,
                     'data': audio_data
+                }
+            })
+    # Bild-Daten an letzte User-Message anhaengen
+    if image_data and image_mime_type and contents:
+        last_user = next((c for c in reversed(contents) if c['role'] == 'user'), None)
+        if last_user:
+            last_user['parts'].append({
+                'inline_data': {
+                    'mime_type': image_mime_type,
+                    'data': image_data
                 }
             })
     return system_instruction, contents
@@ -147,6 +158,8 @@ def main():
         max_tokens = request_data.get('max_tokens', 2000)
         audio_data = request_data.get('audio_data', None)
         audio_mime_type = request_data.get('audio_mime_type', None)
+        image_data = request_data.get('image_data', None)
+        image_mime_type = request_data.get('image_mime_type', None)
 
         if not messages or not isinstance(messages, list):
             send_error(400, {
@@ -155,7 +168,9 @@ def main():
             return
 
         # Messages in Gemini-Format konvertieren
-        system_instruction, contents = convert_messages_to_gemini(messages, audio_data, audio_mime_type)
+        system_instruction, contents = convert_messages_to_gemini(
+            messages, audio_data, audio_mime_type, image_data, image_mime_type
+        )
 
         # Google Gemini API Request vorbereiten (mit Streaming)
         api_url = f'https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent?alt=sse&key={api_key}'

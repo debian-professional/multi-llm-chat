@@ -1485,8 +1485,31 @@
 
         // MODEL CAPABILITY MAP: which file types each model supports
         const MODEL_CAPABILITIES = {
-            'deepseek-v4-flash': { images: false, text: true },   // V4 Flash
-            'deepseek-v4-pro':   { images: false, text: true },   // V4 Pro
+            // DeepSeek: reiner Text, kein Bild (siehe deepseek-api.py Header)
+            'deepseek-v4-flash': { images: false, text: true },
+            'deepseek-v4-pro':   { images: false, text: true },
+            // Google Gemini: alle aktuell angebotenen Modelle sind multimodal (siehe google-api.py Header)
+            'gemini-2.5-flash':  { images: true,  text: true },
+            'gemini-2.5-pro':    { images: true,  text: true },
+            // OpenAI: alle aktuell angebotenen Modelle unterstuetzen Bilder (siehe openai-api.py Header)
+            'gpt-4o-mini':          { images: true,  text: true },
+            'gpt-5-mini':           { images: true,  text: true },
+            'gpt-5.4':              { images: true,  text: true },
+            'gpt-5.2-chat-latest':  { images: true,  text: true },
+            'gpt-4o':               { images: true,  text: true },
+            'gpt-4.1':              { images: true,  text: true },
+            // GroqCloud: aktuell nur Text (siehe groq-api.py Header)
+            'llama-3.3-70b-versatile':                    { images: false, text: true },
+            'llama-3.1-8b-instant':                       { images: false, text: true },
+            'meta-llama/llama-4-scout-17b-16e-instruct':  { images: false, text: true },
+            'qwen/qwen3-32b':                             { images: false, text: true },
+            'moonshotai/kimi-k2-instruct-0905':           { images: false, text: true },
+            // Hugging Face: aktuell nur Text (siehe hugging-api.py Header)
+            'Qwen/Qwen2.5-72B-Instruct':                   { images: false, text: true },
+            'mistralai/Mistral-7B-Instruct-v0.3':          { images: false, text: true },
+            'microsoft/Phi-3.5-mini-instruct':             { images: false, text: true },
+            'meta-llama/Meta-Llama-3.1-70B-Instruct':      { images: false, text: true },
+            'meta-llama/Meta-Llama-3.1-405B-Instruct':     { images: false, text: true },
             'default':           { images: false, text: true },
         };
         let detectedModels = [];   // filled on first API call
@@ -2926,6 +2949,8 @@
         let isRecording = false;      // Aufnahme aktiv?
         let fileTextContent = null;
         let clipboardImageFile = null;
+        let imageData = null;         // base64 Bild (Upload oder Zwischenablage), ohne data:-Praefix
+        let imageMimeType = null;     // MIME-Typ des Bildes
         let uploadedFileNames = [];     // filenames for file card display  // Image pasted from clipboard
         let eventListeners = [];
         let isSending = false;
@@ -3247,7 +3272,7 @@
                 return;
             }
             // Vorhandene Datei-Auswahl leeren
-            selectedFiles = []; fileTextContent = null; uploadedFileNames = [];
+            selectedFiles = []; fileTextContent = null; uploadedFileNames = []; imageData = null; imageMimeType = null;
             fileUpload.value = '';
             fileInfo.innerHTML = ''; fileInfo.classList.remove('visible');
             try {
@@ -3389,7 +3414,7 @@
         async function sendMessage() {
             if (isSending) return;
             const message = inputField.value.trim();
-            if (!message && !fileTextContent && !audioData) return;
+            if (!message && !fileTextContent && !audioData && !imageData) return;
             isSending = true;
             sendButton.disabled = true; sendButton.textContent = t(5);
             inputField.disabled = true;
@@ -3443,6 +3468,7 @@
                 const maxTokens = (MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-v4-flash']).maxOutputTokens;
                 const requestPayload = { model: modelName, messages, max_tokens: maxTokens, no_training: settings.noTraining };
                 if (audioData) { requestPayload.audio_data = audioData; requestPayload.audio_mime_type = audioMimeType; }
+                if (imageData) { requestPayload.image_data = imageData; requestPayload.image_mime_type = imageMimeType; }
                 const requestBody = JSON.stringify(requestPayload);
 
                 // Retry-Logik für Google 429
@@ -3580,8 +3606,10 @@
                 isSending = false; sendButton.disabled = false; sendButton.textContent = t(205);
                 inputField.disabled = false;
                 const sb1 = document.getElementById('sendeBanner'); if (sb1) sb1.style.display = 'none';
-                selectedFiles = []; fileTextContent = null; uploadedFileNames = [];
+                selectedFiles = []; fileTextContent = null; uploadedFileNames = []; imageData = null; imageMimeType = null;
                 audioData = null; audioMimeType = null; audioChunks = [];
+                imageData = null; imageMimeType = null; clipboardImageFile = null;
+                const cip = document.getElementById('clipboardImagePreview'); if (cip) cip.classList.remove('visible');
                 if (isRecording && mediaRecorder) { mediaRecorder.stop(); isRecording = false; }
                 audioButton.textContent = t(247); audioButton.classList.remove('active');
                 fileInfo.innerHTML = ''; fileInfo.classList.remove('visible');
@@ -3670,7 +3698,7 @@
                 const removeBtn = document.getElementById('removeFile');
                 if (removeBtn) {
                     removeBtn.addEventListener('click', () => {
-                        selectedFiles = []; fileTextContent = null; uploadedFileNames = [];
+                        selectedFiles = []; fileTextContent = null; uploadedFileNames = []; imageData = null; imageMimeType = null;
                         fileInfo.innerHTML = ''; fileInfo.classList.remove('visible');
                         fileUpload.value = '';
                     });
@@ -3758,7 +3786,7 @@
             if (!files.length) return;
 
             // Reset previous selection
-            selectedFiles = []; fileTextContent = null; uploadedFileNames = [];
+            selectedFiles = []; fileTextContent = null; uploadedFileNames = []; imageData = null; imageMimeType = null;
             fileInfo.innerHTML = ''; fileInfo.classList.remove('visible');
 
             let combinedText = '';
@@ -3783,6 +3811,21 @@
                 }
                 const isProcessable = SUPPORTED_FILE_FORMATS.includes(fileExtension);
                 if (!isProcessable) {
+                    if (isImageFile(fileExtension)) {
+                        try {
+                            const dataUrl = await new Promise((resolve, reject) => {
+                                const reader = new FileReader();
+                                reader.onload = e => resolve(e.target.result);
+                                reader.onerror = reject;
+                                reader.readAsDataURL(file);
+                            });
+                            imageData = dataUrl.substring(dataUrl.indexOf(',') + 1);
+                            imageMimeType = file.type || 'image/jpeg';
+                        } catch (error) {
+                            fileInfo.innerHTML += `<div class="pdf-error">${tf(25, replaceGermanUmlauts(error.message))}</div>`;
+                            fileInfo.classList.add('visible');
+                        }
+                    }
                     selectedFiles.push(file); uploadedFileNames.push(file.name);
                     infoLines.push(`<div class="pdf-processing">${tf(33, file.name)}</div>`);
                     continue;
@@ -3836,7 +3879,7 @@
             const removeBtn = document.getElementById('removeFile');
             if (removeBtn) {
                 const removeHandler = function() {
-                    selectedFiles = []; fileTextContent = null; uploadedFileNames = [];
+                    selectedFiles = []; fileTextContent = null; uploadedFileNames = []; imageData = null; imageMimeType = null;
                     fileInfo.innerHTML = ''; fileInfo.classList.remove('visible');
                     fileUpload.value = ''; removeBtn.removeEventListener('click', removeHandler);
                 };
@@ -3903,12 +3946,9 @@
         }
 
         function currentModelSupportsImages() {
-            // Check detected models against capability map
-            for (const modelId of detectedModels) {
-                const cap = MODEL_CAPABILITIES[modelId] || MODEL_CAPABILITIES['default'];
-                if (cap.images) return true;
-            }
-            return false;
+            const modelId = settings.selectedModel || modelSelect.value;
+            const cap = MODEL_CAPABILITIES[modelId] || MODEL_CAPABILITIES['default'];
+            return !!cap.images;
         }
 
         // =====================================================================
@@ -3938,6 +3978,8 @@
                         thumb.src = ev.target.result;
                         info.textContent = t(231) + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
                         preview.classList.add('visible');
+                        imageData = ev.target.result.substring(ev.target.result.indexOf(',') + 1);
+                        imageMimeType = file.type || 'image/png';
                     };
                     reader.readAsDataURL(file);
                     return;
@@ -4037,6 +4079,7 @@
             const clipboardRemoveBtn = document.getElementById('clipboardImageRemove');
             addEventListenerWithCleanup(clipboardRemoveBtn, 'click', () => {
                 clipboardImageFile = null;
+                imageData = null; imageMimeType = null;
                 document.getElementById('clipboardImagePreview').classList.remove('visible');
                 document.getElementById('clipboardImageThumb').src = '';
             });
@@ -4067,7 +4110,7 @@
                     const removeBtn = document.getElementById('removeFile');
                     if (removeBtn) {
                         const removeHandler = function() {
-                            selectedFiles = []; fileTextContent = null; uploadedFileNames = [];
+                            selectedFiles = []; fileTextContent = null; uploadedFileNames = []; imageData = null; imageMimeType = null;
                             fileInfo.innerHTML = ''; fileInfo.classList.remove('visible');
                             fileUpload.value = ''; removeBtn.removeEventListener('click', removeHandler);
                         };

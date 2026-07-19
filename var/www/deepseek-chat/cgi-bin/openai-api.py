@@ -1,10 +1,10 @@
-############ FILE: var/www/deepseek-chat/cgi-bin/openai-api.py ############
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 # =============================================================================
 # OPENAI API PROXY
 # Erstellt: 10.03.2026
+# Aktualisiert: 19.07.2026 (Bild-Uebertragung ergaenzt: image_data/image_mime_type, image_url-Format)
 # =============================================================================
 #
 # Unterstuetzte Modelle:
@@ -144,6 +144,8 @@ def main():
         max_tokens = request_data.get('max_tokens', 2000)
         audio_data = request_data.get('audio_data', None)
         audio_mime_type = request_data.get('audio_mime_type', 'audio/webm')
+        image_data = request_data.get('image_data', None)
+        image_mime_type = request_data.get('image_mime_type', 'image/jpeg')
 
         if not messages or not isinstance(messages, list):
             send_error(400, {
@@ -151,16 +153,24 @@ def main():
             })
             return
 
-        # Audio-Daten an letzte User-Message anhaengen (input_audio Format)
-        if audio_data:
-            fmt = 'mp4' if (audio_mime_type and 'mp4' in audio_mime_type) else 'webm'
+        # Audio- und/oder Bild-Daten an letzte User-Message anhaengen
+        if audio_data or image_data:
             for msg in reversed(messages):
                 if msg.get('role') == 'user':
                     text = msg.get('content', '')
-                    msg['content'] = [
-                        {'type': 'text', 'text': text},
-                        {'type': 'input_audio', 'input_audio': {'data': audio_data, 'format': fmt}}
-                    ]
+                    content_parts = [{'type': 'text', 'text': text}]
+                    if audio_data:
+                        fmt = 'mp4' if (audio_mime_type and 'mp4' in audio_mime_type) else 'webm'
+                        content_parts.append({
+                            'type': 'input_audio',
+                            'input_audio': {'data': audio_data, 'format': fmt}
+                        })
+                    if image_data:
+                        content_parts.append({
+                            'type': 'image_url',
+                            'image_url': {'url': f'data:{image_mime_type};base64,{image_data}'}
+                        })
+                    msg['content'] = content_parts
                     break
 
         # OpenAI API — Chat Completions Endpunkt
@@ -302,6 +312,9 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
 
 
 
