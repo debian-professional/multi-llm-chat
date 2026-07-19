@@ -1352,8 +1352,59 @@
       erzeugen in der Chat-Anzeige noch keine eigene Dateikarte (gleiches
       Verhalten wie das bereits bestehende Audio-Feature) — rein
       kosmetisch, Übertragung selbst funktioniert unabhängig davon
-    - Dateien: index.html, deepseek-api.py,
+    - Dateien: index.html, deepseek-api.py
 
 
+    89. [19.07.2026] OpenAI-Modelle auf GPT-5.5/5.6 aktualisiert, Fehler-
+        anzeige repariert, max_tokens-Kompatibilität für neue Modelle
+    - MODEL_CAPABILITIES: gpt-5-mini und gpt-5.2-chat-latest entfernt (nicht
+      mehr auf OpenAIs offizieller Modell-/Preisliste, Stand 19.07.2026).
+      Neu ergänzt: gpt-5.4, gpt-5.5, gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna
+      (alle images:true)
+    - MODEL_CONFIG: bisher existierte dort KEIN EINZIGER OpenAI-Eintrag —
+      jede OpenAI-Anfrage lief mit den DeepSeek-Flash-Limits (8.192 Output-
+      Tokens), unabhängig vom tatsächlich gewählten Modell. Jetzt 8 korrekte
+      Einträge ergänzt:
+        * gpt-4o-mini / gpt-4o:  128.000 / 16.384
+        * gpt-4.1:               1.048.576 / 32.768
+        * gpt-5.4:               1.048.576 / 16.384
+        * gpt-5.5, gpt-5.6-sol/-terra/-luna: 1.048.576 / 128.000
+      (Kontext-/Output-Werte recherchiert über OpenAIs aktuelle API-Doku,
+      Stand 19.07.2026)
+    - OPENAI_MODELS_FREE: ['gpt-4o-mini', 'gpt-5-mini'] →
+      ['gpt-4o-mini', 'gpt-5.6-luna'] (guenstigste/schnellste Stufe der
+      aktuellen Familie, entspricht frueherer "nano"-Stufe)
+    - OPENAI_MODELS_PAID: auf ['gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna',
+      'gpt-5.5', 'gpt-5.4', 'gpt-4o', 'gpt-4.1', 'gpt-4o-mini'] umgestellt
+    - COMPRESSOR_MODELS.openai: gpt-5.6-luna als günstige Kompressor-Option
+      ergänzt
+    - openai-api.py: Kommentar-Header komplett überarbeitet (aktuelle
+      Modelle inkl. Kontext-/Output-Werten, Abschaltdatum 23.10.2026 für
+      gpt-4o/gpt-4o-mini vermerkt, Hinweis dass GPT-5.4/5.5/6 keinen
+      offiziellen kostenlosen API-Tier haben)
+    - Aufräumen: verwaister MODEL_CONFIG-Eintrag für
+      mistralai/Mixtral-8x7B-Instruct-v0.1 entfernt (Modell war bereits aus
+      allen Auswahl-Listen entfernt, der Config-Eintrag blieb übrig)
+    - Bug behoben: leere Fehlermeldung bei API-Fehlern. In sendMessage()
+      wurde die vom Backend gelieferte Fehlermeldung (errData) an drei
+      Stellen (DeepSeek/OpenAI-Zweig, Groq/HuggingFace-Zweig, Fallback-
+      Zweig) komplett verworfen, sobald sie keinem der beiden Spezialfälle
+      (insufficient_quota / context_exceeded) entsprach — die UI zeigte
+      dann nur "Error: API error (400):" ohne jeden Hinweis auf die
+      Ursache.
+        * Fix: errData.details/errData.error/errData.message wird jetzt in
+          allen drei Zweigen an tf(24, response.status, errDetail)
+          weitergereicht
+    - Bug behoben (gefunden durch obigen Fix): openai-api.py sendete
+      'max_tokens' im Request an OpenAI. Die GPT-5.6-Familie (und generell
+      neuere Reasoning-Modelle) lehnt diesen Parameter mit HTTP 400 ab:
+      "Unsupported parameter: 'max_tokens' is not supported with this
+      model. Use 'max_completion_tokens' instead."
+        * Fix: api_request_data sendet jetzt durchgängig
+          'max_completion_tokens' statt 'max_tokens' — funktioniert laut
+          OpenAI-Doku bei ALLEN Modellen (alt und neu), umgekehrt nicht
+        * Verifiziert: gpt-5.6-luna UND gpt-4o-mini live getestet, beide
+          funktionieren fehlerfrei mit max_completion_tokens
+   
     ============================================================================
 
