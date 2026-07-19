@@ -5,8 +5,10 @@
 Wichtigste Highlights:
 - **Multi-LLM-Unterstützung** – Wechsel zwischen OpenAI, DeepSeek, Google Gemini, Hugging Face und GroqCloud über einen Anbieter-Toggle im LLM-Einstellungs-Panel. Jeder Anbieter hat eine eigene Modellliste, Tier-Auswahl und Konfigurationsoptionen.
 - **DeepSeek V4** – Vollständig migriert auf `deepseek-v4-flash` und `deepseek-v4-pro` mit 1M-Token-Kontextfenstern. Die veralteten Modellnamen `deepseek-chat` und `deepseek-reasoner` werden am 24. Juli 2026 abgeschaltet.
+- **GPT-5.6-bereit** – OpenAI-Modell-Lineup aktualisiert auf die GPT-5.6-Familie (Sol, Terra, Luna) plus GPT-5.5, neben GPT-4o und GPT-4.1. Anfragen nutzen jetzt `max_completion_tokens`, den Parameter, den alle aktuellen OpenAI-Modelle verlangen.
+- **Funktionierende Bild-Pipeline** – Bild-Upload und Zwischenablage-Einfügen sind für Google Gemini und OpenAI durchgängig verdrahtet: Bilder werden clientseitig base64-kodiert und als native `inline_data`-Blöcke (Gemini) bzw. `image_url`-Blöcke (OpenAI) übermittelt. Die Modell-Fähigkeits-Erkennung (`MODEL_CAPABILITIES`) ist jetzt pro Anbieter korrekt befüllt, statt für alles außer DeepSeek standardmäßig „kein Bild-Support" anzunehmen.
 - **Multi-Datei-Upload** – Mehrere Dateien gleichzeitig auswählen und senden. Inhalte werden kombiniert und mit Datei-Headern und Trennzeichen als Kontext gesendet.
-- **Audio-Aufnahme via Mikrofon** – Audio direkt im Browser aufnehmen und an die KI senden. Native Unterstützung durch Google Gemini (alle Modelle) und OpenAI (`gpt-4o`, `gpt-4.1`). Der Aufnahme-Button erscheint automatisch nur bei audio-fähigen Modellen.
+- **Audio-Aufnahme via Mikrofon** – Audio direkt im Browser aufnehmen und an die KI senden. Native Unterstützung durch Google Gemini (`gemini-2.5-flash`, `gemini-2.5-pro`) und OpenAI (`gpt-4o`, `gpt-4.1`). Der Aufnahme-Button erscheint automatisch nur bei audio-fähigen Modellen.
 - **Einzigartiges Kontextmanagement** – Einzelne Nachrichten zusammen mit allen nachfolgenden löschen. Der Chat bleibt konsistent und die Token-Nutzung wird dynamisch neu berechnet.
 - **Maximale Sicherheit** – API-Keys sind clientseitig nie sichtbar, Uploads werden via Magic-Byte-Prüfung gegen ausführbare Dateien geschützt, und Sessions werden mit restriktiven Dateiberechtigungen gespeichert.
 - **Keine exotischen Frameworks** – Alles basiert auf Apache, Python 3, Bash und reinem HTML/JavaScript/CSS. Kein Node.js, kein React, keine Build-Pipeline.
@@ -18,6 +20,8 @@ Wichtigste Highlights:
 - **Zwischenablage-Integration** – Ctrl+V-Handler mit Dialog für Text, Bilder und Schutz gegen versehentliches Einfügen von Dateipfaden.
 - **Streaming-Antworten** – KI-Antworten erscheinen Token für Token, genau wie bei ChatGPT oder Claude.
 - **429-Rate-Limit-Handling** – Automatischer Wiederholungsversuch mit Countdown-Anzeige für Google Gemini Free-Tier-Limits.
+- **Transparente Fehlerdiagnose** – API-Fehlerantworten zeigen jetzt die tatsächliche Fehlermeldung des Anbieters (statt eines leeren Strings), sofern der Fehler keinem bekannten Guthaben-/Kontext-Muster entspricht.
+- **Deploy-Verifikation** – `deploy.sh` gibt MD5-Prüfsummen jeder in die Produktion kopierten Datei aus und ermöglicht so den sofortigen Abgleich mit dem Source-Repo ohne separaten manuellen Schritt.
 - **Enthaltenes Tool** – Das Skript `repo2text.sh` exportiert das gesamte Repository als einzelne Textdatei, ideal für die Arbeit mit KI-Assistenten.
 
 ---
@@ -35,6 +39,7 @@ Wichtigste Highlights:
   - [Umlaut-Platzhalter-System](#umlaut-platzhalter-system)
   - [DeepThink-Modus](#deepthink-modus)
   - [Modellerkennung & Fähigkeiten](#modellerkennung--fähigkeiten)
+  - [Bild-Unterstützung (Vision)](#bild-unterstützung-vision)
   - [Mehrsprachiges System](#mehrsprachiges-system)
   - [Einstellungen (Toggles statt Radio-Buttons)](#einstellungen-toggles-statt-radio-buttons)
   - [Session-Management](#session-management)
@@ -47,6 +52,7 @@ Wichtigste Highlights:
   - [Guthaben- und Tageslimit-Banner](#guthaben--und-tageslimit-banner)
   - [Kontextfenster-Überschreitung](#kontextfenster-überschreitung)
 - [DeepSeek V4 Migration](#deepseek-v4-migration)
+- [Wartung & Feature-Update vom 19. Juli 2026](#wartung--feature-update-vom-19-juli-2026)
 - [Das Hilfsskript `repo2text.sh`](#das-hilfsskript-repo2textsh)
 - [Sicherheitsarchitektur im Detail](#sicherheitsarchitektur-im-detail)
 - [Deployment & Verwendung](#deployment--verwendung)
@@ -182,9 +188,13 @@ Alle KI-Antworten werden via Server-Sent Events (SSE) **Token für Token** empfa
 - **Endpoint**: `https://api.openai.com/v1/chat/completions`
 - **Architektur**: Natives OpenAI Chat Completions Format — keine Formatkonvertierung nötig. SSE-Stream wird direkt von `openai-api.py` weitergeleitet.
 - **API-Key**: `OPENAI_API_KEY` via Apache-Umgebungsvariablen.
-- **Free-Tier-Modelle**: `gpt-4o-mini`, `gpt-5-mini`
-- **Paid-Tier-Modelle**: `gpt-5.4`, `gpt-5.2-chat-latest`, `gpt-4o`, `gpt-4.1`, `gpt-4o-mini`
+- **Free-Tier-Modelle**: `gpt-4o-mini`, `gpt-5.6-luna`
+- **Paid-Tier-Modelle**: `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`, `gpt-5.5`, `gpt-5.4`, `gpt-4o`, `gpt-4.1`, `gpt-4o-mini`
+- **Output-Token-Parameter**: `max_completion_tokens` — von allen aktuellen OpenAI-Modellen verlangt (GPT-4o/4.1 akzeptieren ihn ebenfalls, sodass ein einziger Parameter über das gesamte Lineup hinweg funktioniert). Der ältere Parameter `max_tokens` wird von GPT-5.x-Modellen mit HTTP 400 abgelehnt (`Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.`).
+- **Bild-Eingabe**: `gpt-4o-mini`, `gpt-4o`, `gpt-4.1`, `gpt-5.4`, `gpt-5.5` und die gesamte GPT-5.6-Familie akzeptieren Bild-Input. Bilder werden als `image_url`-Content-Blöcke mit einer base64-Daten-URL (`data:{mime};base64,{data}`) gesendet.
 - **Audio-Eingabe**: `gpt-4o` und `gpt-4.1` unterstützen Mikrofon-Aufnahmen. Audio wird als `input_audio`-Blöcke im nativen OpenAI-Format gesendet. Der Aufnahme-Button wird automatisch angezeigt/ausgeblendet basierend auf dem aktiven Modell.
+- **Kein kostenloser API-Tier für GPT-5.x**: OpenAI bietet für GPT-5.4/5.5/5.6 in der API keinen wirklich kostenlosen Tier an — die „Free"-Gruppierung in diesem Client bezeichnet die günstigsten verfügbaren Modelle (`gpt-4o-mini`, `gpt-5.6-luna`), nicht ein $0-Kontingent.
+- **Geplante Abschaltung**: `gpt-4o` und `gpt-4o-mini` (zusammen mit GPT-4, GPT-4 Turbo, GPT-3.5 Turbo und der o-Serie) sind für eine API-weite Abschaltung am **23. Oktober 2026** vorgesehen.
 - DeepThink-Button und -Indikator werden ausgeblendet wenn OpenAI der aktive Anbieter ist.
 - Der System-Prompt identifiziert das aktive Modell: *„You are [model], an AI assistant made by OpenAI."*
 
@@ -194,8 +204,11 @@ Alle KI-Antworten werden via Server-Sent Events (SSE) **Token für Token** empfa
 - **Architektur**: `google-api.py` konvertiert das intern verwendete OpenAI-kompatible Nachrichtenformat in Geminis `contents`-Format, sendet die Anfrage und konvertiert die Gemini-SSE-Antwort zurück in das vom Client erwartete OpenAI-SSE-Format.
 - **API-Key**: `GOOGLE_API_KEY` via Apache-Umgebungsvariablen.
 - **Free-Tier-Modelle**: `gemini-2.5-flash` (5 RPM, 20 RPD)
-- **Paid-Tier-Modelle**: `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-1.5-pro`, `gemini-2.0-flash`
-- **Audio-Eingabe**: Alle Gemini-Modelle unterstützen Audio nativ. Audio wird als `inline_data`-Blöcke im Gemini-Format gesendet. Der Aufnahme-Button ist immer sichtbar wenn Google Gemini aktiv ist.
+- **Paid-Tier-Modelle**: `gemini-2.5-flash`, `gemini-2.5-pro`
+- **Bild-Eingabe**: Beide Modelle akzeptieren Bild-Input, gesendet als `inline_data`-Blöcke im nativen Gemini-Format (derselbe Mechanismus, der auch für Audio genutzt wird).
+- **Audio-Eingabe**: Beide Gemini-Modelle unterstützen Audio nativ. Audio wird als `inline_data`-Blöcke im Gemini-Format gesendet. Der Aufnahme-Button ist immer sichtbar wenn Google Gemini aktiv ist.
+- **Abgeschaltete Modelle**: `gemini-2.0-flash` (abgeschaltet am 1. Juni 2026) und `gemini-1.5-pro` (bereits früher abgeschaltet) wurden aus allen Modelllisten, `MODEL_CONFIG` und `AUDIO_CAPABLE_MODELS` entfernt. Das Standard-Fallback-Modell wurde von `gemini-2.0-flash` auf `gemini-2.5-flash` geändert.
+- **Bevorstehende Abschaltung**: `gemini-2.5-flash` selbst ist für eine Abschaltung am **16. Oktober 2026** vorgesehen (Nachfolger: `gemini-3.5-flash`, noch nicht integriert).
 - DeepThink-Button und -Indikator werden ausgeblendet wenn Google Gemini der aktive Anbieter ist.
 
 ### Hugging-Face-Integration
@@ -204,7 +217,8 @@ Alle KI-Antworten werden via Server-Sent Events (SSE) **Token für Token** empfa
 - **Architektur**: OpenAI-kompatibles Format — keine Konvertierung nötig. SSE wird direkt von `hugging-api.py` weitergeleitet.
 - **API-Key**: `HF_API_KEY` — ein Write-Token von `huggingface.co/settings/tokens` mit der Berechtigung „Make calls to Inference Providers".
 - **Free-Tier-Modelle**: `Qwen/Qwen2.5-72B-Instruct`, `mistralai/Mistral-7B-Instruct-v0.3`, `microsoft/Phi-3.5-mini-instruct`
-- **Paid-Tier-Modelle**: `meta-llama/Meta-Llama-3.1-70B-Instruct`, `meta-llama/Meta-Llama-3.1-405B-Instruct`, `Qwen/Qwen2.5-72B-Instruct`, `mistralai/Mixtral-8x7B-Instruct-v0.1`
+- **Paid-Tier-Modelle**: `meta-llama/Meta-Llama-3.1-70B-Instruct`, `meta-llama/Meta-Llama-3.1-405B-Instruct`, `Qwen/Qwen2.5-72B-Instruct`
+- **Entfernt**: `mistralai/Mixtral-8x7B-Instruct-v0.1` — wird seit 19. Juli 2026 von keinem Inference Provider mehr auf dem Hugging-Face-Router gehostet.
 - DeepThink-Button und -Indikator werden ausgeblendet wenn Hugging Face aktiv ist.
 
 ### GroqCloud-Integration
@@ -215,6 +229,7 @@ Alle KI-Antworten werden via Server-Sent Events (SSE) **Token für Token** empfa
 - **Wichtig**: Ein `User-Agent`-Header ist in allen Anfragen erforderlich — ohne ihn gibt Cloudflare den Fehlercode 1010 zurück und blockiert die Anfrage.
 - **Free- und Paid-Tier-Modelle**: `llama-3.3-70b-versatile`, `llama-3.1-8b-instant`, `meta-llama/llama-4-scout-17b-16e-instruct`, `qwen/qwen3-32b`. Nur Paid: `moonshotai/kimi-k2-instruct-0905`.
 - Alle Modelle laufen auf GroqClouds LPU (Language Processing Unit)-Hardware mit sehr niedriger Inferenz-Latenz.
+- **Dokumentationsbereinigung**: Der Header von `groq-api.py` dokumentierte bisher `mixtral-8x7b-32768` (von Groq seit 20. März 2025 deprecated) und `gemma2-9b-it` (seit 8. Oktober 2025 deprecated) als unterstützte Modelle — beide waren bereits unerreichbar und wurden aus dem Header entfernt. Die tatsächlichen Modell-Arrays in `index.html` waren bereits korrekt; nur die Dokumentation war veraltet.
 - DeepThink-Button und -Indikator werden ausgeblendet wenn GroqCloud der aktive Anbieter ist.
 
 ### LLM-Einstellungs-Panel
@@ -271,8 +286,8 @@ Ein ausgeklügelter Zwischenablage-Handler fängt alle Einfüge-Events ab und re
 | `deepseek-v4-flash` | 1.048.576 | ~3.145.000 Zeichen |
 | `deepseek-v4-pro` | 1.048.576 | ~3.145.000 Zeichen |
 | `gemini-2.5-flash` | 1.048.576 | ~3.145.000 Zeichen |
-| `gemini-1.5-pro` | 2.097.152 | ~6.291.000 Zeichen |
-| `gpt-4o` | 128.000 | ~384.000 Zeichen |
+| `gpt-5.6-sol` / `-terra` / `-luna` | 1.048.576 | ~3.145.000 Zeichen |
+| `gpt-4o` / `gpt-4o-mini` | 128.000 | ~384.000 Zeichen |
 
 **Magic-Byte-Prüfung** (erste 20 Bytes) erkennt und blockiert ausführbare Dateien unabhängig von der Dateinamens-Erweiterung:
 
@@ -324,7 +339,7 @@ Dieses System wird **nur auf Dateiinhalte** angewendet, nie auf reguläre Benutz
 DeepThink ist ein dedizierter Modus für tiefes analytisches Denken, exklusiv verfügbar wenn DeepSeek der aktive Anbieter ist:
 
 - Aktivierbar über einen dedizierten Pill-Style-Button in der zweiten Button-Zeile unterhalb des Eingabefelds.
-- Im aktiven Zustand wird `deepseek-v4-flash` verwendet — dasselbe Modell wie im Normal-Modus, der Modus wird aber mit jeder Nachricht aufgezeichnet. Das leistungsfähigere `deepseek-v4-pro` kann über das Modell-Dropdown für maximale Reasoning-Tiefe manuell gewählt werden.
+- Im aktiven Zustand wird `deepseek-v4-flash` (bzw. `deepseek-v4-pro`, falls im Modell-Dropdown gewählt) verwendet — der Modus ändert nur den System-Prompt, nicht das Modell. Das leistungsfähigere `deepseek-v4-pro` wird über das Modell-Dropdown manuell für maximale Reasoning-Tiefe in beiden Modi gewählt. **Hinweis**: Vor dem 19. Juli 2026 sorgte ein Copy-Paste-Fehler in der Modellauswahl-Logik dafür, dass `deepseek-v4-pro` unabhängig von der Dropdown-Auswahl nie tatsächlich angefragt wurde — dies wurde behoben, siehe [Wartung & Feature-Update vom 19. Juli 2026](#wartung--feature-update-vom-19-juli-2026).
 - Der Button verändert sich visuell: inaktiv (dunkel `#2d2d2d`) → aktiv blau (`#1e3a5f` Hintergrund, `#4dabf7` Rahmen und Text).
 - Eine Indikatorleiste erscheint unterhalb der Button-Zeile: *„DeepThink-Modus aktiv: Tiefgehende Analyse läuft"*.
 - Kontext-Limits und Output-Token-Limits werden automatisch basierend auf dem `MODEL_CONFIG`-Eintrag des aktiven Modells angepasst.
@@ -336,17 +351,51 @@ DeepThink ist ein dedizierter Modus für tiefes analytisches Denken, exklusiv ve
 
 Beim Start fragt `index.html` `/cgi-bin/deepseek-models.py` ab, das den DeepSeek `/v1/models`-Endpoint live aufruft:
 
-- Die zurückgegebenen Modell-IDs werden in `detectedModels[]` gespeichert und im Server-Header angezeigt: `Modell: deepseek-v4-flash, deepseek-v4-pro`.
-- Eine `MODEL_CAPABILITIES`-Map definiert welche Modelle welche Eingabetypen unterstützen:
+- Die zurückgegebenen Modell-IDs werden in `detectedModels[]` gespeichert und intern für Fähigkeits-Prüfungen genutzt (siehe unten). Sie werden **nicht** zur Darstellung des Headers verwendet — der Server-Header (`Modell: ...`) zeigt immer das aktuell **ausgewählte** Modell (`settings.selectedModel`), konsistent zum Verhalten aller fünf Anbieter. Frühere Versionen zeigten für DeepSeek fälschlicherweise die komplette `detectedModels`-Liste unabhängig von der aktiven Auswahl an; dies wurde am 19. Juli 2026 korrigiert.
+- Eine `MODEL_CAPABILITIES`-Map definiert welche Modelle welche Eingabetypen unterstützen, pro Anbieter befüllt basierend auf den dokumentierten Fähigkeiten des jeweiligen Backends:
   ```javascript
   const MODEL_CAPABILITIES = {
+      // DeepSeek: nur Text
       'deepseek-v4-flash': { images: false, text: true },
       'deepseek-v4-pro':   { images: false, text: true },
-      'default':           { images: false, text: true },
+      // Google Gemini: multimodal
+      'gemini-2.5-flash':  { images: true,  text: true },
+      'gemini-2.5-pro':    { images: true,  text: true },
+      // OpenAI: multimodal über das gesamte aktuelle Lineup
+      'gpt-4o-mini': { images: true, text: true },
+      'gpt-4o':      { images: true, text: true },
+      'gpt-4.1':     { images: true, text: true },
+      'gpt-5.4':     { images: true, text: true },
+      'gpt-5.5':     { images: true, text: true },
+      'gpt-5.6-sol':   { images: true, text: true },
+      'gpt-5.6-terra': { images: true, text: true },
+      'gpt-5.6-luna':  { images: true, text: true },
+      // GroqCloud / Hugging Face: nur Text (aktuelles Modell-Lineup)
+      // ... (siehe index.html für die vollständige Liste)
+      'default': { images: false, text: true },
   };
   ```
+- `currentModelSupportsImages()` prüft `settings.selectedModel` (mit Fallback auf den aktuellen `modelSelect`-Dropdown-Wert) gegen `MODEL_CAPABILITIES`. Frühere Versionen prüften stattdessen `detectedModels` — ein nur für DeepSeek relevantes Array, das für andere Anbieter nie befüllt wurde — wodurch Bild-Upload und -Paste stillschweigend für **jeden** Anbieter und jedes Modell blockiert waren, einschliesslich tatsächlich bildfähiger. Dies wurde am 19. Juli 2026 korrigiert.
 - Wenn ein Bild via Zwischenablage eingefügt oder eine `.jpg`/`.png`-Datei hochgeladen wird und das aktuelle Modell keine Bilder unterstützt, wird die Operation mit einem Alert blockiert bevor ein Upload stattfindet.
-- Diese Architektur ist **vorwärtskompatibel**: Bild-Unterstützung für ein Modell hinzuzufügen erfordert nur das Hinzufügen oder Aktualisieren seines Eintrags in `MODEL_CAPABILITIES`.
+- Diese Architektur ist **vorwärtskompatibel**: Bild-Unterstützung für ein Modell hinzuzufügen erfordert nur das Hinzufügen oder Aktualisieren seines Eintrags in `MODEL_CAPABILITIES` — zu beachten ist jedoch, dass `MODEL_CONFIG` (siehe [Modell-Konfiguration](#modell-konfiguration)) ebenfalls einen passenden Eintrag benötigt, damit das Modell korrekte Kontext-/Output-Limits erhält, statt stillschweigend auf die DeepSeek-Standardwerte zurückzufallen.
+
+### Bild-Unterstützung (Vision)
+
+Bild-Upload und Zwischenablage-Einfügen sind für Google Gemini und OpenAI durchgängig end-to-end verdrahtet. Dies war eine bedeutende Lücke, die am 19. Juli 2026 geschlossen wurde — zuvor wurden Bilder zwar von der UI entgegengenommen, erreichten aber nie tatsächlich ein Modell.
+
+**Client-Seite (`index.html`)**:
+- **Datei-Upload**: Wenn eine Bilddatei (`.jpg`, `.jpeg`, `.png` etc.) ausgewählt wird und das aktive Modell Bilder unterstützt (laut `currentModelSupportsImages()`), wird die Datei via `FileReader.readAsDataURL()` eingelesen und die base64-Nutzlast (ohne `data:...;base64,`-Präfix) in `imageData` gespeichert, mit dem MIME-Typ in `imageMimeType`.
+- **Zwischenablage-Paste**: Das Einfügen eines Bildes (Strg+V) führt dieselbe base64-Lesung durch, genutzt sowohl für die Thumbnail-Vorschau über dem Eingabefeld als auch für das tatsächliche `imageData`, das mit der nächsten Nachricht gesendet wird.
+- **Request-Payload**: `sendMessage()` fügt `image_data` und `image_mime_type` in den JSON-Body ein, sobald `imageData` gesetzt ist — neben dem bestehenden `audio_data`/`audio_mime_type`-Mechanismus. Beide können gleichzeitig vorhanden sein.
+- **State-Reset**: `imageData`/`imageMimeType` werden zurückgesetzt nach dem Senden einer Nachricht, beim Entfernen einer Datei über den „X"-Button und beim Beginn einer neuen Dateiauswahl — insgesamt sechs Reset-Stellen, analog zur bestehenden Audio-Reset-Logik.
+- **Bekannte kosmetische Einschränkung**: Ein Bild-Anhang, der *ohne* begleitende Text-Datei gesendet wird, erzeugt aktuell keine eigene Datei-Card in der Chat-Blase (identisch zum bereits bestehenden Verhalten bei reinen Audio-Nachrichten). Die Übertragung an das Modell funktioniert unabhängig davon korrekt; nur die visuelle Card fehlt in diesem speziellen Fall.
+
+**Server-Seite**:
+- **`google-api.py`**: `convert_messages_to_gemini()` akzeptiert `image_data`/`image_mime_type` und hängt das Bild als `inline_data`-Part an die letzte User-Message an — derselbe Mechanismus, der bereits für Audio verwendet wird.
+- **`openai-api.py`**: Der `content` der letzten User-Message wird als Liste aus dem Text-Teil plus optionalem `input_audio`-Block und optionalem `image_url`-Block (`{'type': 'image_url', 'image_url': {'url': 'data:{mime};base64,{data}'}}`) zusammengebaut. Der frühere Code überschrieb `content` beim Verarbeiten von Audio bedingungslos, was ein gleichzeitig gesendetes Bild (oder umgekehrt) stillschweigend verworfen hätte — die überarbeitete Logik baut die Content-Liste inkrementell auf, sodass beides koexistieren kann.
+- **GroqCloud und Hugging Face** erhalten aktuell keine Bilddaten — deren Modell-Lineups sind laut eigener Dokumentation reine Text-Modelle, und `MODEL_CAPABILITIES` spiegelt dies wider (`images: false`), sodass der Client Bild-Anhänge für diese Anbieter blockiert, bevor überhaupt eine Anfrage gesendet wird.
+
+**Verifiziert**: Live getestet mit `gemini-2.5-flash` und `gpt-4o-mini` — beide beschrieben den Inhalt eines hochgeladenen Screenshots korrekt und detailliert.
 
 ### Mehrsprachiges System
 
@@ -500,7 +549,7 @@ Der Client enthält einen eingebauten **Mikrofon-Aufnahme-Button** der direkte S
 
 - **Sichtbarkeit**: Gesteuert von `updateAudioButtonVisibility()`, aufgerufen bei jedem Modellwechsel. Sichtbar nur wenn das aktive Modell in `AUDIO_CAPABLE_MODELS` aufgeführt ist.
 - **Audio-fähige Modelle** (Konstante `AUDIO_CAPABLE_MODELS`):
-  - Google Gemini: `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-1.5-pro`, `gemini-2.0-flash`
+  - Google Gemini: `gemini-2.5-flash`, `gemini-2.5-pro`
   - OpenAI: `gpt-4o`, `gpt-4.1`
 - **Aufnahme-Ablauf**: `getUserMedia()` → `MediaRecorder`-API → Chunk-Aufnahme (10ms-Intervalle) → `Blob` bei Stop zusammengesetzt → base64-kodiert.
 - **MIME-Typ-Auto-Erkennung**: `audio/webm` (Chrome/Firefox) oder `audio/mp4` (Safari) — zur Laufzeit via `MediaRecorder.isTypeSupported()` ermittelt.
@@ -553,8 +602,8 @@ Der Kompressor macht einen separaten LLM-Call der grosse Token-Mengen umfassen k
 | Anbieter | Verfügbare Komprimierungs-Modelle |
 |----------|----------------------------------|
 | DeepSeek | `deepseek-v4-flash`, `deepseek-v4-pro` |
-| OpenAI | `gpt-4o-mini`, `gpt-4o`, `gpt-4.1` |
-| Google | `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-1.5-pro` |
+| OpenAI | `gpt-4o-mini`, `gpt-5.6-luna`, `gpt-4o`, `gpt-4.1` |
+| Google | `gemini-2.5-flash`, `gemini-2.5-pro` |
 
 **Empfohlener Standard**: DeepSeek + `deepseek-v4-flash` — keine Rate Limits, niedrigste Kosten pro Token, zuverlässigste Ergebnisse.
 
@@ -642,7 +691,7 @@ Am **24. April 2026** veröffentlichte DeepSeek den **DeepSeek V4 Preview** — 
 - `MODEL_CAPABILITIES`: aktualisiert auf `deepseek-v4-flash` und `deepseek-v4-pro`
 - `DEEPSEEK_MODELS`, `COMPRESSOR_MODELS.deepseek`: auf V4-Namen aktualisiert
 - Modell-Dropdowns (Modell-Auswahl + Kompressor-Modell-Auswahl): V4-Optionen
-- DeepThink-Logik (8 Stellen): beide Modi verwenden `deepseek-v4-flash`; `deepseek-v4-pro` über Dropdown wählbar
+- DeepThink-Logik (8 Stellen): beide Modi lesen `settings.selectedModel` (mit Fallback auf `deepseek-v4-flash`) — siehe das Update vom 19. Juli 2026 weiter unten zu einem inzwischen behobenen Bug in dieser Logik
 - Standard-Einstellungen: `selectedModel` und `compressorModel` standardmässig auf `deepseek-v4-flash`
 - Frontend-Error-Handler behoben: `response.json()`-Body-Verbrauch verursacht nicht länger leere Fehlermeldungen
 
@@ -656,6 +705,90 @@ Am **24. April 2026** veröffentlichte DeepSeek den **DeepSeek V4 Preview** — 
 ### API-Kompatibilität
 
 Die DeepSeek V4 API verwendet dieselbe Base-URL und dasselbe OpenAI-kompatible Format wie V3. Keine strukturellen Änderungen an `deepseek-api.py` waren nötig — nur die Modellnamen mussten aktualisiert werden.
+
+---
+
+## Wartung & Feature-Update vom 19. Juli 2026
+
+Eine ganztägige Wartungs- und Feature-Session, die einen kritischen Modellauswahl-Bug, mehrere über die Zeit angesammelte Dokumentations-/Modelllisten-Inkonsistenzen über alle fünf Anbieter hinweg sowie die Fertigstellung einer bis dahin nicht funktionierenden Bild-Pipeline (Vision) abdeckte. Dokumentiert in den Changelog-Einträgen 87–89.
+
+### 1. Kritischer Bug: `deepseek-v4-pro` war nie erreichbar
+
+**Symptom**: Die Auswahl von `deepseek-v4-pro` im Modell-Dropdown hatte keine Wirkung — jede Anfrage wurde unabhängig von Dropdown-Auswahl oder DeepThink-Modus mit `deepseek-v4-flash` gesendet.
+
+**Ursache**: Acht Vorkommen desselben Copy-Paste-Fehlers über `index.html` verteilt, die jeweils zu Folgendem auflösten:
+```javascript
+(currentMode === 'deepthink') ? 'deepseek-v4-flash' : 'deepseek-v4-flash'
+```
+Beide Zweige des Ternary-Operators lieferten denselben String zurück, wodurch `settings.selectedModel` für den DeepSeek-Anbieter nie ausgelesen wurde — anders als bei jedem anderen Anbieter (Google, OpenAI, Groq, Hugging Face), die korrekt `settings.selectedModel || <Fallback>` verwendeten.
+
+**Fix**: Alle acht Vorkommen (verteilt über `sendMessage()`, `handleRegenerate()`, die Kontext-/Token-Schätzfunktionen und UI-Indikator-Updates) lesen jetzt `settings.selectedModel || 'deepseek-v4-flash'`, konsistent zum an anderer Stelle verwendeten Muster.
+
+**Zugehöriger Fix — veralteter Kontext-Header**: `llmSaveHandler` (der „Apply Settings"-Button im LLM-Einstellungs-Panel) ruft jetzt als letzte Aktion explizit `updateContextDisplay()` auf und garantiert damit, dass der Header `Context: X% (Modell)` die gerade gespeicherte Modellauswahl sofort widerspiegelt statt erst bei der nächsten Kontext-Neuberechnung.
+
+**Zugehöriger Fix — irreführender Modell-Header**: Der Header `Modell: ...` zeigte bisher, nur für DeepSeek, die *komplette* von `deepseek-models.py` gemeldete Modellliste (z. B. `Modell: deepseek-v4-flash, deepseek-v4-pro`) unabhängig davon, welches Modell tatsächlich ausgewählt war — inkonsistent zu jedem anderen Anbieter, der korrekt nur das aktive Modell anzeigte. `updateApiServiceUI()`, die allgemeine UI-Update-Routine und `fetchDeepSeekModels()` wurden alle korrigiert, sodass sie einheitlich über alle Anbieter hinweg `settings.selectedModel` anzeigen.
+
+### 2. Diagnose-Logging: Modellname im Server-Log
+
+Die Funktionen `log_to_file()` und `send_error()` in `deepseek-api.py` erhielten einen optionalen `model`-Parameter. Jede Log-Zeile enthält jetzt ab dem Zeitpunkt, an dem der Request-Body geparst wurde, zusätzlich `| Model: <Name>` — sowohl bei erfolgreichen Anfragen als auch bei Fehlerantworten. Dies ermöglicht die serverseitige Verifikation, welches Modell tatsächlich eine bestimmte Anfrage erhalten hat, unabhängig vom (und zuverlässiger als der) clientseitige(n) UI-Zustand oder der Selbstauskunft des Modells (siehe [DeepSeek Modell-Selbstauskunft](#deepseek-modell-selbstauskunft)).
+
+### 3. Bereinigung toter Modelle
+
+Mehrere in Code-Kommentaren und Auswahllisten referenzierte Modelle waren nicht mehr erreichbar:
+
+| Anbieter | Entferntes Modell | Grund |
+|----------|-------------------|-------|
+| Google | `gemini-2.0-flash` | Am 1. Juni 2026 abgeschaltet; war zudem das Standard-Fallback-Modell des CGI-Skripts |
+| Google | `gemini-1.5-pro` | Bereits vor dieser Bereinigung abgeschaltet |
+| Hugging Face | `mistralai/Mixtral-8x7B-Instruct-v0.1` | Wird von keinem Inference Provider mehr auf dem HF-Router gehostet |
+| GroqCloud (nur Doku) | `mixtral-8x7b-32768` | Von Groq seit 20. März 2025 deprecated (Dokumentation war veraltet; die Live-Modell-Arrays waren bereits korrekt) |
+| GroqCloud (nur Doku) | `gemma2-9b-it` | Von Groq seit 8. Oktober 2025 deprecated (nur Dokumentation) |
+| OpenAI | `gpt-5-mini`, `gpt-5.2-chat-latest` | Nicht mehr auf OpenAIs aktueller Modell-/Preisliste (abgelöst durch die GPT-5.4/5.5/5.6-Familie) |
+
+Entfernt aus `GOOGLE_MODELS_PAID`, `HF_MODELS_PAID`, `OPENAI_MODELS_FREE`/`PAID`, `MODEL_CONFIG`, `MODEL_CAPABILITIES`, `AUDIO_CAPABLE_MODELS` und `COMPRESSOR_MODELS`, soweit zutreffend. Das Standard-Fallback-Modell von `google-api.py` wurde von `gemini-2.0-flash` auf `gemini-2.5-flash` geändert. Ein verwaister `MODEL_CONFIG`-Eintrag für das entfernte Mixtral-Modell (vorhanden, obwohl es bereits aus allen Auswahllisten entfernt war) wurde ebenfalls bereinigt.
+
+Zusätzlich fehlte in `MODEL_CONFIG` ein Eintrag für `moonshotai/kimi-k2-instruct-0905`, obwohl es in `GROQ_MODELS_PAID` gelistet war — es fiel stillschweigend auf das Output-Token-Limit von DeepSeek zurück. Ein korrekter Eintrag (131.072 Kontext / 8.192 Output) wurde ergänzt.
+
+### 4. OpenAI-Lineup auf GPT-5.5 / GPT-5.6 aktualisiert
+
+OpenAI veröffentlichte **GPT-5.5** (23. April 2026) und die **GPT-5.6-Familie — Sol, Terra, Luna** (9. Juli 2026, die aktuelle Flaggschiff-Generation), seit die Modell-Konfiguration dieses Projekts zuletzt aktualisiert wurde (10. März 2026). Siehe [OpenAI-Integration](#openai-integration) für die aktualisierten Modelllisten.
+
+Ein zweites, unabhängig entdecktes Problem: `MODEL_CONFIG` enthielt vor diesem Update **keinen einzigen Eintrag für irgendein OpenAI-Modell**. Jede OpenAI-Anfrage — unabhängig vom gewählten Modell — nutzte stillschweigend die Limits von DeepSeek Flash (8.192 Max-Output-Tokens), was Modelle wie `gpt-4.1` (real 32.768 Max-Output) oder die GPT-5.6-Familie (real 128.000 Max-Output) beschnitt. Acht korrekte Einträge wurden ergänzt, mit Kontext-/Output-Werten aus OpenAIs aktueller API-Dokumentation.
+
+### 5. Transparente API-Fehlermeldungen
+
+**Symptom**: API-Fehler von DeepSeek, OpenAI, Groq und Hugging Face erschienen als nacktes `Error: API error (400):` ohne weitere Details, was eine Diagnose allein aus der UI heraus unmöglich machte.
+
+**Ursache**: In drei separaten Fehlerbehandlungs-Zweigen innerhalb von `sendMessage()` wurde die geparste Backend-Fehlerantwort (`errData`) verworfen, sobald sie gegen die beiden bekannten Fehlertypen (`insufficient_quota`, `context_exceeded`) geprüft worden war. War der tatsächliche Fehler keiner von beiden — etwa ein nicht erkannter Parameter, wie in Punkt 6 unten angetroffen —, war die geworfene Fehlermeldung fest auf einen leeren String gesetzt.
+
+**Fix**: Alle drei Zweige extrahieren jetzt `errData.details || errData.error || errData.message` und reichen dies an die angezeigte Fehlermeldung durch, wodurch der tatsächliche, vom Anbieter gelieferte Diagnosetext sichtbar wird.
+
+### 6. `max_tokens` → `max_completion_tokens` für OpenAI
+
+Entdeckt als direkte Folge von Fix 5 oben: Sobald der echte Fehlertext sichtbar wurde, lieferte der erste Live-Test mit `gpt-5.6-luna`:
+```
+Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.
+```
+OpenAIs aktuelle Modellgeneration (GPT-5.x und Reasoning-fähige Modelle allgemein) lehnt den Parameter `max_tokens` in der Chat-Completions-API ab. `openai-api.py` sendet jetzt stattdessen `max_completion_tokens` — ein Parameter, der sowohl von älteren Modellen (GPT-4o, GPT-4.1) als auch vom aktuellen GPT-5.x-Lineup akzeptiert wird, wodurch er sich unbedingt statt pro Modell verzweigt verwenden lässt. Live verifiziert gegen sowohl `gpt-5.6-luna` als auch `gpt-4o-mini`.
+
+### 7. Bild-Pipeline fertiggestellt
+
+Siehe den dedizierten Abschnitt [Bild-Unterstützung (Vision)](#bild-unterstützung-vision) oben für die vollständige Beschreibung. Zusammengefasst: `MODEL_CAPABILITIES` wurde pro Anbieter korrekt befüllt (zuvor hatte nur DeepSeek Einträge, alle `images: false`), `currentModelSupportsImages()` wurde korrigiert, um das tatsächlich ausgewählte Modell statt eines unabhängigen, nur-DeepSeek-relevanten Arrays zu prüfen, und die Client-/Server-Verdrahtung, um Bild-Bytes tatsächlich an Google Gemini und OpenAI zu übertragen, wurde erstmals implementiert — Bilder waren zuvor von der UI entgegengenommen worden, erreichten aber nie ein Modell.
+
+### 8. `deploy.sh`: MD5-Prüfsummen-Verifikation
+
+`deploy.sh` gibt jetzt die MD5-Prüfsumme jeder Datei aus, die es in das Produktionsverzeichnis kopiert — direkt nach den Kopier-/Chown-/Chmod-Schritten und vor dem Apache-Reload:
+```
+=== MD5-Summen der kopierten Dateien (Produktion) ===
+4a08bef03d8543cc3e1cbacf1a10bc96  /var/www/deepseek-chat/index.html
+42abf2af226184edf979b3721aff0e1c  /var/www/deepseek-chat/cgi-bin/openai-api.py
+...
+```
+Dies erspart einen separaten manuellen `md5sum`-Schritt nach jedem Deploy zur Bestätigung, dass die Produktionsdatei dem beabsichtigten Commit entspricht — ein Schritt, der während derselben Session bereits ein Stale-Deploy-Problem aufgedeckt hatte (ein produktiver `deploy.sh`-Aufruf lief mit einer veralteten gecachten Kopie seiner selbst, da das Skript sich nicht selbst deployt; siehe Hinweis unter [Deploy-Skripte](#deploy-skripte)).
+
+### Geänderte Dateien
+
+`index.html`, `deepseek-api.py`, `google-api.py`, `groq-api.py`, `hugging-api.py`, `openai-api.py`, `shell-scripts/deploy.sh`
 
 ---
 
@@ -800,48 +933,47 @@ chmod 700 /var/www/deepseek-chat/sessions
 
 ### Konfiguration
 
-**Modell-Konfiguration** (`MODEL_CONFIG` in `index.html`) — einzige Quelle der Wahrheit für alle Modell-Limits:
+**Modell-Konfiguration** (`MODEL_CONFIG` in `index.html`) — einzige Quelle der Wahrheit für alle Modell-Limits, Stand 19.07.2026:
 ```javascript
 const MODEL_CONFIG = {
-    // OpenAI
-    'gpt-5.4':              { maxContextTokens: 1050000, maxOutputTokens: 16384, maxContextMessages: 100 },
-    'gpt-5.2-chat-latest':  { maxContextTokens: 128000,  maxOutputTokens: 16384, maxContextMessages: 80  },
-    'gpt-4o':               { maxContextTokens: 128000,  maxOutputTokens: 16384, maxContextMessages: 80  },
-    'gpt-4.1':              { maxContextTokens: 1048576, maxOutputTokens: 32768, maxContextMessages: 100 },
-    'gpt-4o-mini':          { maxContextTokens: 128000,  maxOutputTokens: 16384, maxContextMessages: 80  },
-    'gpt-5-mini':           { maxContextTokens: 128000,  maxOutputTokens: 16384, maxContextMessages: 80  },
-    // DeepSeek V4 (Stand 11.05.2026)
-    'deepseek-v4-flash':    { maxContextTokens: 1048576, maxOutputTokens: 8192,  maxContextMessages: 50  },
-    'deepseek-v4-pro':      { maxContextTokens: 1048576, maxOutputTokens: 32768, maxContextMessages: 50  },
+    // DeepSeek V4
+    'deepseek-v4-flash':    { maxContextTokens: 1048576, maxOutputTokens: 8192,   maxContextMessages: 50  },
+    'deepseek-v4-pro':      { maxContextTokens: 1048576, maxOutputTokens: 32768,  maxContextMessages: 50  },
     // Google Gemini
-    'gemini-2.5-flash':     { maxContextTokens: 1048576, maxOutputTokens: 8192,  maxContextMessages: 100 },
-    'gemini-2.5-pro':       { maxContextTokens: 1048576, maxOutputTokens: 65536, maxContextMessages: 100 },
-    'gemini-1.5-pro':       { maxContextTokens: 2097152, maxOutputTokens: 8192,  maxContextMessages: 100 },
-    'gemini-2.0-flash':     { maxContextTokens: 1048576, maxOutputTokens: 8192,  maxContextMessages: 100 },
+    'gemini-2.5-flash':     { maxContextTokens: 1048576, maxOutputTokens: 8192,   maxContextMessages: 100 },
+    'gemini-2.5-pro':       { maxContextTokens: 1048576, maxOutputTokens: 65536,  maxContextMessages: 100 },
     // Hugging Face
     'Qwen/Qwen2.5-72B-Instruct':               { maxContextTokens: 128000, maxOutputTokens: 8192, maxContextMessages: 80 },
     'mistralai/Mistral-7B-Instruct-v0.3':      { maxContextTokens: 32768,  maxOutputTokens: 4096, maxContextMessages: 40 },
     'microsoft/Phi-3.5-mini-instruct':         { maxContextTokens: 128000, maxOutputTokens: 4096, maxContextMessages: 60 },
     'meta-llama/Meta-Llama-3.1-70B-Instruct':  { maxContextTokens: 128000, maxOutputTokens: 8192, maxContextMessages: 80 },
     'meta-llama/Meta-Llama-3.1-405B-Instruct': { maxContextTokens: 128000, maxOutputTokens: 8192, maxContextMessages: 80 },
-    'mistralai/Mixtral-8x7B-Instruct-v0.1':    { maxContextTokens: 32768,  maxOutputTokens: 4096, maxContextMessages: 40 },
     // GroqCloud
-    'llama-3.3-70b-versatile':                   { maxContextTokens: 128000, maxOutputTokens: 8192, maxContextMessages: 80 },
-    'llama-3.1-8b-instant':                      { maxContextTokens: 131072, maxOutputTokens: 8192, maxContextMessages: 80 },
-    'meta-llama/llama-4-scout-17b-16e-instruct': { maxContextTokens: 131072, maxOutputTokens: 8192, maxContextMessages: 80 },
+    'llama-3.3-70b-versatile':                   { maxContextTokens: 128000, maxOutputTokens: 8192,  maxContextMessages: 80 },
+    'llama-3.1-8b-instant':                      { maxContextTokens: 131072, maxOutputTokens: 8192,  maxContextMessages: 80 },
+    'meta-llama/llama-4-scout-17b-16e-instruct': { maxContextTokens: 131072, maxOutputTokens: 8192,  maxContextMessages: 80 },
     'qwen/qwen3-32b':                            { maxContextTokens: 131072, maxOutputTokens: 40960, maxContextMessages: 80 },
-    'moonshotai/kimi-k2-instruct-0905':          { maxContextTokens: 131072, maxOutputTokens: 8192, maxContextMessages: 80 }
+    'moonshotai/kimi-k2-instruct-0905':          { maxContextTokens: 131072, maxOutputTokens: 8192,  maxContextMessages: 80 },
+    // OpenAI (ergänzt am 19.07.2026 — fehlte zuvor komplett, fiel stillschweigend auf DeepSeek-Flash-Limits zurück)
+    'gpt-4o-mini':    { maxContextTokens: 128000,  maxOutputTokens: 16384,  maxContextMessages: 80  },
+    'gpt-4o':         { maxContextTokens: 128000,  maxOutputTokens: 16384,  maxContextMessages: 80  },
+    'gpt-4.1':        { maxContextTokens: 1048576, maxOutputTokens: 32768,  maxContextMessages: 100 },
+    'gpt-5.4':        { maxContextTokens: 1048576, maxOutputTokens: 16384,  maxContextMessages: 100 },
+    'gpt-5.5':        { maxContextTokens: 1048576, maxOutputTokens: 128000, maxContextMessages: 100 },
+    'gpt-5.6-sol':    { maxContextTokens: 1048576, maxOutputTokens: 128000, maxContextMessages: 100 },
+    'gpt-5.6-terra':  { maxContextTokens: 1048576, maxOutputTokens: 128000, maxContextMessages: 100 },
+    'gpt-5.6-luna':   { maxContextTokens: 1048576, maxOutputTokens: 128000, maxContextMessages: 100 },
 };
 const DEEPSEEK_MODELS    = ['deepseek-v4-flash', 'deepseek-v4-pro'];
-const OPENAI_MODELS_FREE = ['gpt-4o-mini', 'gpt-5-mini'];
-const OPENAI_MODELS_PAID = ['gpt-5.4', 'gpt-5.2-chat-latest', 'gpt-4o', 'gpt-4.1', 'gpt-4o-mini'];
+const OPENAI_MODELS_FREE = ['gpt-4o-mini', 'gpt-5.6-luna'];
+const OPENAI_MODELS_PAID = ['gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-5.4', 'gpt-4o', 'gpt-4.1', 'gpt-4o-mini'];
 const GOOGLE_MODELS_FREE = ['gemini-2.5-flash'];
-const GOOGLE_MODELS_PAID = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro', 'gemini-2.0-flash'];
+const GOOGLE_MODELS_PAID = ['gemini-2.5-flash', 'gemini-2.5-pro'];
 const HF_MODELS_FREE     = ['Qwen/Qwen2.5-72B-Instruct', 'mistralai/Mistral-7B-Instruct-v0.3', 'microsoft/Phi-3.5-mini-instruct'];
-const HF_MODELS_PAID     = ['meta-llama/Meta-Llama-3.1-70B-Instruct', 'meta-llama/Meta-Llama-3.1-405B-Instruct', 'Qwen/Qwen2.5-72B-Instruct', 'mistralai/Mixtral-8x7B-Instruct-v0.1'];
+const HF_MODELS_PAID     = ['meta-llama/Meta-Llama-3.1-70B-Instruct', 'meta-llama/Meta-Llama-3.1-405B-Instruct', 'Qwen/Qwen2.5-72B-Instruct'];
 const GROQ_MODELS_FREE   = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'meta-llama/llama-4-scout-17b-16e-instruct', 'qwen/qwen3-32b'];
 const GROQ_MODELS_PAID   = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'meta-llama/llama-4-scout-17b-16e-instruct', 'qwen/qwen3-32b', 'moonshotai/kimi-k2-instruct-0905'];
-const AUDIO_CAPABLE_MODELS = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro', 'gemini-2.0-flash', 'gpt-4o', 'gpt-4.1'];
+const AUDIO_CAPABLE_MODELS = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gpt-4o', 'gpt-4.1'];
 ```
 
 **Sprach-Konfiguration** (`language.xml`): Einen `<language id="custom" name="..." visible="true">`-Block hinzufügen um den Custom-Sprach-Slot zu aktivieren. `has_address_form="true"` für Sprachen mit formell/informell-Unterscheidung setzen.
@@ -850,10 +982,17 @@ const AUDIO_CAPABLE_MODELS = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-
 
 | Skript | Funktion |
 |--------|----------|
-| `deploy.sh <user>` | Kopiert Dateien von `/home/<user>/multi-llm-chat/var/www/deepseek-chat/` nach `/var/www/deepseek-chat/`, setzt Eigentümerschaft und Berechtigungen, lädt Apache neu |
+| `deploy.sh <user>` | Kopiert Dateien von `/home/<user>/multi-llm-chat/var/www/deepseek-chat/` nach `/var/www/deepseek-chat/`, setzt Eigentümerschaft und Berechtigungen, gibt MD5-Prüfsummen jeder kopierten Datei aus, lädt Apache neu |
 | `sync-back.sh <user>` | Kopiert geänderte Dateien aus der Produktion zurück ins Quell-Repo |
 | `install.sh` | Installiert `deploy.sh` und `sync-back.sh` im Produktionsverzeichnis |
 | `tag-release.sh` | Erstellt einen Git-Tag mit automatisch inkrementierter Versionsnummer und pusht ihn. Führt zuerst `git fetch --tags` aus um Konflikte mit bestehenden Remote-Tags zu vermeiden. |
+
+**Wichtig — `deploy.sh` deployt sich nicht selbst.** Die eigene `cp`-Liste des Skripts umfasst `index.html`, `manifest`, `files-directorys`, `cgi-bin/*.py` und `language.xml` — sich selbst kopiert es nie. Nach einer Änderung an `deploy.sh` im Quell-Repo und einem `git pull` auf dem Server bleibt die Produktionskopie unter `/var/www/deepseek-chat/deploy.sh` die **alte** Version, bis sie manuell überkopiert wird:
+```bash
+cp ~/multi-llm-chat/shell-scripts/deploy.sh /var/www/deepseek-chat/deploy.sh
+chmod +x /var/www/deepseek-chat/deploy.sh
+```
+Dies führte während der Session vom 19. Juli 2026 zu einem echten Stolperstein — `sudo deploy.sh` lieferte auch nach erfolgreichem `git pull` weiterhin die Ausgabe von vor der MD5-Prüfsummen-Erweiterung, weil das aufgerufene Skript noch die veraltete Produktionskopie war.
 
 ---
 
@@ -874,7 +1013,7 @@ const AUDIO_CAPABLE_MODELS = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-
 │   ├── index.html                      Hauptanwendung (~5.000 Zeilen, alles JS/CSS/HTML)
 │   ├── language.xml                    Alle UI-Texte in allen Sprachen (EN, DE, ES, Custom)
 │   ├── manifest                        Design-Manifest (alle Konventionen und Regeln)
-│   ├── changelog                       Vollständige Entwicklungsgeschichte (86 Einträge)
+│   ├── changelog                       Vollständige Entwicklungsgeschichte (89 Einträge)
 │   ├── files-directorys                Dateiübersicht / Verzeichnislisting
 │   ├── cgi-bin/
 │   │   ├── openai-api.py              Streaming-Proxy zur OpenAI Chat Completions API
@@ -902,11 +1041,11 @@ const AUDIO_CAPABLE_MODELS = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-
 
 ## Modell-Konfiguration
 
-Das `MODEL_CONFIG`-Objekt in `index.html` ist die **einzige Quelle der Wahrheit** für alle modellspezifischen Limits über alle fünf Anbieter hinweg. Alle Features die von Modell-Limits abhängen — Kontext-Nutzungsgrad-Anzeige, dynamisches Upload-Limit, Kontext-Overflow-Erkennung, Kompressor-Schwellwerte — lesen aus diesem einzigen Objekt.
+Das `MODEL_CONFIG`-Objekt in `index.html` ist die **einzige Quelle der Wahrheit** für alle modellspezifischen Limits über alle fünf Anbieter hinweg. Alle Features die von Modell-Limits abhängen — Kontext-Nutzungsgrad-Anzeige, dynamisches Upload-Limit, Kontext-Overflow-Erkennung, Kompressor-Schwellwerte — lesen aus diesem einzigen Objekt. Ein in `MODEL_CONFIG` fehlendes Modell fällt stillschweigend auf die Limits von DeepSeek Flash zurück, statt laut zu scheitern — dies betraf bis zur Korrektur am 19. Juli 2026 jedes OpenAI-Modell (siehe [Wartung & Feature-Update vom 19. Juli 2026](#wartung--feature-update-vom-19-juli-2026)), weshalb ein neu hinzugefügtes Modell explizit gegen diese Tabelle geprüft werden sollte, statt als funktionierend anzunehmen.
 
-**Modell-Konfiguration aktualisieren**: Wenn ein Anbieter seine Modelle aktualisiert (neues Modell, geänderte Kontext-Limits, veraltetes Modell), muss nur der `MODEL_CONFIG`-Block in `index.html` aktualisiert werden. Keine anderen Dateien benötigen Änderungen, ausser wenn der Modellname auch in den Anbieter-Modelllisten (`DEEPSEEK_MODELS`, `GOOGLE_MODELS_*`, etc.) oder in `AUDIO_CAPABLE_MODELS` verwendet wird.
+**Modell-Konfiguration aktualisieren**: Wenn ein Anbieter seine Modelle aktualisiert (neues Modell, geänderte Kontext-Limits, veraltetes Modell), muss nur der `MODEL_CONFIG`-Block in `index.html` aktualisiert werden. Keine anderen Dateien benötigen Änderungen, ausser wenn der Modellname auch in den Anbieter-Modelllisten (`DEEPSEEK_MODELS`, `GOOGLE_MODELS_*`, etc.), in `MODEL_CAPABILITIES` oder in `AUDIO_CAPABLE_MODELS` verwendet wird.
 
-Quellen: [OpenAI API Docs](https://platform.openai.com/docs), [DeepSeek API Docs](https://api-docs.deepseek.com), [Google Gemini Docs](https://ai.google.dev/gemini-api/docs), [Hugging Face Inference Providers](https://huggingface.co/docs/inference-providers), [GroqCloud Docs](https://console.groq.com/docs/models) *(Stand 11.05.2026)*.
+Quellen: [OpenAI API Docs](https://platform.openai.com/docs), [DeepSeek API Docs](https://api-docs.deepseek.com), [Google Gemini Docs](https://ai.google.dev/gemini-api/docs), [Hugging Face Inference Providers](https://huggingface.co/docs/inference-providers), [GroqCloud Docs](https://console.groq.com/docs/models) *(Stand 19.07.2026)*.
 
 ---
 
@@ -1015,19 +1154,27 @@ Dieses Projekt demonstriert professionelles Web-Development in einem minimalisti
 **Engineering**:
 - Magic-Byte-Prüfung erkennt ausführbare Dateien unabhängig von der Dateiendung — 12 Signaturen auf 4 Plattformen.
 - Umlaut-Platzhalter-System löst eine fundamentale DeepSeek API-Einschränkung für deutschen Text.
-- Vorwärtskompatible Modell-Fähigkeiten-Map — ein neues Modell hinzufügen erfordert nur einen einzigen Config-Eintrag.
+- Vorwärtskompatible Modell-Fähigkeiten-Map — ein neues Modell hinzufügen erfordert nur einen einzigen Config-Eintrag (wobei `MODEL_CONFIG` und `MODEL_CAPABILITIES` explizit synchron gehalten werden müssen — eine Lücke, die bis zum 19. Juli 2026 dazu führte, dass OpenAIs komplettes Modell-Lineup stillschweigend mit dem falschen Output-Token-Limit lief).
+- End-to-End-Bild-Pipeline für Google Gemini und OpenAI — base64-Bilddaten fliessen vom Browser-Upload/-Paste bis hin zu nativen `inline_data`/`image_url`-API-Payloads, gesteuert über eine Pro-Modell-Fähigkeiten-Map statt einer hartcodierten Annahme.
 - Präzises Kompressor-Zusammenfassungs-Verwerfen: Zusammenfassung wird ungültig wenn Kontext nach manueller Löschung unter den zuletzt ausgelösten Schwellwert fällt.
-- Dynamisches Upload-Limit: 75% des Kontextfensters des aktiven Modells in Zeichen — skaliert automatisch von 384k Zeichen (`gpt-4o`) bis 6,2M Zeichen (`gemini-1.5-pro`).
-- Vollständiger Audit-Trail via Git, detaillierter 86-Einträge-Changelog und Design-Manifest.
+- Dynamisches Upload-Limit: 75% des Kontextfensters des aktiven Modells in Zeichen — skaliert automatisch von 384k Zeichen (`gpt-4o`) bis ~3,1M Zeichen (`deepseek-v4-flash`, `gemini-2.5-flash`, die GPT-5.6-Familie).
+- Deploy-Verifikation fest in die Deployment-Pipeline eingebaut — `deploy.sh` gibt MD5-Prüfsummen jeder kopierten Datei aus und deckt veraltete/nicht übereinstimmende Deploys sofort auf, statt sie erst durch unerklärliches Laufzeitverhalten zu entdecken.
+- Vollständiger Audit-Trail via Git, detaillierter 89-Einträge-Changelog und Design-Manifest.
 
 **DeepSeek V4 bereit** — migriert auf `deepseek-v4-flash` und `deepseek-v4-pro` mit 1M-Token-Kontextfenstern, vor der Abschalt-Deadline für Legacy-Modelle am 24. Juli 2026.
 
+**GPT-5.6 bereit** — OpenAI-Lineup aktuell bis zur Sol/Terra/Luna-Generation (9. Juli 2026), mit durchgängig verwendetem `max_completion_tokens` für Kompatibilität über das gesamte Modell-Spektrum hinweg.
+
 **Für einen professionellen Entwickler** demonstriert dieses Projekt:
 - **Sicherheitsbewusstsein** — API-Key-Schutz, Executable-Erkennung, sichere Session-Speicherung, kein Path-Traversal.
-- **Strukturierte Disziplin** — Design-Manifest, Versions-Tags, strikte UI-Konventionen, 86-Einträge-Changelog.
-- **Problem-Lösungstiefe** — X11-Paste-Verhalten, Umlaut-Korrumpierung, PDF-Binary-Output-Probleme, „Lost in the Middle", Kontext-Overflow-Verkettung.
+- **Strukturierte Disziplin** — Design-Manifest, Versions-Tags, strikte UI-Konventionen, 89-Einträge-Changelog.
+- **Problem-Lösungstiefe** — X11-Paste-Verhalten, Umlaut-Korrumpierung, PDF-Binary-Output-Probleme, „Lost in the Middle", Kontext-Overflow-Verkettung, und eine taggleiche Ursachenkette von einer leeren Fehlermeldung bis zu einem fehlenden OpenAI-Request-Parameter.
 - **Vollständige Dokumentation** — Inline-Code-Kommentare, dediziertes Manifest, Dokumentations-Header pro Skript, dreisprachiges README.
 
 ---
 
-*Zuletzt aktualisiert: 11.05.2026*
+*Zuletzt aktualisiert: 19.07.2026*
+
+
+
+############ FILE: Readme_EN.md ############
