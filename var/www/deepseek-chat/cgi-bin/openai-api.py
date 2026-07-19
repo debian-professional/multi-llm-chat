@@ -201,7 +201,12 @@ def main():
         api_request_data = {
             'model':      model,
             'messages':   messages,
-            'max_tokens': max_tokens,
+            # max_completion_tokens statt max_tokens: funktioniert bei ALLEN
+            # Modellen (alt und neu), waehrend max_tokens von den neueren
+            # GPT-5.x-Modellen mit HTTP 400 abgelehnt wird ("Unsupported
+            # parameter: 'max_tokens' is not supported with this model.
+            # Use 'max_completion_tokens' instead.")
+            'max_completion_tokens': max_tokens,
             'stream':     True
         }
 
