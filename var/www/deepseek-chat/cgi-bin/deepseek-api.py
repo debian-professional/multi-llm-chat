@@ -4,7 +4,7 @@
 
 # =============================================================================
 # DEEPSEEK API PROXY
-# Importiert / aktualisiert: 11.05.2026
+# Importiert / aktualisiert: 19.07.2026 (Log-Erweiterung: Modellname im Log)
 # =============================================================================
 #
 # Unterstuetzte Modelle:
@@ -35,7 +35,7 @@ import urllib.request
 import urllib.error
 import datetime
 
-def log_to_file(status_code, response_data):
+def log_to_file(status_code, response_data, model=None):
     """Schreibt ausgewählte Informationen in die Log-Datei (ohne API-Key)."""
     try:
         if os.environ.get('REQUEST_METHOD') == 'OPTIONS':
@@ -50,6 +50,8 @@ def log_to_file(status_code, response_data):
         if isinstance(response_data, dict):
             error_msg = response_data.get('error')
         log_line = f"{timestamp} | IP: {ip} | {method} {path} | Status: {status_code}"
+        if model:
+            log_line += f" | Model: {model}"
         if error_msg:
             log_line += f" | Error: {error_msg}"
         log_line += "\n"
@@ -58,7 +60,7 @@ def log_to_file(status_code, response_data):
     except Exception:
         pass
 
-def send_error(status_code, data):
+def send_error(status_code, data, model=None):
     """Sendet Fehler-Response als JSON (vor dem Streaming-Start)."""
     print(f"Status: {status_code}")
     print("Content-Type: application/json")
@@ -68,9 +70,10 @@ def send_error(status_code, data):
     print()
     print(json.dumps(data, ensure_ascii=False))
     sys.stdout.flush()
-    log_to_file(status_code, data)
+    log_to_file(status_code, data, model)
 
 def main():
+    model = None  # wird nach dem Parsen der Anfrage gesetzt, fuer Logging auch bei spaeteren Fehlern verfuegbar
     try:
         # API-Key aus Umgebungsvariable laden
         api_key = os.environ.get('DEEPSEEK_API_KEY')
@@ -107,7 +110,7 @@ def main():
         request_data = json.loads(post_data)
 
         # Validierung
-        model = request_data.get('model', 'deepseek-v4-flash')
+        model = request_data.get('model', 'deepseek-v4-flash')  # ueberschreibt das None von oben
         messages = request_data.get('messages', [])
         max_tokens = request_data.get('max_tokens', 2000)
         no_training = request_data.get('no_training', True)
@@ -115,7 +118,7 @@ def main():
         if not messages or not isinstance(messages, list):
             send_error(400, {
                 'error': 'Ungueltige Anfrage: messages Array erforderlich'
-            })
+            }, model)
             return
 
         # DeepSeek API Request vorbereiten (mit Streaming)
@@ -156,7 +159,7 @@ def main():
                     'error': f'DeepSeek API Fehler: {e.code}',
                     'error_type': 'insufficient_quota',
                     'details': error_body
-                })
+                }, model)
             # HTTP 400: prüfen ob Kontextfenster überschritten
             elif e.code == 400:
                 context_keywords = ['context', 'length', 'token', 'maximum']
@@ -166,23 +169,23 @@ def main():
                         'error': f'DeepSeek API Fehler: {e.code}',
                         'error_type': 'context_exceeded',
                         'details': error_body
-                    })
+                    }, model)
                 else:
                     send_error(e.code, {
                         'error': f'DeepSeek API Fehler: {e.code}',
                         'details': error_body
-                    })
+                    }, model)
             else:
                 send_error(e.code, {
                     'error': f'DeepSeek API Fehler: {e.code}',
                     'details': error_body
-                })
+                }, model)
             return
         except urllib.error.URLError as e:
             send_error(500, {
                 'error': 'Verbindung zur DeepSeek API fehlgeschlagen',
                 'details': str(e.reason)
-            })
+            }, model)
             return
 
         # SSE-Header senden (erst nach erfolgreicher API-Verbindung)
@@ -203,13 +206,13 @@ def main():
                 sys.stdout.write(decoded)
                 sys.stdout.flush()
 
-        log_to_file(200, {})
+        log_to_file(200, {}, model)
 
     except json.JSONDecodeError as e:
         send_error(400, {
             'error': 'Ungültiges JSON',
             'details': str(e)
-        })
+        }, model)
 
     except Exception as e:
         error_details = traceback.format_exc()
@@ -217,10 +220,7 @@ def main():
             'error': 'Interner Serverfehler',
             'message': str(e),
             'details': error_details
-        })
+        }, model)
 
 if __name__ == '__main__':
     main()
-
-
-
