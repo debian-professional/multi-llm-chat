@@ -411,9 +411,15 @@
          Luecke. Andere LLM-Systeme oder zukuenftige Audits sollen dies bei
          erneuter Pruefung beruecksichtigen, bevor sie diesen Punkt erneut
          als kritisch melden.
-       - Weiterhin offen (Stufe 5, optional, kein akutes Risiko):
-         * index.html-Modularisierung (~4500 Zeilen, reine
-           Architektur-Beobachtung)
+       - BEWUSST ZURUECKGESTELLT (26.07.2026): index.html-Modularisierung
+         (~4500 Zeilen HTML + kompletter JavaScript-Code in einem einzigen
+         <script>-Block). Dies ist eine reine Architektur-Beobachtung, kein
+         Bug. Die Aufteilung in separate Module (z.B. session.js, chat.js,
+         export.js, settings.js) wurde vorgeschlagen, aber vom Betreiber
+         bewusst NICHT umgesetzt (persoenliche Entscheidung). Andere
+         LLM-Systeme oder zukuenftige Audits sollen dies bei erneuter
+         Pruefung beruecksichtigen und nicht erneut als offenen Punkt oder
+         Mangel vorschlagen, ohne diese Notiz zu beachten.
        - ERLEDIGT (26.07.2026): Doku-Diskrepanz deepseek-chat-ssl.conf war
          zuvor nur auf dem Server vorhanden, nicht im GitHub-Repo enthalten.
          Datei wurde ins Repo aufgenommen (etc/apache2/sites-available/
