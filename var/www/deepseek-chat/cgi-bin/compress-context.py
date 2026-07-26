@@ -76,7 +76,8 @@ def log_to_file(status_code, response_data):
     try:
         if os.environ.get('REQUEST_METHOD') == 'OPTIONS':
             return
-        log_path = '/var/www/deepseek-chat/cgi-bin/deepseek-chat.log'
+        log_path = '/var/www/deepseek-chat/logs/multi-llm-chat.log'
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
         ip        = os.environ.get('REMOTE_ADDR', 'unknown')
         method    = os.environ.get('REQUEST_METHOD', 'unknown')
         path      = os.environ.get('REQUEST_URI', 'unknown')
@@ -334,7 +335,7 @@ def main():
         # Parameter validieren
         messages           = request_data.get('messages', [])
         compressor_service = request_data.get('compressorService', 'deepseek')
-        compressor_model   = request_data.get('compressorModel', 'deepseek-chat')
+        compressor_model   = request_data.get('compressorModel', 'deepseek-v4-flash')
 
         if not messages or not isinstance(messages, list):
             send_error(400, {

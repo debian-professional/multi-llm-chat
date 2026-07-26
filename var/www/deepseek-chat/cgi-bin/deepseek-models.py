@@ -17,7 +17,8 @@ MODELS_URL = 'https://api.deepseek.com/v1/models'
 
 def log_to_file(message):
     try:
-        log_path = os.path.join(os.path.dirname(__file__), 'deepseek-chat.log')
+        log_path = '/var/www/deepseek-chat/logs/multi-llm-chat.log'
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
         with open(log_path, 'a', encoding='utf-8') as f:
             from datetime import datetime
             f.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | models | {message}\n")
