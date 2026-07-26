@@ -4,8 +4,35 @@
 import json
 import sys
 import os
+import re
+import datetime
+from pathlib import Path
 
 SESSIONS_DIR = '/var/www/deepseek-chat/sessions'
+
+# Sicherheits-Fix (26.07.2026): session_id wurde bisher ungeprueft in
+# os.path.join() verwendet -> Path Traversal beim Loeschen beliebiger Dateien.
+SESSION_ID_RE = re.compile(r'^\d{4}-\d{2}-\d{2}_\d{6}_[A-Za-z0-9]{6}$')
+
+def validate_session_id(session_id):
+    """Validiert die Session-ID strikt gegen das Format YYYY-MM-DD_HHMMSS_xxxxxx."""
+    if not isinstance(session_id, str) or not SESSION_ID_RE.fullmatch(session_id):
+        return False
+    try:
+        datetime.datetime.strptime(session_id[:10], '%Y-%m-%d')
+        datetime.datetime.strptime(session_id[11:17], '%H%M%S')
+        return True
+    except ValueError:
+        return False
+
+def resolve_session_path(session_id):
+    """Loest den Session-Dateipfad auf und stellt sicher, dass er innerhalb
+    von SESSIONS_DIR bleibt (Verteidigung gegen Path Traversal)."""
+    sessions_dir = Path(SESSIONS_DIR).resolve()
+    session_file = (sessions_dir / f'{session_id}.json').resolve()
+    if session_file.parent != sessions_dir:
+        raise ValueError('Ungültiger Session-Pfad')
+    return str(session_file)
 
 def send_response(status_code, data):
     """Sendet HTTP-Response zurück."""
@@ -47,9 +74,17 @@ def main():
             send_response(400, {'error': 'Keine Session-ID'})
             return
 
-        # Session-Datei löschen
-        session_file = os.path.join(SESSIONS_DIR, f'{session_id}.json')
-        
+        if not validate_session_id(session_id):
+            send_response(400, {'error': 'Ungültige Session-ID'})
+            return
+
+        # Session-Datei löschen (sicherer, aufgeloester Pfad)
+        try:
+            session_file = resolve_session_path(session_id)
+        except ValueError:
+            send_response(400, {'error': 'Ungültige Session-ID'})
+            return
+
         if not os.path.exists(session_file):
             send_response(404, {'error': 'Session nicht gefunden'})
             return
@@ -68,4 +103,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
 

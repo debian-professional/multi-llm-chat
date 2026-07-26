@@ -2259,15 +2259,20 @@
                     const sessionDate = session.timestamp ? new Date(session.timestamp).toLocaleString() : '';
                     item.innerHTML = `
                         <div class="session-header">
-                            <div class="session-id">${session.sessionId}</div>
+                            <div class="session-id"></div>
                             <div class="session-date">${sessionDate}</div>
                         </div>
-                        <div class="session-preview">${session.preview || '...'}</div>
+                        <div class="session-preview"></div>
                         <div class="session-count">${tf(38, msgCount)}</div>
                         <div class="session-actions">
                             <button class="session-load-btn">${t(223)}</button>
                             <button class="session-delete-btn">${t(224)}</button>
                         </div>`;
+                    // XSS-Fix (26.07.2026): sessionId und preview stammen aus
+                    // gespeicherten Chat-Inhalten (preview = erste Nutzernachricht)
+                    // und werden daher per textContent statt innerHTML gesetzt
+                    item.querySelector('.session-id').textContent = session.sessionId;
+                    item.querySelector('.session-preview').textContent = session.preview || '...';
                     item.querySelector('.session-load-btn').onclick = () => loadSession(session.sessionId);
                     item.querySelector('.session-delete-btn').onclick = () => deleteSession(session.sessionId, item);
                     sessionsList.appendChild(item);
@@ -2422,11 +2427,15 @@
                             const progress = Math.round((i / totalPages) * 100);
                             progressInfo.innerHTML = `
                                 <div class="pdf-processing">
-                                    PDF: ${file.name} (${i}/${totalPages} pages, ${progress}%)
+                                    PDF: <span class="pdf-processing-filename"></span> (${i}/${totalPages} pages, ${progress}%)
                                     <div class="pdf-progress">
                                         <div class="pdf-progress-bar" style="width:${progress}%"></div>
                                     </div>
                                 </div>`;
+                            // XSS-Fix (26.07.2026): file.name stammt vom Nutzer/Dateisystem
+                            // und wird daher per textContent statt innerHTML gesetzt
+                            const fnSpan = progressInfo.querySelector('.pdf-processing-filename');
+                            if (fnSpan) fnSpan.textContent = file.name;
                         }
                     }
                     clearTimeout(timeoutId);
@@ -3793,11 +3802,9 @@
             messageContainer.setAttribute('data-msg-id', msgId);
             const messageDiv = document.createElement('div');
             messageDiv.className = isUser ? 'user-message' : 'ai-message';
-            if (isUser) {
-                messageDiv.innerHTML = text;
-            } else {
-                messageDiv.textContent = text;
-            }
+            // XSS-Fix (26.07.2026): Nutzer- und KI-Nachrichten werden beide als reiner
+            // Text gerendert, kein innerHTML mehr fuer Chat-Inhalte
+            messageDiv.textContent = text;
             messageContainer.appendChild(messageDiv);
             if (!isUser) addFeedbackButtons(messageContainer, msgId);
             const rightButtons = document.createElement('div');
@@ -4457,6 +4464,9 @@
     </script>
 </body>
 </html>
+
+
+
 
 
 
