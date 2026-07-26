@@ -1470,5 +1470,51 @@
     - Dateien: index.html, compress-context.py, deepseek-models.py,
       language.xml, manifest, Readme_DE.md, Readme_ES.md
 
+    91. [26.07.2026] Sicherheitsaudit Stufe 1: Stored XSS und Path Traversal behoben
+    - index.html: drei Stored-XSS-Lücken behoben, bei denen nutzergesteuerte
+      Werte per innerHTML statt textContent gerendert wurden:
+        * addMessageToChat(): Nutzernachrichten wurden per innerHTML gesetzt
+          (KI-Antworten bereits zuvor korrekt per textContent) — ein
+          Nachrichtentext wie "<img src=x onerror=alert(1)>" führte beliebigen
+          JavaScript-Code im Browser jeder Person aus, die den Chatverlauf
+          sieht (Stored XSS). Fix: beide Zweige nutzen jetzt textContent.
+        * loadSessionsList(): session.sessionId und session.preview (aus
+          gespeicherten Chat-Inhalten, preview = erste Nutzernachricht)
+          wurden direkt in ein innerHTML-Template eingesetzt. Fix: statisches
+          Template per innerHTML, dynamische Werte danach per
+          querySelector(...).textContent gesetzt.
+        * PDF-Upload-Fortschrittsanzeige (zusätzlicher, nicht im ursprünglichen
+          Audit gemeldeter Fund): file.name wurde ungefiltert per innerHTML
+          angezeigt — ein bösartig benannter Dateiname (z.B.
+          "<img src=x onerror=...>.pdf") hätte beim Hochladen Code ausgeführt.
+          Fix: Dateiname wird jetzt per textContent in ein eigenes <span>
+          gesetzt.
+    - save-session.py, load-session.py, delete-session.py: Path-Traversal-
+      Lücke behoben. Die bisherige Validierung prüfte nur Datum- und
+      Zeit-Teil der Session-ID (parts[0]/parts[1]), der Zufallsteil
+      (parts[2]) wurde nie geprüft — eine Session-ID wie
+      "2026-07-26_120000_../../../etc/cron.d/evil" bestand die alte Prüfung
+      und ermöglichte Lesen/Schreiben/Löschen beliebiger Dateien auf dem
+      Server.
+        * Fix: neue strikte Regex SESSION_ID_RE
+          (^\d{4}-\d{2}-\d{2}_\d{6}_[A-Za-z0-9]{6}$) in allen drei Skripten,
+          ergänzt um die bestehende strptime-Prüfung für Datum/Uhrzeit
+        * Zusätzliche zweite Verteidigungsebene: neue Funktion
+          resolve_session_path() löst den Dateipfad via pathlib auf und
+          verifiziert explizit, dass er innerhalb von SESSIONS_DIR bleibt —
+          greift unabhängig von der Regex, falls diese je umgangen würde
+        * Verifiziert: gültige Session-IDs weiterhin akzeptiert;
+          Traversal-Payloads sowie ungültige Datumswerte (z.B. Monat 13)
+          zuverlässig abgelehnt; beide Schutzebenen einzeln getestet
+    - Verifiziert nach Deployment: MD5-Summen aller vier Dateien stimmen mit
+      den gelieferten Versionen überein; XSS-Payload
+      "<img src=x onerror=alert(1)>" erscheint im Inkognito-Fenster als
+      reiner Text ohne Code-Ausführung; Speichern/Laden/Löschen einer
+      normalen Session funktioniert weiterhin einwandfrei
+    - Dateien: index.html, save-session.py, load-session.py,
+      delete-session.py
+
     ============================================================================
+
+
 
