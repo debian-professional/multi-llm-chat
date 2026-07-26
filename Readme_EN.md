@@ -106,8 +106,8 @@ The architecture is intentionally simple but well thought out:
 | `compress-context.py` | Context compression — summarizes oldest 50% of messages via second LLM call |
 | `deepseek-models.py` | Queries DeepSeek `/v1/models` endpoint at startup for live model detection |
 | `save-session.py` | POST: receives `{sessionId, messages}`, validates ID, writes JSON to disk |
-| `load-session.py` | GET: returns session list with previews; GET `?id=`: returns full session |
-| `delete-session.py` | DELETE: removes session JSON file |
+| `load-session.py` | GET: returns session list with previews; POST `{sessionId}`: returns full session |
+| `delete-session.py` | POST `{sessionId}`: removes session JSON file |
 | `export-pdf.py` | Server-side PDF export via ReportLab |
 | `export-markdown.py` | Server-side Markdown export |
 | `export-txt.py` | Server-side TXT export |
@@ -459,8 +459,8 @@ Every conversation is automatically managed as a server-side session:
 
 **CGI endpoint details**:
 - `save-session.py` — `POST`: receives `{sessionId, messages}`, validates ID format (regex), writes `sessions/{sessionId}.json`
-- `load-session.py` — `GET`: returns `[{id, preview, count, date}]`; `GET ?id=X`: returns full `{messages: [...]}`
-- `delete-session.py` — `DELETE ?id=X`: removes `sessions/{sessionId}.json`
+- `load-session.py` — `GET`: returns `[{id, preview, count, date}]`; `POST {sessionId}`: returns full `{messages: [...]}`
+- `delete-session.py` — `POST {sessionId}`: removes `sessions/{sessionId}.json`
 
 ### Export Functions
 
@@ -1024,8 +1024,8 @@ This caught out a live deployment during the 19 July 2026 session — `sudo depl
 │   │   ├── compress-context.py        Context compression via second LLM call
 │   │   ├── deepseek-models.py         Live model list from DeepSeek /v1/models
 │   │   ├── save-session.py            Session save endpoint (POST)
-│   │   ├── load-session.py            Session list / load endpoint (GET)
-│   │   ├── delete-session.py          Session delete endpoint (DELETE)
+│   │   ├── load-session.py            Session list (GET) / load endpoint (POST)
+│   │   ├── delete-session.py          Session delete endpoint (POST)
 │   │   ├── export-pdf.py              PDF export via ReportLab
 │   │   ├── export-markdown.py         Markdown export
 │   │   ├── export-txt.py              Plain text export
@@ -1177,4 +1177,3 @@ This project demonstrates professional-level web development in a minimalist, se
 
 
 
-############ FILE: Readme_ES.md ############

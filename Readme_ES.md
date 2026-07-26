@@ -106,8 +106,8 @@ La arquitectura es intencionalmente simple pero bien pensada:
 | `compress-context.py` | Compresión de contexto — resume el 50% más antiguo de los mensajes mediante segunda llamada LLM |
 | `deepseek-models.py` | Consulta el endpoint DeepSeek `/v1/models` en tiempo real al inicio |
 | `save-session.py` | POST: recibe `{sessionId, messages}`, valida ID, escribe JSON en disco |
-| `load-session.py` | GET: devuelve lista de sesiones con vistas previas; GET `?id=`: devuelve sesión completa |
-| `delete-session.py` | DELETE: elimina el archivo JSON de sesión |
+| `load-session.py` | GET: devuelve lista de sesiones con vistas previas; POST `{sessionId}`: devuelve sesión completa |
+| `delete-session.py` | POST `{sessionId}`: elimina el archivo JSON de sesión |
 | `export-pdf.py` | Exportación PDF del lado del servidor mediante ReportLab |
 | `export-markdown.py` | Exportación Markdown del lado del servidor |
 | `export-txt.py` | Exportación TXT del lado del servidor |
@@ -459,8 +459,8 @@ Cada conversación se gestiona automáticamente como una sesión del lado del se
 
 **Detalles del endpoint CGI**:
 - `save-session.py` — `POST`: recibe `{sessionId, messages}`, valida formato de ID (regex), escribe `sessions/{sessionId}.json`
-- `load-session.py` — `GET`: devuelve `[{id, preview, count, date}]`; `GET ?id=X`: devuelve `{messages: [...]}` completo
-- `delete-session.py` — `DELETE ?id=X`: elimina `sessions/{sessionId}.json`
+- `load-session.py` — `GET`: devuelve `[{id, preview, count, date}]`; `POST {sessionId}`: devuelve `{messages: [...]}` completo
+- `delete-session.py` — `POST {sessionId}`: elimina `sessions/{sessionId}.json`
 
 ### Funciones de Exportación
 
@@ -1024,8 +1024,8 @@ Esto causó un tropiezo real durante la sesión del 19 de julio de 2026 — `sud
 │   │   ├── compress-context.py        Compresión de contexto mediante segunda llamada LLM
 │   │   ├── deepseek-models.py         Lista de modelos en tiempo real desde DeepSeek /v1/models
 │   │   ├── save-session.py            Endpoint de guardado de sesión (POST)
-│   │   ├── load-session.py            Endpoint de lista/carga de sesión (GET)
-│   │   ├── delete-session.py          Endpoint de eliminación de sesión (DELETE)
+│   │   ├── load-session.py            Endpoint de lista (GET) / carga de sesión (POST)
+│   │   ├── delete-session.py          Endpoint de eliminación de sesión (POST)
 │   │   ├── export-pdf.py              Exportación PDF vía ReportLab
 │   │   ├── export-markdown.py         Exportación Markdown
 │   │   ├── export-txt.py              Exportación de texto plano
@@ -1174,6 +1174,9 @@ Este proyecto demuestra desarrollo web de nivel profesional en un enfoque minima
 ---
 
 *Última actualización: 19.07.2026*
+
+
+
 
 
 
