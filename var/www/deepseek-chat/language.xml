@@ -98,9 +98,9 @@ Adding a new language:
     <text id="110">Default Mode</text>
     <text id="111">Normal Chat</text>
     <text id="112">Normal Chat</text>
-    <text id="113">Standard conversation mode for general questions. (deepseek-chat)</text>
+    <text id="113">Standard conversation mode for general questions. (deepseek-v4-flash)</text>
     <text id="114">DeepThink Mode</text>
-    <text id="115">In-depth analysis with reasoning. (deepseek-reasoner)</text>
+    <text id="115">In-depth analysis with reasoning. (deepseek-v4-pro)</text>
     <text id="116">Privacy</text>
     <text id="117">Active</text>
     <text id="118">Inactive</text>
@@ -277,9 +277,9 @@ Adding a new language:
     <text id="110">Standard Modus</text>
     <text id="111">Normaler Chat</text>
     <text id="112">Normaler Chat</text>
-    <text id="113">Standard-Gesprächsmodus für allgemeine Fragen. (deepseek-chat)</text>
+    <text id="113">Standard-Gesprächsmodus für allgemeine Fragen. (deepseek-v4-flash)</text>
     <text id="114">DeepThink Modus</text>
-    <text id="115">Tiefgehende Analyse mit Reasoning. (deepseek-reasoner)</text>
+    <text id="115">Tiefgehende Analyse mit Reasoning. (deepseek-v4-pro)</text>
     <text id="116">Datenschutz</text>
     <text id="117">Aktiv</text>
     <text id="118">Inaktiv</text>
@@ -458,9 +458,9 @@ Adding a new language:
     <text id="110">Modo predeterminado</text>
     <text id="111">Chat normal</text>
     <text id="112">Chat normal</text>
-    <text id="113">Modo de conversación estándar para preguntas generales. (deepseek-chat)</text>
+    <text id="113">Modo de conversación estándar para preguntas generales. (deepseek-v4-flash)</text>
     <text id="114">Modo DeepThink</text>
-    <text id="115">Análisis profundo con razonamiento. (deepseek-reasoner)</text>
+    <text id="115">Análisis profundo con razonamiento. (deepseek-v4-pro)</text>
     <text id="116">Privacidad</text>
     <text id="117">Activo</text>
     <text id="118">Inactivo</text>
@@ -634,9 +634,9 @@ Adding a new language:
     <text id="110">Default Mode</text>
     <text id="111">Normal Chat</text>
     <text id="112">Normal Chat</text>
-    <text id="113">Standard conversation mode for general questions. (deepseek-chat)</text>
+    <text id="113">Standard conversation mode for general questions. (deepseek-v4-flash)</text>
     <text id="114">DeepThink Mode</text>
-    <text id="115">In-depth analysis with reasoning. (deepseek-reasoner)</text>
+    <text id="115">In-depth analysis with reasoning. (deepseek-v4-pro)</text>
     <text id="116">Privacy</text>
     <text id="117">Active</text>
     <text id="118">Inactive</text>
@@ -733,9 +733,3 @@ Adding a new language:
   </language>
 
 </languages>
-
-
-
-
-
-
