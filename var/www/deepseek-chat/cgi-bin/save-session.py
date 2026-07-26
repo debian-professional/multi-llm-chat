@@ -11,6 +11,11 @@ from pathlib import Path
 
 SESSIONS_DIR = '/var/www/deepseek-chat/sessions'
 
+# Sicherheits-Fix (26.07.2026): CORS-Wildcard durch feste Origin ersetzt,
+# zusaetzlich Request-Groessenlimit gegen Missbrauch/DoS.
+ALLOWED_ORIGIN = 'https://172.29.255.1'
+MAX_REQUEST_SIZE = 20 * 1024 * 1024  # 20 MB (Session kann eingebettete Bilder enthalten)
+
 # Sicherheits-Fix (26.07.2026): Vorher wurde nur der Datum- und Zeit-Teil der
 # Session-ID geprueft, der Zufallsteil (parts[2]) ueberhaupt nicht. Eine ID wie
 # "2026-07-26_120000_../../../etc/cron.d/evil" bestand die alte Pruefung
@@ -46,7 +51,7 @@ def send_response(status_code, data):
     """Sendet HTTP-Response zurück."""
     print(f"Status: {status_code}")
     print("Content-Type: application/json")
-    print("Access-Control-Allow-Origin: *")
+    print(f"Access-Control-Allow-Origin: {ALLOWED_ORIGIN}")
     print("Access-Control-Allow-Methods: POST, OPTIONS")
     print("Access-Control-Allow-Headers: Content-Type")
     print()
@@ -75,6 +80,11 @@ def main():
         content_length = int(os.environ.get('CONTENT_LENGTH', 0))
         if content_length == 0:
             send_response(400, {'error': 'Leere Anfrage'})
+            return
+
+        # Sicherheits-Fix (26.07.2026): Request-Groessenlimit gegen Missbrauch/DoS
+        if content_length > MAX_REQUEST_SIZE:
+            send_response(413, {'error': f'Anfrage zu gross (max. {MAX_REQUEST_SIZE // (1024*1024)} MB)'})
             return
 
         # POST-Daten lesen

@@ -13,10 +13,16 @@ from datetime import datetime
 
 LOG_PATH = '/var/www/deepseek-chat/logs/multi-llm-chat.log'
 
+# Sicherheits-Fix (26.07.2026): CORS-Wildcard durch feste Origin ersetzt,
+# zusaetzlich Request-Groessenlimit (Payload ist per Design winzig: Typ,
+# msgId, max. 60 Zeichen Vorschau).
+ALLOWED_ORIGIN = 'https://172.29.255.1'
+MAX_REQUEST_SIZE = 64 * 1024  # 64 KB
+
 def send_response(status_code, data):
     print(f"Status: {status_code}")
     print("Content-Type: application/json")
-    print("Access-Control-Allow-Origin: *")
+    print(f"Access-Control-Allow-Origin: {ALLOWED_ORIGIN}")
     print()
     print(json.dumps(data, ensure_ascii=False))
     sys.stdout.flush()
@@ -28,6 +34,9 @@ def main():
             return
 
         content_length = int(os.environ.get('CONTENT_LENGTH', 0))
+        if content_length > MAX_REQUEST_SIZE:
+            send_response(413, {"error": f"Anfrage zu gross (max. {MAX_REQUEST_SIZE // 1024} KB)"})
+            return
         raw_data = sys.stdin.buffer.read(content_length)
         data = json.loads(raw_data.decode('utf-8'))
 
@@ -54,3 +63,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+

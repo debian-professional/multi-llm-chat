@@ -14,13 +14,18 @@ from reportlab.lib.enums import TA_LEFT, TA_CENTER
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
+# Sicherheits-Fix (26.07.2026): CORS-Wildcard durch feste Origin ersetzt,
+# zusaetzlich Request-Groessenlimit gegen Missbrauch/DoS.
+ALLOWED_ORIGIN = 'https://172.29.255.1'
+MAX_REQUEST_SIZE = 20 * 1024 * 1024  # 20 MB (Chat kann eingebettete Bilder enthalten)
+
 def send_response(status_code, data, content_type='application/json'):
     """Sendet HTTP-Response zurück."""
     if isinstance(data, bytes):
         # Für Binärdaten: alles über stdout.buffer schreiben
         headers = f"Status: {status_code}\r\n"
         headers += f"Content-Type: {content_type}\r\n"
-        headers += "Access-Control-Allow-Origin: *\r\n"
+        headers += f"Access-Control-Allow-Origin: {ALLOWED_ORIGIN}\r\n"
         headers += "Access-Control-Allow-Methods: POST, OPTIONS\r\n"
         headers += "Access-Control-Allow-Headers: Content-Type\r\n"
         headers += f"Content-Disposition: attachment; filename=\"deepseek-chat-export.pdf\"\r\n"
@@ -33,7 +38,7 @@ def send_response(status_code, data, content_type='application/json'):
         # Für JSON-Daten: normale print Ausgabe
         print(f"Status: {status_code}")
         print(f"Content-Type: {content_type}")
-        print("Access-Control-Allow-Origin: *")
+        print(f"Access-Control-Allow-Origin: {ALLOWED_ORIGIN}")
         print("Access-Control-Allow-Methods: POST, OPTIONS")
         print("Access-Control-Allow-Headers: Content-Type")
         print()
@@ -213,6 +218,11 @@ def main():
             send_response(400, {'error': 'Leere Anfrage'})
             return
 
+        # Sicherheits-Fix (26.07.2026): Request-Groessenlimit gegen Missbrauch/DoS
+        if content_length > MAX_REQUEST_SIZE:
+            send_response(413, {'error': f'Anfrage zu gross (max. {MAX_REQUEST_SIZE // (1024*1024)} MB)'})
+            return
+
         # POST-Daten lesen
         post_data = sys.stdin.read(content_length)
         request_data = json.loads(post_data)
@@ -235,4 +245,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
 

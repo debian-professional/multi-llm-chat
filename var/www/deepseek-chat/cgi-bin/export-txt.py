@@ -10,6 +10,11 @@ import json
 import os
 from datetime import datetime
 
+# Sicherheits-Fix (26.07.2026): Request-Groessenlimit gegen Missbrauch/DoS.
+# Hinweis: Dieses Skript setzt bereits keinen CORS-Header, d.h. Cross-Origin-
+# Lesezugriffe sind per Browser-Default bereits blockiert.
+MAX_REQUEST_SIZE = 20 * 1024 * 1024  # 20 MB (Chat kann eingebettete Bilder enthalten)
+
 def send_response(content, content_type, filename):
     if isinstance(content, str):
         content = content.encode('utf-8')
@@ -33,6 +38,9 @@ def main():
             return
 
         content_length = int(os.environ.get('CONTENT_LENGTH', 0))
+        if content_length > MAX_REQUEST_SIZE:
+            send_error(f"Anfrage zu gross (max. {MAX_REQUEST_SIZE // (1024*1024)} MB)", 413)
+            return
         raw_data = sys.stdin.buffer.read(content_length)
         data = json.loads(raw_data.decode('utf-8'))
         chat_data = data.get('chatData', {})
@@ -77,3 +85,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+

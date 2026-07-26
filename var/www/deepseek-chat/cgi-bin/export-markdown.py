@@ -5,11 +5,16 @@ import json
 import sys
 import os
 
+# Sicherheits-Fix (26.07.2026): CORS-Wildcard durch feste Origin ersetzt,
+# zusaetzlich Request-Groessenlimit gegen Missbrauch/DoS.
+ALLOWED_ORIGIN = 'https://172.29.255.1'
+MAX_REQUEST_SIZE = 20 * 1024 * 1024  # 20 MB (Chat kann eingebettete Bilder enthalten)
+
 def send_response(status_code, data, content_type='application/json'):
     """Sendet HTTP-Response zurück."""
     print(f"Status: {status_code}")
     print(f"Content-Type: {content_type}; charset=utf-8")
-    print("Access-Control-Allow-Origin: *")
+    print(f"Access-Control-Allow-Origin: {ALLOWED_ORIGIN}")
     print("Access-Control-Allow-Methods: POST, OPTIONS")
     print("Access-Control-Allow-Headers: Content-Type")
     if content_type == 'text/markdown':
@@ -146,6 +151,11 @@ def main():
             send_response(400, {'error': 'Leere Anfrage'})
             return
 
+        # Sicherheits-Fix (26.07.2026): Request-Groessenlimit gegen Missbrauch/DoS
+        if content_length > MAX_REQUEST_SIZE:
+            send_response(413, {'error': f'Anfrage zu gross (max. {MAX_REQUEST_SIZE // (1024*1024)} MB)'})
+            return
+
         # POST-Daten lesen
         post_data = sys.stdin.read(content_length)
         request_data = json.loads(post_data)
@@ -168,3 +178,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+

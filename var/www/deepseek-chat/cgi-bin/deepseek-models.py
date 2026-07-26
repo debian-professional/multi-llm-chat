@@ -15,6 +15,9 @@ import urllib.error
 DEEPSEEK_API_KEY = os.environ.get('DEEPSEEK_API_KEY', '')
 MODELS_URL = 'https://api.deepseek.com/v1/models'
 
+# Sicherheits-Fix (26.07.2026): CORS-Wildcard durch feste Origin ersetzt.
+ALLOWED_ORIGIN = 'https://172.29.255.1'
+
 def log_to_file(message):
     try:
         log_path = '/var/www/deepseek-chat/logs/multi-llm-chat.log'
@@ -29,7 +32,7 @@ def send_json(data, status=200):
     status_text = '200 OK' if status == 200 else f'{status} Error'
     print(f'Status: {status_text}')
     print('Content-Type: application/json')
-    print('Access-Control-Allow-Origin: *')
+    print(f'Access-Control-Allow-Origin: {ALLOWED_ORIGIN}')
     print()
     print(json.dumps(data))
 
@@ -60,3 +63,6 @@ except urllib.error.HTTPError as e:
 except Exception as e:
     log_to_file(f'Exception: {str(e)}')
     send_json({'error': str(e)}, 500)
+
+
+
