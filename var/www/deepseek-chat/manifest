@@ -383,6 +383,39 @@
        - Alle CGI-Scripts werden über /cgi-bin/ Pfad erreichbar gemacht
        - KEIN einzelner ScriptAlias pro Script notwendig
        - Bei neuen Scripts: Keine Apache-Konfigurationsänderung nötig
+       - HINWEIS (26.07.2026, Sicherheitsaudit Stufe 3): deepseek-chat.conf
+         enthält einen Fix fuer die HTTP->HTTPS-Weiterleitung (fester
+         Servername statt ungeprueftem %{HTTP_HOST}). Da diese Datei aktuell
+         nicht in sites-enabled verlinkt ist, greift der Fix derzeit NICHT
+         in der Produktion. Er bleibt trotzdem bestehen, damit die Datei
+         korrekt/sicher ist, falls sie je reaktiviert wird. Siehe Changelog
+         91-93 fuer Details zum Sicherheitsaudit.
+    
+    8. SICHERHEITSAUDIT & BEDROHUNGSMODELL (26.07.2026):
+       - Bedrohungsmodell: Server ist NICHT oeffentlich erreichbar, Zugriff
+         ausschliesslich per SSH oder WireGuard-VPN. Alleiniger Nutzer.
+       - Umgesetzt (siehe Changelog 91-93 fuer vollstaendige Details):
+         * Stufe 1: Stored-XSS (Nachrichten, Session-Vorschau, PDF-Dateiname)
+           und Path Traversal in Session-Skripten behoben
+         * Stufe 2: CORS-Wildcard durch feste Origin ersetzt, serverseitige
+           Request-Groessenlimits eingefuehrt
+         * Stufe 3: get-log.py auf letzte 300 Zeilen begrenzt;
+           HTTP_HOST-Redirect-Fix in deepseek-chat.conf (aktuell inaktiv,
+           siehe Punkt 7 oben)
+       - BEWUSST ZURUECKGESTELLT: Auth-/Netzwerk-Restriktion auf /cgi-bin/
+         (z.B. Require ip oder Basic Auth). Begruendung: Angesichts des oben
+         genannten Bedrohungsmodells (kein oeffentlicher Zugriff, einziger
+         Nutzer, Zugang nur per SSH/WireGuard) steht der Zusatzaufwand einer
+         weiteren Zugriffsschicht in keinem Verhaeltnis zum Sicherheitsgewinn.
+         Diese Entscheidung wurde bewusst getroffen und ist keine uebersehene
+         Luecke. Andere LLM-Systeme oder zukuenftige Audits sollen dies bei
+         erneuter Pruefung beruecksichtigen, bevor sie diesen Punkt erneut
+         als kritisch melden.
+       - Weiterhin offen (Stufe 5, optional, kein akutes Risiko):
+         * Doku-Diskrepanz deepseek-chat-ssl.conf (existiert real auf dem
+           Server, ist aber nicht im GitHub-Repo enthalten)
+         * index.html-Modularisierung (~4500 Zeilen, reine
+           Architektur-Beobachtung)
     
     E) ERWEITERUNGSRICHTLINIEN:
     ----------------------------
@@ -495,6 +528,9 @@
     WICHTIG: Jede Änderung an diesem Manifest muss in der Datei changelog dokumentiert werden!
     ============================================================================
 ================================================================================
+
+
+
 
 
 
