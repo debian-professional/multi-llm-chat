@@ -1514,7 +1514,47 @@
     - Dateien: index.html, save-session.py, load-session.py,
       delete-session.py
 
+    92. [26.07.2026] Sicherheitsaudit Stufe 2: CORS-Wildcard entfernt und
+        Request-Groessenlimits eingefuehrt
+    - Alle CGI-Endpunkte mit "Access-Control-Allow-Origin: *" gaben jeder
+      beliebigen Webseite die Erlaubnis, per Cross-Site-Request auf die
+      API-Endpunkte zuzugreifen. Da der Server nur intern/per VPN erreichbar
+      ist, ermoeglichte dies insbesondere, dass ein Browser-Tab mit einer
+      oeffentlichen, boesartigen Webseite auf einem VPN-verbundenen Geraet
+      Anfragen an z.B. get-log.py, save-session.py oder die API-Proxys
+      stellen und deren Antworten auslesen konnte.
+        * Fix: neue Konstante ALLOWED_ORIGIN = 'https://172.29.255.1' in
+          allen betroffenen Skripten, ersetzt den Wildcard konsequent
+        * export-rtf.py und export-txt.py setzten von vornherein gar keinen
+          CORS-Header (bereits sicherster Default) — dort bewusst nicht
+          angefasst, um keine unnoetige Aenderung einzufuehren
+    - Kein Endpunkt begrenzte bislang die Groesse eingehender POST-Anfragen,
+      was einen Vektor fuer Denial-of-Service (Server durch riesige Anfragen
+      lahmlegen) darstellte.
+        * Fix: neue Konstante MAX_REQUEST_SIZE, Pruefung von CONTENT_LENGTH
+          vor dem Einlesen der POST-Daten, Antwort mit HTTP 413 bei
+          Ueberschreitung
+        * 20 MB fuer alle Endpunkte, die vollstaendige Konversationen (ggf.
+          mit eingebetteten Bildern) entgegennehmen: compress-context.py,
+          deepseek-api.py, google-api.py, groq-api.py, hugging-api.py,
+          openai-api.py, export-markdown.py, export-pdf.py, export-rtf.py,
+          export-txt.py, save-session.py, load-session.py, delete-session.py
+        * 64 KB fuer feedback-log.py (Payload ist per Design winzig: Typ,
+          msgId, max. 60 Zeichen Vorschau)
+        * get-log.py und deepseek-models.py benoetigen kein Limit (GET-only,
+          kein Request-Body)
+    - Verifiziert: py_compile aller 16 betroffenen Dateien erfolgreich;
+      keine verbleibenden CORS-Wildcards im gesamten Codebase; Live-Tests
+      per simuliertem CGI-Aufruf bestaetigen korrekte 413-Antwort bei
+      Ueberschreitung sowie unveraendert korrektes Verhalten bei normalen,
+      kleinen Anfragen (getestet an feedback-log.py und openai-api.py)
+    - Verifiziert nach Deployment: MD5-Summen aller 16 Dateien stimmen mit
+      den gelieferten Versionen ueberein; Apache-Reload und -Status ok
+    - Dateien: compress-context.py, deepseek-api.py, deepseek-models.py,
+      delete-session.py, export-markdown.py, export-pdf.py, export-rtf.py,
+      export-txt.py, feedback-log.py, get-log.py, google-api.py,
+      groq-api.py, hugging-api.py, load-session.py, openai-api.py,
+      save-session.py
+
     ============================================================================
-
-
 
