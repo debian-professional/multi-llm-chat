@@ -719,16 +719,16 @@ Adding a new language:
     <text id="228">As PDF</text>
     <text id="229">DeepThink</text>
     <text id="230">Thinking...</text>
-    <text id="231"></text>
-    <text id="232"></text>
-    <text id="233"></text>
-    <text id="234"></text>
-    <text id="235"></text>
-    <text id="236"></text>
-    <text id="237"></text>
-    <text id="238"></text>
-    <text id="239"></text>
-    <text id="240"></text>
+    <text id="231">Image from clipboard</text>
+    <text id="232">Clipboard content</text>
+    <text id="233">Insert at cursor</text>
+    <text id="234">Attach as file</text>
+    <text id="235">Cancel</text>
+    <text id="236">Text from clipboard</text>
+    <text id="237">characters</text>
+    <text id="238">Model:</text>
+    <text id="239">Images are not supported by the currently selected model. Please use a text file instead.</text>
+    <text id="240">Files copied in the file manager cannot be read by the browser. Please use the "Upload file" button instead.</text>
 
   </language>
 

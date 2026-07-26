@@ -669,7 +669,7 @@ El **24 de abril de 2026**, DeepSeek lanzó el **DeepSeek V4 Preview** — una n
 | Modelo | Parámetros | Activos | Contexto | Máx. Salida | Modo Thinking |
 |--------|-----------|---------|---------|------------|--------------|
 | `deepseek-v4-flash` | 284B total | 13B | 1.048.576 tokens | 8.192 tokens | Sí (Thinking + Non-Thinking) |
-| `deepseek-v4-pro` | 1,6B total | 49B | 1.048.576 tokens | 32.768 tokens | Sí (Thinking + Non-Thinking) |
+| `deepseek-v4-pro` | 1,6T total | 49B | 1.048.576 tokens | 32.768 tokens | Sí (Thinking + Non-Thinking) |
 
 ### Mejoras de Arquitectura (V4 vs. V3)
 
@@ -1177,4 +1177,3 @@ Este proyecto demuestra desarrollo web de nivel profesional en un enfoque minima
 
 
 
-############ FILE: shell-scripts/deploy.sh ############
