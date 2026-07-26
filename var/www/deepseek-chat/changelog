@@ -1556,5 +1556,40 @@
       groq-api.py, hugging-api.py, load-session.py, openai-api.py,
       save-session.py
 
+    93. [26.07.2026] Sicherheitsaudit Stufe 3: Log-Ausgabe begrenzt und
+        HTTP_HOST-Redirect abgesichert
+    - get-log.py gab bisher die komplette Log-Datei ungefiltert zurueck, was
+      bei langer Laufzeit unnoetig viele (potenziell sensible) historische
+      Eintraege preisgab.
+        * Fix: Ausgabe auf die letzten 300 Zeilen begrenzt, per
+          collections.deque(maxlen=300) effizient zeilenweise eingelesen
+          statt die komplette Datei in den Speicher zu laden
+        * Hinweis "[Anzeige begrenzt auf die letzten 300 Zeilen]" wird bei
+          Kuerzung vorangestellt
+        * Verifiziert: 1000-Zeilen-Testdatei liefert exakt die letzten 300
+          Zeilen; 50-Zeilen-Datei liefert unveraendert alle 50; leere Datei
+          zeigt weiterhin die korrekte "keine Eintraege"-Meldung
+    - etc/apache2/sites-available/deepseek-chat.conf: Die automatische
+      HTTP->HTTPS-Weiterleitung nutzte %{HTTP_HOST} ungeprueft in der
+      Redirect-URL. Ein manipulierter Host-Header (z.B.
+      "Host: evil.example") haette zu einer Weiterleitung auf
+      https://evil.example/... gefuehrt (Open-Redirect/Header-Injection).
+        * Fix: RewriteRule verwendet jetzt den fest einprogrammierten
+          Servernamen (https://172.29.255.1) statt des vom Client
+          gesendeten Host-Headers
+        * Verifiziert: apache2ctl configtest liefert "Syntax OK", Apache
+          erfolgreich neu geladen, Datei auf dem Server manuell kontrolliert
+    - Nebenbefund: get-log.py verlor beim Commit kurzzeitig sein
+      Ausfuehrrecht (100755 -> 100644), was zu einem CGI-Fehler gefuehrt
+      haette. Wurde direkt auf dem Server korrigiert und das Ausfuehrbit
+      diesmal dauerhaft im Git-Repo verankert (100644 -> 100755 committet)
+    - Nebenbefund: deepseek-chat-ssl.conf (referenziert im Manifest) liegt
+      real auf dem Server, ist aber nicht im GitHub-Repo/Export enthalten
+      und wird von deploy.sh nicht mitverwaltet -> vorgemerkt fuer Stufe 5.
+      Bestaetigt dabei den ServerName 172.29.255.1, der bereits als
+      CORS-Origin in Stufe 2 verwendet wurde
+    - Dateien: var/www/deepseek-chat/cgi-bin/get-log.py,
+      etc/apache2/sites-available/deepseek-chat.conf
+
     ============================================================================
 
