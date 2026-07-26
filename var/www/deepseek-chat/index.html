@@ -1741,6 +1741,19 @@
         }
 
         /**
+         * Escaped HTML-Sonderzeichen in einem String.
+         * XSS-Fix (26.07.2026): tf()/t() ersetzen Platzhalter ohne jede
+         * Escaping-Logik. Werden die Ergebnisse spaeter per innerHTML
+         * eingesetzt (statt textContent), muessen nutzergesteuerte Werte
+         * (file.name, error.message, etc.) vorher escaped werden.
+         */
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = String(str);
+            return div.innerHTML;
+        }
+
+        /**
          * Translate with placeholder substitution.
          * tf(5) → "Sending..."
          * tf(3, 10) → "File too large. Maximum size: 10 MB"
@@ -2278,7 +2291,7 @@
                     sessionsList.appendChild(item);
                 });
             } catch (e) {
-                sessionsList.innerHTML = `<div class="no-sessions">${tf(44, e.message)}</div>`;
+                sessionsList.innerHTML = `<div class="no-sessions">${escapeHtml(tf(44, e.message))}</div>`;
             }
         }
         
@@ -3877,7 +3890,7 @@
                 }
                 const execSig = await checkMagicBytes(file);
                 if (execSig) {
-                    fileInfo.innerHTML += `<div class="pdf-error">${t(11)}<br>${t(34).replace('{0}', file.name).replace('{1}', '')}<br>Platform: ${execSig.platform}<br>Format: ${execSig.format}</div>`;
+                    fileInfo.innerHTML += `<div class="pdf-error">${t(11)}<br>${t(34).replace('{0}', escapeHtml(file.name)).replace('{1}', '')}<br>Platform: ${escapeHtml(execSig.platform)}<br>Format: ${escapeHtml(execSig.format)}</div>`;
                     fileInfo.classList.add('visible');
                     continue;
                 }
@@ -3894,12 +3907,12 @@
                             imageData = dataUrl.substring(dataUrl.indexOf(',') + 1);
                             imageMimeType = file.type || 'image/jpeg';
                         } catch (error) {
-                            fileInfo.innerHTML += `<div class="pdf-error">${tf(25, replaceGermanUmlauts(error.message))}</div>`;
+                            fileInfo.innerHTML += `<div class="pdf-error">${escapeHtml(tf(25, replaceGermanUmlauts(error.message)))}</div>`;
                             fileInfo.classList.add('visible');
                         }
                     }
                     selectedFiles.push(file); uploadedFileNames.push(file.name);
-                    infoLines.push(`<div class="pdf-processing">${tf(33, file.name)}</div>`);
+                    infoLines.push(`<div class="pdf-processing">${tf(33, escapeHtml(file.name))}</div>`);
                     continue;
                 }
                 try {
@@ -3907,7 +3920,7 @@
                     const dynMax = getDynamicMaxFileChars();
                     if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
                         text = await extractTextFromPDF(file, dynMax);
-                        infoLines.push(tf(35, file.name, text.length));
+                        infoLines.push(tf(35, escapeHtml(file.name), text.length));
                     } else if (file.type.startsWith('text/') || file.name.toLowerCase().endsWith('.txt')) {
                         text = await new Promise((resolve, reject) => {
                             const reader = new FileReader();
@@ -3931,14 +3944,14 @@
                             return;
                         }
                         if (text.length > dynMax) text = text.substring(0, dynMax);
-                        infoLines.push(tf(36, file.name, text.length));
+                        infoLines.push(tf(36, escapeHtml(file.name), text.length));
                     } else {
-                        infoLines.push(tf(34, file.name, (file.size / 1024).toFixed(2)));
+                        infoLines.push(tf(34, escapeHtml(file.name), (file.size / 1024).toFixed(2)));
                     }
                     selectedFiles.push(file); uploadedFileNames.push(file.name);
                     if (text) combinedText += (combinedText ? '\n\n---\n\n' : '') + `[${file.name}]\n${text}`;
                 } catch (error) {
-                    fileInfo.innerHTML += `<div class="pdf-error">${tf(25, replaceGermanUmlauts(error.message))}</div>`;
+                    fileInfo.innerHTML += `<div class="pdf-error">${escapeHtml(tf(25, replaceGermanUmlauts(error.message)))}</div>`;
                     fileInfo.classList.add('visible');
                 }
             }
@@ -4464,6 +4477,9 @@
     </script>
 </body>
 </html>
+
+
+
 
 
 
