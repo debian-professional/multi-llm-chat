@@ -1406,5 +1406,69 @@
         * Verifiziert: gpt-5.6-luna UND gpt-4o-mini live getestet, beide
           funktionieren fehlerfrei mit max_completion_tokens
    
+
+    90. [26.07.2026] Session-Persistenz repariert, Log-Pfad-Inkonsistenzen bereinigt,
+        Manifest und language.xml umfassend aktualisiert (tote Modelle, OpenAI ergänzt)
+    - index.html: Kritischer Bug behoben — Speichern, Auflisten, Laden und Löschen
+      alter Chats war komplett funktionsunfähig, da Frontend und Backend
+      unterschiedliche JSON-Feldnamen/Request-Muster verwendeten:
+        * saveSession(): sendete 'messages' statt des von save-session.py
+          erwarteten 'chatData'-Objekts → jeder Speichervorgang scheiterte
+          mit HTTP 400, ohne dass dies in der UI sichtbar wurde
+        * loadSessionsList(): erwartete 'session.id'/'session.date', Backend
+          liefert 'sessionId'/'timestamp' → Liste zeigte "undefined"
+        * loadSession(): rief load-session.py per GET mit '?id=' auf, das der
+          Server komplett ignoriert (GET liefert immer nur die volle Liste)
+          → Laden eines Chats funktionierte nie
+        * deleteSession(): rief delete-session.py per DELETE mit '?id=' auf,
+          das der Server mit HTTP 405 ablehnt (nur POST mit JSON-Body erlaubt)
+        * Fix: saveSession() sendet jetzt {sessionId, chatData: {timestamp,
+          messages, settings}}; loadSessionsList() nutzt sessionId/timestamp;
+          loadSession() und deleteSession() rufen POST mit sessionId im
+          JSON-Body auf; Response-Fehler werden jetzt geloggt statt still
+          verschluckt
+        * Auswirkung: vor diesem Fix wurde noch nie erfolgreich eine Session
+          gespeichert — ältere Chats sind serverseitig nicht rekonstruierbar
+    - compress-context.py: Log-Pfad korrigiert — schrieb fälschlich nach
+      /var/www/deepseek-chat/cgi-bin/deepseek-chat.log (alter, vor Monaten
+      korrigierter Pfad) statt ins zentrale logs/multi-llm-chat.log.
+      Kompressor-Aktivität war dadurch im Log-Viewer (get-log.py) unsichtbar.
+      Zusätzlich: veralteter Fallback compressorModel 'deepseek-chat' (seit
+      24.07.2026 abgeschaltet) auf 'deepseek-v4-flash' aktualisiert.
+    - deepseek-models.py: identischer Log-Pfad-Fehler behoben — schrieb in
+      dieselbe verwaiste Datei im cgi-bin-Verzeichnis statt ins zentrale Log.
+    - language.xml: drei separate Fehler behoben:
+        * ID 113/115 (Modus-Beschreibungen, alle 4 Sprachblöcke): veraltete
+          Modellnamen "(deepseek-chat)"/"(deepseek-reasoner)" ersetzt durch
+          "(deepseek-v4-flash)"/"(deepseek-v4-pro)"
+        * ID 239 (Bild-Fehlermeldung, en/de/es): Text war fest auf "DeepSeek"
+          formuliert, obwohl der Alert bei JEDEM Anbieter ohne Bild-Support
+          ausgelöst wird (in der Praxis v.a. GroqCloud/Hugging Face) — auf
+          anbieter-neutrale Formulierung umgestellt
+        * custom-Sprachblock (IDs 231–240): entgegen der dokumentierten
+          Vorgabe "Pre-filled with English as fallback" waren diese 10 IDs
+          leer — mit dem englischen Text aus dem en-Block befüllt
+    - manifest: umfassend veraltet, an vier Stellen korrigiert:
+        * Abschnitt 4/4b (Modus-System, API-Dienst-Auswahl): veraltete
+          DeepSeek-Modellnamen, tote Google-Modelle (gemini-1.5-pro,
+          gemini-2.0-flash), totes HF-Modell (Mixtral-8x7B) entfernt;
+          redundante alte Groq-Modell-Zeile bereinigt; OpenAI als Anbieter
+          komplett neu ergänzt (Dienst-Liste, DeepThink-Ausblendung,
+          Modell-Listen Free/Paid, API-Key, Backend-Endpoint)
+        * Abschnitt 10 (Kompressor): veralteten Default-Modellnamen korrigiert
+        * Abschnitt D.1 (Technische Konventionen): Modell-Listen aller
+          Anbieter aktualisiert; OpenAI war hier komplett unerwähnt
+          (kein Endpoint, kein Backend, keine Modelle, kein API-Key-Eintrag)
+          — jetzt vollständig ergänzt
+        * Abschnitt F (AUDIO_CAPABLE_MODELS-Beispiel): tote Google-Modelle
+          entfernt, Datumsstempel aktualisiert
+    - Readme_DE.md, Readme_ES.md: Faktenfehler in der V4-Modell-Tabelle
+      behoben — deepseek-v4-pro stand mit "1,6B gesamt" statt "1,6T gesamt"
+      (Übersetzungsfehler bei der internationalen B/T-Notation), obwohl
+      dieselbe Zeile "49B" aktive Parameter ausweist (aktiv > gesamt ist
+      unmöglich — interner Widerspruch als Beleg für den Fehler)
+    - Dateien: index.html, compress-context.py, deepseek-models.py,
+      language.xml, manifest, Readme_DE.md, Readme_ES.md
+
     ============================================================================
 
