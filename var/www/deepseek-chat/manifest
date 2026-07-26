@@ -121,41 +121,45 @@
        - Hover-Buttons zum Löschen einzelner Nachrichten (kleines [X] rechts)
     
     4. MODUS-SYSTEM:
-       - Standard: Normaler Chat (deepseek-chat)
-       - DeepThink: Blaue Pill-Markierung, echtes Reasoning (deepseek-reasoner)
+       - Standard: Normaler Chat (deepseek-v4-flash)
+       - DeepThink: Blaue Pill-Markierung, echtes Reasoning (deepseek-v4-pro)
        - Modus wird in jeder Nachricht gekennzeichnet
        - Search wurde entfernt (nicht in der DeepSeek API verfügbar)
-       - DeepThink-Button wird ausgeblendet wenn Google Gemini ODER Hugging Face als API-Dienst gewählt ist
+       - DeepThink-Button wird ausgeblendet, sobald ein anderer API-Dienst als DeepSeek gewählt ist
+         (Google Gemini, Hugging Face, GroqCloud, OpenAI)
     
-    4b. API-DIENST-AUSWAHL (aktualisiert 07.03.2026):
-       - Wählbare API-Dienste: DeepSeek (Standard), Google Gemini, Hugging Face, GroqCloud
+    4b. API-DIENST-AUSWAHL (aktualisiert 26.07.2026):
+       - Wählbare API-Dienste: DeepSeek (Standard), Google Gemini, Hugging Face, GroqCloud, OpenAI
        - Umschaltung in den Einstellungen via Toggle-Switch (Konvention A.3.F)
        - Bei Google: DeepThink-Button und DeepThink-Indikator werden ausgeblendet
        - Bei Hugging Face: DeepThink-Button und DeepThink-Indikator werden ausgeblendet
        - Bei GroqCloud: DeepThink-Button und DeepThink-Indikator werden ausgeblendet
+       - Bei OpenAI: DeepThink-Button und DeepThink-Indikator werden ausgeblendet
        - Bei Google Free: noTraining nicht anwendbar (wird nicht angezeigt)
        - Bei Google Paid: noTraining sichtbar und steuerbar
        - Modell-Auswahl via Dropdown (dokumentierte Ausnahme, siehe A.3)
-       - DeepSeek-Modelle: deepseek-chat, deepseek-reasoner
+       - DeepSeek-Modelle: deepseek-v4-flash, deepseek-v4-pro
        - Google-Modelle Free:  gemini-2.5-flash
-       - Google-Modelle Paid:  gemini-2.5-flash, gemini-2.5-pro, gemini-1.5-pro, gemini-2.0-flash
+       - Google-Modelle Paid:  gemini-2.5-flash, gemini-2.5-pro
        - HF-Modelle Free:  Qwen/Qwen2.5-72B-Instruct, mistralai/Mistral-7B-Instruct-v0.3, microsoft/Phi-3.5-mini-instruct
        - HF-Modelle Paid:  meta-llama/Meta-Llama-3.1-70B-Instruct, meta-llama/Meta-Llama-3.1-405B-Instruct,
-                           Qwen/Qwen2.5-72B-Instruct, mistralai/Mixtral-8x7B-Instruct-v0.1
-       - Groq-Modelle Free:  llama-3.3-70b-versatile, llama-3.1-8b-instant, mixtral-8x7b-32768, gemma2-9b-it
-       - Groq-Modelle Paid:  llama-3.3-70b-versatile, llama-3.1-8b-instant, mixtral-8x7b-32768, gemma2-9b-it
-       [13.03.2026] Groq-Modelle aktualisiert (gemma2-9b-it + mixtral-8x7b-32768 abgeschaltet):
+                           Qwen/Qwen2.5-72B-Instruct
        - Groq-Modelle Free:  llama-3.3-70b-versatile, llama-3.1-8b-instant,
                              meta-llama/llama-4-scout-17b-16e-instruct, qwen/qwen3-32b
        - Groq-Modelle Paid:  llama-3.3-70b-versatile, llama-3.1-8b-instant,
                              meta-llama/llama-4-scout-17b-16e-instruct, qwen/qwen3-32b,
                              moonshotai/kimi-k2-instruct-0905
+       - OpenAI-Modelle Free:  gpt-4o-mini, gpt-5.6-luna
+       - OpenAI-Modelle Paid:  gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna, gpt-5.5, gpt-5.4,
+                               gpt-4o, gpt-4.1, gpt-4o-mini
        - API-Key Google:   GOOGLE_API_KEY in /etc/apache2/envvars
        - API-Key HF:       HF_API_KEY in /etc/apache2/envvars (Write-Token mit "Make calls to Inference Providers")
        - API-Key GroqCloud: GRQ_API_KEY in /etc/apache2/envvars
+       - API-Key OpenAI:   OPENAI_API_KEY in /etc/apache2/envvars
        - Backend Google:   separates Script /cgi-bin/google-api.py
        - Backend HF:       separates Script /cgi-bin/hugging-api.py
        - Backend GroqCloud: separates Script /cgi-bin/groq-api.py
+       - Backend OpenAI:   separates Script /cgi-bin/openai-api.py
     
     5. ANREDEFORM-KONSISTENZ (ENDEUTIG UND UNUMSTÖSSLICH):
        - Die gewählte Anredeform (Sie/Du) wird im gesamten Interface konsequent angewendet
@@ -210,7 +214,7 @@
         - LLM für Komprimierung: frei wählbar (nur bezahlte Provider)
           * Erlaubt: DeepSeek, OpenAI, Google (bezahlt)
           * Nicht erlaubt: Groq, HuggingFace (Free-Tier TPM zu niedrig)
-        - Standard: aktiv, DeepSeek / deepseek-chat
+        - Standard: aktiv, DeepSeek / deepseek-v4-flash
         - Ergebnis wird in System-Prompt eingebaut (nicht als separate Message)
         - Kompressor prüft VOR dem API-Aufruf
         - Ergebnisdateien: /var/www/deepseek-chat/kompressor/kompressor_YYYYMMDD_HHMMSS.txt
@@ -285,26 +289,35 @@
        - Google Endpoint:        /cgi-bin/google-api.py (lokaler Proxy)
        - Hugging Face Endpoint:  /cgi-bin/hugging-api.py (lokaler Proxy)
        - GroqCloud Endpoint:     /cgi-bin/groq-api.py (lokaler Proxy)
+       - OpenAI Endpoint:        /cgi-bin/openai-api.py (lokaler Proxy)
        - DeepSeek Backend:       https://api.deepseek.com/v1/chat/completions (über Proxy)
        - Google Backend:         https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent
        - Hugging Face Backend:   https://router.huggingface.co/v1/chat/completions (OpenAI-kompatibler Router)
        - GroqCloud Backend:      https://api.groq.com/openai/v1/chat/completions (OpenAI-kompatibler Endpunkt)
+       - OpenAI Backend:         https://api.openai.com/v1/chat/completions
        - Kompressor Endpoint:    /cgi-bin/compress-context.py (lokaler Proxy, kein Streaming)
-       - DeepSeek Modelle:       deepseek-chat (Chat) / deepseek-reasoner (DeepThink)
+       - DeepSeek Modelle:       deepseek-v4-flash (Chat) / deepseek-v4-pro (DeepThink)
        - Google Modelle Free:    gemini-2.5-flash (20 RPD, 5 RPM)
-       - Google Modelle Paid:    gemini-2.5-flash, gemini-2.5-pro, gemini-1.5-pro, gemini-2.0-flash
+       - Google Modelle Paid:    gemini-2.5-flash, gemini-2.5-pro
        - HF Modelle Free:        Qwen/Qwen2.5-72B-Instruct, mistralai/Mistral-7B-Instruct-v0.3, microsoft/Phi-3.5-mini-instruct
        - HF Modelle Paid:        meta-llama/Meta-Llama-3.1-70B-Instruct, meta-llama/Meta-Llama-3.1-405B-Instruct,
-                                 Qwen/Qwen2.5-72B-Instruct, mistralai/Mixtral-8x7B-Instruct-v0.1
-       - Groq Modelle Free:      llama-3.3-70b-versatile, llama-3.1-8b-instant, mixtral-8x7b-32768, gemma2-9b-it
-       - Groq Modelle Paid:      llama-3.3-70b-versatile, llama-3.1-8b-instant, mixtral-8x7b-32768, gemma2-9b-it
-       - MODEL_CONFIG Objekt steuert alle Token-Limits je Modell (siehe Eintrag 56 + 69 + 72 + 73)
+                                 Qwen/Qwen2.5-72B-Instruct
+       - Groq Modelle Free:      llama-3.3-70b-versatile, llama-3.1-8b-instant,
+                                 meta-llama/llama-4-scout-17b-16e-instruct, qwen/qwen3-32b
+       - Groq Modelle Paid:      llama-3.3-70b-versatile, llama-3.1-8b-instant,
+                                 meta-llama/llama-4-scout-17b-16e-instruct, qwen/qwen3-32b,
+                                 moonshotai/kimi-k2-instruct-0905
+       - OpenAI Modelle Free:    gpt-4o-mini, gpt-5.6-luna
+       - OpenAI Modelle Paid:    gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna, gpt-5.5, gpt-5.4,
+                                 gpt-4o, gpt-4.1, gpt-4o-mini
+       - MODEL_CONFIG Objekt steuert alle Token-Limits je Modell (siehe Eintrag 56 + 69 + 72 + 73 + 89)
        - System-Prompt basierend auf Anredeform und Modus
        - API-KEY SPEICHERUNG: Kein API-Key im Client-Code
        - SICHERHEITSVERBESSERUNG (13.02.2026): DeepSeek API-Key in serverseitige Umgebungsvariable ausgelagert
        - SICHERHEITSVERBESSERUNG (03.03.2026): Google API-Key in serverseitige Umgebungsvariable ausgelagert
        - SICHERHEITSVERBESSERUNG (04.03.2026): Hugging Face API-Key in serverseitige Umgebungsvariable ausgelagert
        - SICHERHEITSVERBESSERUNG (07.03.2026): GroqCloud API-Key in serverseitige Umgebungsvariable ausgelagert
+       - SICHERHEITSVERBESSERUNG (10.03.2026): OpenAI API-Key in serverseitige Umgebungsvariable ausgelagert
        - Python CGI-Scripts verwalten die sichere Kommunikation
        - Der Client sendet Anfragen an lokale Proxies, niemals direkt an externe APIs
     
@@ -394,8 +407,8 @@
            anbietet oder ein bestehendes Modell diese Fähigkeit erhält, MUSS AUDIO_CAPABLE_MODELS
            sofort aktualisiert werden
          * Dasselbe gilt bei Entfernung der Audio-Fähigkeit: Modell aus der Liste entfernen
-         * Aktuell audio-fähige Modelle (Stand 11.03.2026):
-           Google:  gemini-2.5-flash, gemini-2.5-pro, gemini-1.5-pro, gemini-2.0-flash
+         * Aktuell audio-fähige Modelle (Stand 26.07.2026):
+           Google:  gemini-2.5-flash, gemini-2.5-pro
            OpenAI:  gpt-4o, gpt-4.1
          * Diese Regel gilt für alle zukünftigen LLM-Anbieter ohne Ausnahme
 
@@ -482,6 +495,9 @@
     WICHTIG: Jede Änderung an diesem Manifest muss in der Datei changelog dokumentiert werden!
     ============================================================================
 ================================================================================
+
+
+
 
 
 
