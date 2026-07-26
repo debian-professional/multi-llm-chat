@@ -1591,5 +1591,41 @@
     - Dateien: var/www/deepseek-chat/cgi-bin/get-log.py,
       etc/apache2/sites-available/deepseek-chat.conf
 
-    ============================================================================
+    94. [26.07.2026] Sicherheitsaudit Nachtrag: Rest-XSS ueber Dateinamen/
+        Fehlermeldungen behoben + Doku-Korrektur Session-Endpunkte
+    - index.html: Nach Abschluss von Stufe 1-3 wurden bei einer weiteren
+      Durchsicht noch verbliebene Stellen gefunden, an denen file.name bzw.
+      error.message/e.message ungefiltert per innerHTML gerendert wurden
+      (die PDF-Fortschrittsanzeige und Session-Vorschau waren bereits aus
+      Stufe 1 abgesichert, dieser Pfad nicht):
+        * Magic-Byte-Fehlerpfad (checkMagicBytes-Erkennung): file.name sowie
+          execSig.platform/execSig.format wurden direkt in innerHTML
+          eingesetzt
+        * Alle vier infoLines.push(...)-Aufrufe im Upload-Handler
+          (nicht verarbeitbare Dateien, PDF, TXT, sonstige Formate):
+          file.name ungefiltert in tf()-Platzhalter eingesetzt, das Ergebnis
+          spaeter per innerHTML gerendert
+        * Beide catch-Bloecke im Upload-Handler: error.message ungefiltert
+          per innerHTML gerendert
+        * sessionsList-Ladefehler: e.message ungefiltert per innerHTML
+          gerendert
+    - Fix: neue zentrale Hilfsfunktion escapeHtml(str) (nutzt den
+      Standard-Browser-Trick div.textContent -> div.innerHTML), an allen
+      betroffenen Stellen um die nutzergesteuerten Werte gewrappt
+    - Verifiziert: JS-Syntax-Check ok; Escaping-Verhalten mit
+      XSS-Payload getestet; Live-Test durch Upload einer Datei mit Namen
+      "<img src=x onerror=alert(1)>.pdf" — sowohl bei ungueltiger
+      PDF-Struktur als auch bei Magic-Byte-Erkennung eines echten
+      ELF64-Executables erscheint der Dateiname korrekt nur als Text, ohne
+      Code-Ausfuehrung
+    - Readme_DE.md, Readme_EN.md, Readme_ES.md: veraltete Endpoint-Doku
+      korrigiert. load-session.py (spezifische Session laden) und
+      delete-session.py wurden in einer frueheren Session-Fix-Runde bereits
+      von GET/DELETE mit Query-Parameter (?id=) auf POST mit JSON-Body
+      umgestellt, die Dokumentation (Endpoint-Tabelle, CGI-Endpoint-Details,
+      Verzeichnisbaum-Kommentare) beschrieb weiterhin das alte Verhalten.
+      In allen drei Sprachversionen konsistent korrigiert, Zeilenanzahl je
+      Datei unveraendert (strukturelle Paritaet gewahrt: 1182/1179/1182)
+    - Dateien: index.html, Readme_DE.md, Readme_EN.md, Readme_ES.md
 
+    ============================================================================
