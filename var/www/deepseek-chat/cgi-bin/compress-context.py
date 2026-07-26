@@ -47,6 +47,11 @@ import urllib.request
 import urllib.error
 import datetime
 
+# Sicherheits-Fix (26.07.2026): CORS-Wildcard durch feste Origin ersetzt,
+# zusaetzlich serverseitiges Request-Groessenlimit gegen Missbrauch/DoS.
+ALLOWED_ORIGIN = 'https://172.29.255.1'
+MAX_REQUEST_SIZE = 20 * 1024 * 1024  # 20 MB
+
 # =============================================================================
 # SYSTEM-PROMPT FUER DIE KOMPRIMIERUNG
 # =============================================================================
@@ -107,7 +112,7 @@ def send_error(status_code, data):
     """Sendet Fehler-Response als JSON."""
     print(f"Status: {status_code}")
     print("Content-Type: application/json")
-    print("Access-Control-Allow-Origin: *")
+    print(f"Access-Control-Allow-Origin: {ALLOWED_ORIGIN}")
     print("Access-Control-Allow-Methods: POST, OPTIONS")
     print("Access-Control-Allow-Headers: Content-Type")
     print()
@@ -120,7 +125,7 @@ def send_success(summary):
     """Sendet Erfolgs-Response mit der Zusammenfassung."""
     print("Status: 200")
     print("Content-Type: application/json")
-    print("Access-Control-Allow-Origin: *")
+    print(f"Access-Control-Allow-Origin: {ALLOWED_ORIGIN}")
     print("Access-Control-Allow-Methods: POST, OPTIONS")
     print("Access-Control-Allow-Headers: Content-Type")
     print()
@@ -328,6 +333,13 @@ def main():
             })
             return
 
+        # Sicherheits-Fix (26.07.2026): Request-Groessenlimit gegen Missbrauch/DoS
+        if content_length > MAX_REQUEST_SIZE:
+            send_error(413, {
+                'error': f'Anfrage zu gross (max. {MAX_REQUEST_SIZE // (1024*1024)} MB)'
+            })
+            return
+
         # POST-Daten lesen
         post_data    = sys.stdin.read(content_length)
         request_data = json.loads(post_data)
@@ -488,3 +500,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+

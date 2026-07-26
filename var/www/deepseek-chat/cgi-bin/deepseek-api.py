@@ -35,6 +35,11 @@ import urllib.request
 import urllib.error
 import datetime
 
+# Sicherheits-Fix (26.07.2026): CORS-Wildcard durch feste Origin ersetzt,
+# zusaetzlich serverseitiges Request-Groessenlimit gegen Missbrauch/DoS.
+ALLOWED_ORIGIN = 'https://172.29.255.1'
+MAX_REQUEST_SIZE = 20 * 1024 * 1024  # 20 MB
+
 def log_to_file(status_code, response_data, model=None):
     """Schreibt ausgewählte Informationen in die Log-Datei (ohne API-Key)."""
     try:
@@ -64,7 +69,7 @@ def send_error(status_code, data, model=None):
     """Sendet Fehler-Response als JSON (vor dem Streaming-Start)."""
     print(f"Status: {status_code}")
     print("Content-Type: application/json")
-    print("Access-Control-Allow-Origin: *")
+    print(f"Access-Control-Allow-Origin: {ALLOWED_ORIGIN}")
     print("Access-Control-Allow-Methods: POST, OPTIONS")
     print("Access-Control-Allow-Headers: Content-Type")
     print()
@@ -102,6 +107,13 @@ def main():
         if content_length == 0:
             send_error(400, {
                 'error': 'Leere Anfrage. Bitte model, messages und max_tokens senden.'
+            })
+            return
+
+        # Sicherheits-Fix (26.07.2026): Request-Groessenlimit gegen Missbrauch/DoS
+        if content_length > MAX_REQUEST_SIZE:
+            send_error(413, {
+                'error': f'Anfrage zu gross (max. {MAX_REQUEST_SIZE // (1024*1024)} MB)'
             })
             return
 
@@ -191,7 +203,7 @@ def main():
         # SSE-Header senden (erst nach erfolgreicher API-Verbindung)
         print("Status: 200")
         print("Content-Type: text/event-stream")
-        print("Access-Control-Allow-Origin: *")
+        print(f"Access-Control-Allow-Origin: {ALLOWED_ORIGIN}")
         print("Access-Control-Allow-Methods: POST, OPTIONS")
         print("Access-Control-Allow-Headers: Content-Type")
         print("Cache-Control: no-cache")
@@ -224,3 +236,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
