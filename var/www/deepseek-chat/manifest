@@ -412,10 +412,13 @@
          erneuter Pruefung beruecksichtigen, bevor sie diesen Punkt erneut
          als kritisch melden.
        - Weiterhin offen (Stufe 5, optional, kein akutes Risiko):
-         * Doku-Diskrepanz deepseek-chat-ssl.conf (existiert real auf dem
-           Server, ist aber nicht im GitHub-Repo enthalten)
          * index.html-Modularisierung (~4500 Zeilen, reine
            Architektur-Beobachtung)
+       - ERLEDIGT (26.07.2026): Doku-Diskrepanz deepseek-chat-ssl.conf war
+         zuvor nur auf dem Server vorhanden, nicht im GitHub-Repo enthalten.
+         Datei wurde ins Repo aufgenommen (etc/apache2/sites-available/
+         deepseek-chat-ssl.conf), ist damit jetzt versioniert und wird bei
+         zukuenftigen Exports mit erfasst.
     
     E) ERWEITERUNGSRICHTLINIEN:
     ----------------------------
