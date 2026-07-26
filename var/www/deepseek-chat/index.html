@@ -2223,10 +2223,21 @@
         async function saveSession() {
             if (!currentSessionId || contextHistory.messages.length === 0) return;
             try {
-                await fetch(SAVE_SESSION_URL, {
+                const response = await fetch(SAVE_SESSION_URL, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sessionId: currentSessionId, messages: contextHistory.messages })
+                    body: JSON.stringify({
+                        sessionId: currentSessionId,
+                        chatData: {
+                            timestamp: new Date().toISOString(),
+                            messages: contextHistory.messages,
+                            settings: settings
+                        }
+                    })
                 });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    console.error('Session save error:', data.error || response.status);
+                }
             } catch (e) { console.error('Session save error:', e); }
         }
         
@@ -2245,10 +2256,11 @@
                     const item = document.createElement('div');
                     item.className = 'session-item';
                     const msgCount = session.messageCount || 0;
+                    const sessionDate = session.timestamp ? new Date(session.timestamp).toLocaleString() : '';
                     item.innerHTML = `
                         <div class="session-header">
-                            <div class="session-id">${session.id}</div>
-                            <div class="session-date">${session.date || ''}</div>
+                            <div class="session-id">${session.sessionId}</div>
+                            <div class="session-date">${sessionDate}</div>
                         </div>
                         <div class="session-preview">${session.preview || '...'}</div>
                         <div class="session-count">${tf(38, msgCount)}</div>
@@ -2256,8 +2268,8 @@
                             <button class="session-load-btn">${t(223)}</button>
                             <button class="session-delete-btn">${t(224)}</button>
                         </div>`;
-                    item.querySelector('.session-load-btn').onclick = () => loadSession(session.id);
-                    item.querySelector('.session-delete-btn').onclick = () => deleteSession(session.id, item);
+                    item.querySelector('.session-load-btn').onclick = () => loadSession(session.sessionId);
+                    item.querySelector('.session-delete-btn').onclick = () => deleteSession(session.sessionId, item);
                     sessionsList.appendChild(item);
                 });
             } catch (e) {
@@ -2268,14 +2280,17 @@
         async function loadSession(sessionId) {
             try {
                 await saveSession();
-                const response = await fetch(`${LOAD_SESSION_URL}?id=${sessionId}`);
+                const response = await fetch(LOAD_SESSION_URL, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId })
+                });
                 const data = await response.json();
-                if (data.messages) {
+                if (data.success && data.chatData && data.chatData.messages) {
                     contextHistory.messages = [];
                     messageIdCounter = 0;
                     document.getElementById('chat').innerHTML = '';
                     currentSessionId = sessionId;
-                    data.messages.forEach(msg => {
+                    data.chatData.messages.forEach(msg => {
                         const newId = 'msg_' + (++messageIdCounter);
                         msg.id = newId;
                         contextHistory.messages.push(msg);
@@ -2292,7 +2307,15 @@
         
         async function deleteSession(sessionId, itemElement) {
             try {
-                await fetch(`${DELETE_SESSION_URL}?id=${sessionId}`, { method: 'DELETE' });
+                const response = await fetch(DELETE_SESSION_URL, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId })
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    alert(tf(45, data.error || response.status));
+                    return;
+                }
                 itemElement.remove();
             } catch (e) { alert(tf(45, e.message)); }
         }
@@ -4434,6 +4457,9 @@
     </script>
 </body>
 </html>
+
+
+
 
 
 
