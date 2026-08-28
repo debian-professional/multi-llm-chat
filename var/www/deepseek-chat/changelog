@@ -1656,8 +1656,30 @@
       rekonstruiert die Karte ohnehin nicht und war nicht betroffen
     - Dateien: index.html
 
+    96. [28.08.2026] System-Prompt nennt jetzt die tatsaechlich aktive
+        Modellversion (deepseek/google/openai)
+    - index.html (buildSystemPrompt): Fuer die Provider deepseek, google und
+      openai wurde dem Modell im System-Prompt bislang nur der Anbietername
+      genannt ("You are DeepSeek, an AI assistant made by DeepSeek."), nicht
+      aber die konkrete, tatsaechlich aktive Version (settings.selectedModel,
+      z.B. deepseek-v4-flash). huggingface und groq erhielten den Modellnamen
+      bereits korrekt
+    - Folge: Fragte man das Modell nach seiner eigenen Version, musste es
+      raten und antwortete z.B. mit DeepSeek-V3 oder R1, obwohl tatsaechlich
+      deepseek-v4-flash bzw. deepseek-v4-pro aktiv war - die App kannte die
+      korrekte Antwort laengst (Kopfzeile "Modell: deepseek-v4-flash"), gab
+      sie aber nicht an das Modell weiter
+    - Fix: Alle vier Branches (deepseek, google, huggingface, groq, openai)
+      nennen jetzt einheitlich den Modellnamen aus settings.selectedModel im
+      System-Prompt, inklusive expliziter Anweisung, bei Fragen nach Modell/
+      Version genau diesen Namen zu nennen
+    - Betroffen ist nur der System-Prompt (buildSystemPrompt); die tatsaechlich
+      an die API gesendete Modell-ID (modelName in sendMessage) war bereits
+      vorher korrekt - es handelte sich ausschliesslich um eine fehlende
+      Selbstauskunft des Modells gegenueber dem Nutzer, keinen API-Fehler
+    - Dateien: index.html
 
-    96. [28.08.2026] Explizite Steuerung des DeepSeek Thinking-Mode
+    97. [28.08.2026] Explizite Steuerung des DeepSeek Thinking-Mode
         (Chat/DeepThink jetzt real unterschiedlich auf API-Ebene)
     - Anlass: Recherche zu einer Nutzerfrage, warum das Modell seine eigene
       Versionsnummer nicht zuverlaessig nennen konnte (siehe Eintrag 96).
