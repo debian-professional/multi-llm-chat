@@ -53,6 +53,7 @@ Aspectos destacados:
   - [Manejo de Ventana de Contexto Superada](#manejo-de-ventana-de-contexto-superada)
 - [Migración a DeepSeek V4](#migración-a-deepseek-v4)
 - [Actualización de Mantenimiento y Funciones del 19 de Julio de 2026](#actualización-de-mantenimiento-y-funciones-del-19-de-julio-de-2026)
+- [Corrección del 28.08.2026: Control Explícito del Thinking Mode de DeepSeek](#corrección-del-28082026-control-explícito-del-thinking-mode-de-deepseek)
 - [El Script Auxiliar `repo2text.sh`](#el-script-auxiliar-repo2textsh)
 - [Arquitectura de Seguridad en Detalle](#arquitectura-de-seguridad-en-detalle)
 - [Despliegue y Uso](#despliegue-y-uso)
@@ -339,7 +340,7 @@ Este sistema se aplica **solo al contenido de archivos**, nunca a mensajes regul
 DeepThink es un modo dedicado para el razonamiento analítico profundo, disponible exclusivamente cuando DeepSeek es el proveedor activo:
 
 - Activado mediante un botón pill-style dedicado en la segunda fila de botones debajo del campo de entrada.
-- Cuando está activo, se usa `deepseek-v4-flash` (o `deepseek-v4-pro`, si se selecciona en el dropdown de modelos) — el modo solo cambia el prompt del sistema, no el modelo. El más capaz `deepseek-v4-pro` se selecciona manualmente mediante el dropdown de modelos para máxima profundidad de razonamiento en cualquier modo. **Nota**: antes del 19 de julio de 2026, un error de copiar-pegar en la lógica de selección de modelo causaba que `deepseek-v4-pro` nunca se solicitara realmente sin importar la selección del dropdown — esto se corrigió; ver [Actualización de Mantenimiento y Funciones del 19 de Julio de 2026](#actualización-de-mantenimiento-y-funciones-del-19-de-julio-de-2026).
+- Cuando está activo, se usa `deepseek-v4-flash` (o `deepseek-v4-pro`, si se selecciona en el dropdown de modelos) con el Thinking Mode de DeepSeek explícitamente activado con esfuerzo de razonamiento alto. El más capaz `deepseek-v4-pro` se selecciona manualmente mediante el dropdown de modelos para máxima profundidad de razonamiento en cualquier modo. **Nota**: antes del 19 de julio de 2026, un error de copiar-pegar en la lógica de selección de modelo causaba que `deepseek-v4-pro` nunca se solicitara realmente sin importar la selección del dropdown — esto se corrigió; ver [Actualización de Mantenimiento y Funciones del 19 de Julio de 2026](#actualización-de-mantenimiento-y-funciones-del-19-de-julio-de-2026). **Actualización (28.08.2026)**: antes de esta fecha, este punto describía el modo como un cambio únicamente del prompt del sistema, no del modelo — eso era cierto, pero incompleto: el Thinking Mode de la API de DeepSeek está activado por defecto con esfuerzo alto en cada solicitud, sin importar el prompt del sistema, por lo que el modo Chat también razonaba con esfuerzo completo sin querer. El modo Chat ahora desactiva explícitamente el Thinking Mode en lugar de depender del valor por defecto de la API; ver [Corrección del 28.08.2026](#corrección-del-28082026-control-explícito-del-thinking-mode-de-deepseek).
 - El botón cambia visualmente: inactivo (oscuro `#2d2d2d`) → activo azul (`#1e3a5f` fondo, `#4dabf7` borde y texto).
 - Aparece una barra indicadora debajo de la fila de botones: *"Modo DeepThink activo: Análisis en profundidad en progreso"*.
 - Los límites de contexto y de tokens de salida se ajustan automáticamente según la entrada `MODEL_CONFIG` del modelo activo.
@@ -792,6 +793,22 @@ Esto elimina la necesidad de un paso manual separado de `md5sum` después de cad
 
 ---
 
+## Corrección del 28.08.2026: Control Explícito del Thinking Mode de DeepSeek
+
+**Síntoma**: Sin bug visible — descubierto al investigar una pregunta sobre la autodeclaración de versión del modelo. El modo Chat y el modo DeepThink siempre se documentaron (ver [Modo DeepThink](#modo-deepthink)) como diferentes únicamente en el prompt del sistema, nunca en un parámetro de razonamiento real a nivel de API.
+
+**Causa raíz**: Desde la API de DeepSeek V4, el Thinking Mode está activado por defecto con esfuerzo de razonamiento `high` en cada solicitud, a menos que se desactive explícitamente mediante `{"thinking": {"type": "disabled"}}` en el cuerpo de la solicitud — esto ya no está ligado al nombre del modelo (a diferencia de la antigua separación `deepseek-chat`/`deepseek-reasoner`). `deepseek-api.py` nunca establecía este parámetro, por lo que **cada** solicitud a `deepseek-v4-flash`/`deepseek-v4-pro` — incluido el modo Chat normal — razonaba silenciosamente con esfuerzo completo, incurriendo en el coste de tokens de razonamiento y la latencia que el modo Chat debería evitar.
+
+**Corrección**: El frontend ahora envía un booleano explícito `thinking_enabled` (`true` solo cuando el modo DeepThink está activo) junto con el payload de solicitud de DeepSeek existente. `deepseek-api.py` lo reenvía como `{"thinking": {"type": "enabled"}, "reasoning_effort": "high"}` cuando es `true`, o como `{"thinking": {"type": "disabled"}}` cuando es `false` — la diferencia entre el modo Chat y DeepThink es ahora real a nivel de API, no solo en el prompt del sistema.
+
+**Verificación**: Se consultó directamente la documentación oficial de la API de DeepSeek (`https://api-docs.deepseek.com/guides/thinking_mode`) antes de implementar la corrección, para confirmar el comportamiento activado por defecto y los parámetros de control exactos.
+
+### Archivos Modificados
+
+`index.html`, `deepseek-api.py`
+
+---
+
 ## El Script Auxiliar `repo2text.sh`
 
 Este script Bash fue desarrollado específicamente para **exportar todo el código fuente de un repositorio de GitHub como un único archivo de texto** — ideal para pasar el contexto completo del proyecto a un asistente de IA en una única subida.
@@ -1174,9 +1191,3 @@ Este proyecto demuestra desarrollo web de nivel profesional en un enfoque minima
 ---
 
 *Última actualización: 19.07.2026*
-
-
-
-
-
-

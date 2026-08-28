@@ -2768,9 +2768,16 @@
                 else if (settings.apiService === 'openai') activeApiUrl = OPENAI_API_URL;
                 else activeApiUrl = API_URL;
                 const maxTokens = (MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-v4-flash']).maxOutputTokens;
+                // Fix (28.08.2026): siehe sendMessage() - thinking_enabled macht den
+                // Chat/DeepThink-Unterschied auch bei Regenerate auf API-Ebene real.
+                // Massgeblich ist der Modus der urspruenglichen Nutzernachricht (userMsg.mode).
+                const regenPayload = { model: modelName, messages, max_tokens: maxTokens, no_training: settings.noTraining };
+                if (settings.apiService === 'deepseek') {
+                    regenPayload.thinking_enabled = (userMsg.mode === 'deepthink');
+                }
                 const response = await fetch(activeApiUrl, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ model: modelName, messages, max_tokens: maxTokens, no_training: settings.noTraining })
+                    body: JSON.stringify(regenPayload)
                 });
                 if (!response.ok) {
                     if (settings.apiService === 'deepseek' || settings.apiService === 'openai') {
@@ -3069,10 +3076,19 @@
                 base = (settings.addressForm === 'sie') ? t(29) : t(30);
             }
             // Provider-spezifische Identität
+            // Fix (28.08.2026): Bislang wurde dem Modell fuer deepseek/google/
+            // openai nur der Anbieter genannt, nicht die konkrete, tatsaechlich
+            // aktive Modellversion (settings.selectedModel). Dadurch musste das
+            // Modell bei Fragen nach der eigenen Version raten (z.B. "DeepSeek-V3
+            // oder R1?") statt die korrekte, von der App verwendete Version
+            // (z.B. deepseek-v4-flash) zu nennen. huggingface/groq bekamen den
+            // Modellnamen bereits genannt - jetzt konsistent fuer alle Provider.
             if (settings.apiService === 'deepseek') {
-                base += ' You are DeepSeek, an AI assistant made by DeepSeek.';
+                const modelName = settings.selectedModel || 'deepseek-v4-flash';
+                base += ' You are DeepSeek, an AI assistant made by DeepSeek. You are currently running as the model "' + modelName + '". If asked which model or version you are, answer with this exact model name.';
             } else if (settings.apiService === 'google') {
-                base += ' You are Gemini, an AI assistant made by Google.';
+                const modelName = settings.selectedModel || 'gemini-2.5-flash';
+                base += ' You are Gemini, an AI assistant made by Google. You are currently running as the model "' + modelName + '". If asked which model or version you are, answer with this exact model name.';
             } else if (settings.apiService === 'huggingface') {
                 const modelName = settings.selectedModel || 'an AI assistant';
                 base += ' You are ' + modelName + ', an AI assistant. Do not claim to be Claude, GPT, or any other AI.';
@@ -3081,7 +3097,7 @@
                 base += ' You are ' + modelName + ', an AI assistant running on GroqCloud. Do not claim to be Claude, GPT, or any other AI.';
             } else if (settings.apiService === 'openai') {
                 const modelName = settings.selectedModel || 'an AI assistant';
-                base += ' You are ' + modelName + ', an AI assistant made by OpenAI.';
+                base += ' You are ' + modelName + ', an AI assistant made by OpenAI. If asked which model or version you are, answer with this exact model name.';
             }
             if (isDeepThink) {
                 if (!meta || !meta.has_address_form) {
@@ -3553,6 +3569,15 @@
                 else activeApiUrl = API_URL;
                 const maxTokens = (MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-v4-flash']).maxOutputTokens;
                 const requestPayload = { model: modelName, messages, max_tokens: maxTokens, no_training: settings.noTraining };
+                // Fix (28.08.2026): DeepSeeks Thinking-Mode ist API-seitig standardmaessig
+                // aktiv (High-Effort), unabhaengig vom Modellnamen und unabhaengig davon,
+                // ob DeepThink im Frontend gewaehlt wurde - bisher wurde dieser Parameter
+                // gar nicht gesendet, wodurch auch der "Chat"-Modus stets mit vollem
+                // Reasoning-Aufwand lief. thinking_enabled macht den Chat/DeepThink-
+                // Unterschied jetzt auch auf API-Ebene real (siehe deepseek-api.py).
+                if (settings.apiService === 'deepseek') {
+                    requestPayload.thinking_enabled = (currentMode === 'deepthink');
+                }
                 if (audioData) { requestPayload.audio_data = audioData; requestPayload.audio_mime_type = audioMimeType; }
                 if (imageData) { requestPayload.image_data = imageData; requestPayload.image_mime_type = imageMimeType; }
                 const requestBody = JSON.stringify(requestPayload);

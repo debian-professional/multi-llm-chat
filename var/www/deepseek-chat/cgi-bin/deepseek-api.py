@@ -4,7 +4,7 @@
 
 # =============================================================================
 # DEEPSEEK API PROXY
-# Importiert / aktualisiert: 19.07.2026 (Log-Erweiterung: Modellname im Log)
+# Importiert / aktualisiert: 28.08.2026 (Fix: Explizite Thinking-Mode-Steuerung)
 # =============================================================================
 #
 # Unterstuetzte Modelle:
@@ -24,6 +24,18 @@
 # Hinweis: deepseek-chat und deepseek-reasoner werden ab 24.07.2026
 #          abgeschaltet (routen aktuell auf deepseek-v4-flash).
 #
+# Fix (28.08.2026): Der DeepSeek-Thinking-Mode ist API-seitig standardmaessig
+# aktiv (High-Effort) - unabhaengig vom Modellnamen, seit deepseek-chat/
+# deepseek-reasoner nicht mehr die einzigen Modell-IDs sind. Ohne explizite
+# Steuerung lief daher bisher JEDE Anfrage (auch der "Chat"-Modus im Frontend)
+# stillschweigend mit vollem Reasoning-Aufwand. Das Frontend sendet jetzt ein
+# Feld thinking_enabled (bool); dieses Proxy-Skript setzt daraus den
+# tatsaechlichen DeepSeek-API-Parameter:
+#   thinking_enabled == True  -> {"thinking": {"type": "enabled"},
+#                                 "reasoning_effort": "high"}
+#   thinking_enabled == False -> {"thinking": {"type": "disabled"}}
+# Quelle: https://api-docs.deepseek.com/guides/thinking_mode (Stand 28.08.2026)
+#
 # Quelle: https://api-docs.deepseek.com (Stand 11.05.2026)
 # =============================================================================
 
@@ -40,7 +52,7 @@ import datetime
 ALLOWED_ORIGIN = 'https://172.29.255.1'
 MAX_REQUEST_SIZE = 20 * 1024 * 1024  # 20 MB
 
-def log_to_file(status_code, response_data, model=None):
+def log_to_file(status_code, response_data, model=None, thinking=None):
     """Schreibt ausgewählte Informationen in die Log-Datei (ohne API-Key)."""
     try:
         if os.environ.get('REQUEST_METHOD') == 'OPTIONS':
@@ -57,6 +69,11 @@ def log_to_file(status_code, response_data, model=None):
         log_line = f"{timestamp} | IP: {ip} | {method} {path} | Status: {status_code}"
         if model:
             log_line += f" | Model: {model}"
+        # Fix (28.08.2026): Thinking-Mode-Status mitloggen, um serverseitig
+        # verifizieren zu koennen, dass Chat/DeepThink tatsaechlich
+        # unterschiedliche Reasoning-Parameter an die DeepSeek-API senden.
+        if thinking is not None:
+            log_line += f" | Thinking: {'enabled' if thinking else 'disabled'}"
         if error_msg:
             log_line += f" | Error: {error_msg}"
         log_line += "\n"
@@ -126,6 +143,11 @@ def main():
         messages = request_data.get('messages', [])
         max_tokens = request_data.get('max_tokens', 2000)
         no_training = request_data.get('no_training', True)
+        # Fix (28.08.2026): siehe Kommentar am Dateianfang. False ist der
+        # sichere Default, falls das Feld fehlt (z.B. aeltere Frontend-Version) -
+        # damit verhaelt sich ein Client ohne dieses Feld wie "Chat"-Modus statt
+        # unbemerkt mit vollem Reasoning-Aufwand zu laufen.
+        thinking_enabled = bool(request_data.get('thinking_enabled', False))
 
         if not messages or not isinstance(messages, list):
             send_error(400, {
@@ -142,6 +164,14 @@ def main():
             'max_tokens': max_tokens,
             'stream': True
         }
+
+        # Fix (28.08.2026): Thinking-Mode explizit setzen statt den API-Default
+        # (immer aktiv, High-Effort) unkontrolliert wirken zu lassen.
+        if thinking_enabled:
+            api_request_data['thinking'] = {'type': 'enabled'}
+            api_request_data['reasoning_effort'] = 'high'
+        else:
+            api_request_data['thinking'] = {'type': 'disabled'}
 
         headers = {
             'Content-Type': 'application/json',
@@ -218,7 +248,7 @@ def main():
                 sys.stdout.write(decoded)
                 sys.stdout.flush()
 
-        log_to_file(200, {}, model)
+        log_to_file(200, {}, model, thinking_enabled)
 
     except json.JSONDecodeError as e:
         send_error(400, {
@@ -236,6 +266,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-

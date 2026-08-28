@@ -1656,4 +1656,53 @@
       rekonstruiert die Karte ohnehin nicht und war nicht betroffen
     - Dateien: index.html
 
+
+    96. [28.08.2026] Explizite Steuerung des DeepSeek Thinking-Mode
+        (Chat/DeepThink jetzt real unterschiedlich auf API-Ebene)
+    - Anlass: Recherche zu einer Nutzerfrage, warum das Modell seine eigene
+      Versionsnummer nicht zuverlaessig nennen konnte (siehe Eintrag 96).
+      Dabei in der offiziellen DeepSeek-API-Doku
+      (https://api-docs.deepseek.com/guides/thinking_mode) entdeckt:
+      Thinking Mode ist bei deepseek-v4-flash/deepseek-v4-pro standardmaessig
+      aktiv (High-Effort), unabhaengig vom Modellnamen. Anders als bei den
+      fruehreren Modell-IDs deepseek-chat/deepseek-reasoner ist der Thinking-
+      Status nicht mehr an den Modellnamen gekoppelt, sondern wird ueber
+      eigene Request-Parameter (thinking / reasoning_effort) gesteuert
+    - Symptom: Kein sichtbarer Bug, sondern eine unbeabsichtigte Design-
+      Luecke. deepseek-api.py sendete diesen Parameter nie, wodurch JEDE
+      Anfrage - auch im normalen "Chat"-Modus, nicht nur im "DeepThink"-
+      Modus - stillschweigend mit vollem Reasoning-Aufwand lief. Der
+      DeepThink-Umschalter in der App aenderte bislang nur den System-
+      Prompt, hatte aber keinerlei Wirkung auf das tatsaechliche API-
+      Verhalten, da beide Modi ohnehin bereits im Thinking-Mode liefen
+    - Fix index.html: sendMessage() und handleRegenerate() senden bei
+      apiService === 'deepseek' jetzt zusaetzlich thinking_enabled (bool)
+      im Request-Payload - true nur wenn DeepThink aktiv ist (bei
+      Regenerate massgeblich: der Modus der urspruenglichen Nutzernachricht,
+      userMsg.mode)
+    - Fix deepseek-api.py: liest thinking_enabled aus dem Request (Default
+      False als sicherer Fallback fuer aeltere Clients ohne dieses Feld)
+      und setzt daraus den tatsaechlichen DeepSeek-API-Parameter:
+        true  -> {"thinking": {"type": "enabled"}, "reasoning_effort": "high"}
+        false -> {"thinking": {"type": "disabled"}}
+      log_to_file() protokolliert den Thinking-Status jetzt zusaetzlich
+      (Feld "| Thinking: enabled/disabled") zur serverseitigen Verifizierung
+    - Doku: Readme_EN.md (Master), Readme_DE.md und Readme_ES.md aktualisiert.
+      Die veraltete Aussage im DeepThink-Abschnitt ("der Modus aendert nur
+      den System-Prompt, nicht das Modell") wurde um eine praezisierende
+      Anmerkung ergaenzt; neuer Abschnitt "28 August 2026 Fix: Explicit
+      DeepSeek Thinking Mode Control" (analog zum Update vom 19.07.2026)
+      in allen drei Sprachversionen inkl. Inhaltsverzeichnis-Eintrag
+      hinzugefuegt. Strukturelle Paritaet gewahrt: alle drei Dateien
+      jeweils 1193 Zeilen
+    - Nicht betroffen: Der SSE-Parser im Frontend liest ohnehin nur
+      delta.content und ignoriert delta.reasoning_content - es gab also
+      keinen Anzeigefehler durch sichtbare Denkketten. Da die App keine
+      tools an die DeepSeek-API sendet, ist reasoning_content laut Doku
+      fuer Mehrfachrunden ohnehin irrelevant ("does not need to be passed
+      back; even if passed to the API, it will be ignored") - kein
+      Korrektheitsproblem bei Multi-Turn-Unterhaltungen
+    - Dateien: index.html, deepseek-api.py, Readme_DE.md, Readme_EN.md,
+      Readme_ES.md
+
     ============================================================================
