@@ -1628,4 +1628,32 @@
       Datei unveraendert (strukturelle Paritaet gewahrt: 1182/1179/1182)
     - Dateien: index.html, Readme_DE.md, Readme_EN.md, Readme_ES.md
 
+    95. [28.08.2026] Regressions-Fix: File-Card wurde nach XSS-Fix Stufe 1
+        als Rohtext statt als Karte angezeigt
+    - index.html: Der XSS-Fix aus Eintrag 91 (26.07.2026) stellte
+      addMessageToChat() global von innerHTML auf textContent um. Dabei
+      wurde uebersehen, dass createFileCardHTML() bewusst HTML-Markup
+      erzeugt (die Datei-/Audio-Karte beim Senden einer Nachricht mit
+      Anhang) und weiterhin als Markup gerendert werden muss - seit dem
+      Fix erschien stattdessen der rohe "<div class=\"file-card\">..."
+      Quelltext sichtbar im Chatverlauf
+    - Fix: addMessageToChat() erhaelt einen neuen, optionalen Parameter
+      fileCardHTML. Ist er gesetzt, wird das Karten-Markup ueber ein
+      <template>-Element eingefuegt (echtes HTML), der eigentliche
+      Nachrichtentext wird davon getrennt weiterhin ausschliesslich per
+      document.createTextNode() gesetzt - die XSS-Absicherung fuer den
+      Nachrichtentext selbst bleibt vollstaendig erhalten
+    - sendMessage() uebergibt das File-Card-HTML jetzt separat statt es
+      wie zuvor mit dem Nachrichtentext zu einem String zu verketten
+    - Zusaetzliche Haertung: createFileCardHTML() escapet Dateiname und
+      Dateityp-Badge jetzt selbst mit escapeHtml(), bevor sie in das
+      Karten-HTML eingesetzt werden. Da diese Karte wieder per HTML
+      gerendert wird, waere sonst ueber einen praeparierten Dateinamen
+      (z.B. "<img src=x onerror=...>.txt") erneut Stored XSS moeglich
+      gewesen - unabhaengig vom eigentlichen Anzeige-Bug
+    - Betroffen war nur die Live-Anzeige beim Senden einer Nachricht mit
+      Datei-/Audio-Anhang; das Laden gespeicherter Sessions (loadSession)
+      rekonstruiert die Karte ohnehin nicht und war nicht betroffen
+    - Dateien: index.html
+
     ============================================================================
