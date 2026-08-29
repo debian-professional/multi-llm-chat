@@ -4,22 +4,40 @@
 
 # =============================================================================
 # DEEPSEEK API PROXY
-# Importiert / aktualisiert: 29.08.2026 (Fix: UTF-8-Dekodierung des Request-Body)
+# Importiert / aktualisiert: 29.08.2026 (Bild-Uebertragung ergaenzt fuer
+# deepseek-v4-flash-vision-exp)
 # =============================================================================
 #
 # Unterstuetzte Modelle:
 #
 #   deepseek-v4-flash  (DeepSeek V4 Flash)
-#     Version      : V4 Preview (Stand 11.05.2026)
-#     Kontext      : 1.048.576 Token Input / 8.192 Token Output
+#     Version      : V4 GA (0731, Stand 31.07.2026)
+#     Kontext      : 1.048.576 Token Input / 384.000 Token Output
 #     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
 #                    Thinking- und Non-Thinking-Mode verfuegbar
 #
 #   deepseek-v4-pro  (DeepSeek V4 Pro)
-#     Version      : V4 Preview (Stand 11.05.2026)
-#     Kontext      : 1.048.576 Token Input / 32.768 Token Output
+#     Version      : V4 GA (0813, Stand 13.08.2026)
+#     Kontext      : 1.048.576 Token Input / 384.000 Token Output
 #     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
 #                    Thinking- und Non-Thinking-Mode verfuegbar
+#
+#   deepseek-v4-flash-vision-exp  (DeepSeek V4 Flash Vision, experimentell)
+#     Version      : Experimentell, veroeffentlicht 21.08.2026
+#     Kontext      : 1.048.576 Token Input / 384.000 Token Output
+#     Faehigkeiten : Text + Bild (Vision). Kein Audio, kein Video.
+#                    Textleistung identisch zu deepseek-v4-flash, Bild-
+#                    Eingabe als Erweiterung. Bilder NUR in User-Messages
+#                    erlaubt (System-/Assistant-Messages mit Bild -> HTTP 400
+#                    von der DeepSeek-API). Bild wird als OpenAI-kompatibler
+#                    image_url-Content-Block mit base64-Daten-URL gesendet
+#                    (data:{mime};base64,{data}) - identisches Format zu
+#                    openai-api.py, da DeepSeeks Vision-API OpenAI-kompatibel
+#                    ist. Ein Bild wird pro Anfrage an die letzte User-
+#                    Message angehaengt (mehrere Bilder pro Anfrage sind laut
+#                    DeepSeek-Doku moeglich, aber vom Frontend aktuell nicht
+#                    vorgesehen). Thinking-Mode ebenfalls verfuegbar.
+#     Quelle       : https://api-docs.deepseek.com/guides/vision (Stand 29.08.2026)
 #
 # Hinweis: deepseek-chat und deepseek-reasoner werden ab 24.07.2026
 #          abgeschaltet (routen aktuell auf deepseek-v4-flash).
@@ -36,7 +54,7 @@
 #   thinking_enabled == False -> {"thinking": {"type": "disabled"}}
 # Quelle: https://api-docs.deepseek.com/guides/thinking_mode (Stand 28.08.2026)
 #
-# Quelle: https://api-docs.deepseek.com (Stand 11.05.2026)
+# Quelle: https://api-docs.deepseek.com (Stand 29.08.2026)
 # =============================================================================
 
 import json
@@ -153,12 +171,35 @@ def main():
         # damit verhaelt sich ein Client ohne dieses Feld wie "Chat"-Modus statt
         # unbemerkt mit vollem Reasoning-Aufwand zu laufen.
         thinking_enabled = bool(request_data.get('thinking_enabled', False))
+        # Fix (29.08.2026): Bild-Uebertragung fuer deepseek-v4-flash-vision-exp.
+        # image_data/image_mime_type kommen vom Frontend genau wie bei
+        # google-api.py/openai-api.py als separate Top-Level-Felder, nicht
+        # bereits eingebettet in messages[].
+        image_data = request_data.get('image_data', None)
+        image_mime_type = request_data.get('image_mime_type', 'image/jpeg')
 
         if not messages or not isinstance(messages, list):
             send_error(400, {
                 'error': 'Ungueltige Anfrage: messages Array erforderlich'
             }, model)
             return
+
+        # Fix (29.08.2026): Bild an die letzte User-Message anhaengen, analog
+        # zu openai-api.py - DeepSeeks Vision-API ist OpenAI-kompatibel und
+        # akzeptiert denselben image_url-Content-Block mit base64-Daten-URL.
+        # Wichtig laut DeepSeek-Doku: Bilder sind NUR in User-Messages erlaubt,
+        # nicht in System-/Assistant-Messages (sonst HTTP 400 von der API) -
+        # daher gezielt die letzte Message mit role='user' suchen, nicht
+        # einfach die letzte Message im Array.
+        if image_data:
+            for msg in reversed(messages):
+                if msg.get('role') == 'user':
+                    text = msg.get('content', '')
+                    msg['content'] = [
+                        {'type': 'text', 'text': text},
+                        {'type': 'image_url', 'image_url': {'url': f'data:{image_mime_type};base64,{image_data}'}}
+                    ]
+                    break
 
         # DeepSeek API Request vorbereiten (mit Streaming)
         api_url = 'https://api.deepseek.com/v1/chat/completions'

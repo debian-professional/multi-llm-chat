@@ -1488,6 +1488,11 @@
             // DeepSeek: reiner Text, kein Bild (siehe deepseek-api.py Header)
             'deepseek-v4-flash': { images: false, text: true },
             'deepseek-v4-pro':   { images: false, text: true },
+            // Fix (29.08.2026): deepseek-v4-flash-vision-exp (veroeffentlicht
+            // 21.08.2026) ist DeepSeeks erstes bildfaehiges V4-Modell -
+            // separates Modell, NICHT einfach eine Faehigkeit von Flash/Pro.
+            // Siehe deepseek-api.py Header fuer Details zur Bild-Uebertragung.
+            'deepseek-v4-flash-vision-exp': { images: true, text: true },
             // Google Gemini: alle aktuell angebotenen Modelle sind multimodal (siehe google-api.py Header)
             'gemini-2.5-flash':  { images: true,  text: true },
             'gemini-2.5-pro':    { images: true,  text: true },
@@ -1540,6 +1545,16 @@
                 maxContextMessages: 50
             },
             'deepseek-v4-pro': {
+                maxContextTokens:  1048576,
+                maxOutputTokens:   384000,
+                maxContextMessages: 50
+            },
+            // Fix (29.08.2026): deepseek-v4-flash-vision-exp - erstes
+            // bildfaehiges DeepSeek-V4-Modell (veroeffentlicht 21.08.2026).
+            // Kontext/Output identisch zu deepseek-v4-flash (gleiche Basis,
+            // Bild-Faehigkeit als Erweiterung). Quelle: DeepSeek API Docs /
+            // OpenRouter Modellseite, Stand 29.08.2026.
+            'deepseek-v4-flash-vision-exp': {
                 maxContextTokens:  1048576,
                 maxOutputTokens:   384000,
                 maxContextMessages: 50
@@ -1646,7 +1661,7 @@
                 maxContextMessages: 100
             }
         };
-        const DEEPSEEK_MODELS      = ['deepseek-v4-flash', 'deepseek-v4-pro'];
+        const DEEPSEEK_MODELS      = ['deepseek-v4-flash', 'deepseek-v4-pro', 'deepseek-v4-flash-vision-exp'];
         const OPENAI_MODELS_FREE   = ['gpt-4o-mini', 'gpt-5.6-luna'];
         const OPENAI_MODELS_PAID   = ['gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-5.4', 'gpt-4o', 'gpt-4.1', 'gpt-4o-mini'];
         const GOOGLE_MODELS_FREE   = ['gemini-2.5-flash'];
@@ -3086,6 +3101,18 @@
             if (settings.apiService === 'deepseek') {
                 const modelName = settings.selectedModel || 'deepseek-v4-flash';
                 base += ' You are DeepSeek, an AI assistant made by DeepSeek. You are currently running as the model "' + modelName + '". If asked which model or version you are, answer with this exact model name.';
+                // Fix (29.08.2026): DeepSeek hat fuer die V4-Familie kein
+                // offizielles Knowledge-Cutoff-Datum veroeffentlicht. Ohne
+                // diese Anweisung antwortet das Modell auf Nachfrage faelsch-
+                // licherweise mit "Juli 2024" (bzw. teils "Oktober 2023") -
+                // das ist der Cutoff der aelteren Modelle DeepSeek-V3/R1, den
+                // das Modell offenbar aus generischem Trainingswissen
+                // uebernimmt, obwohl V4 erst 2026 veroeffentlicht wurde und
+                // somit deutlich neuere Trainingsdaten haben muss. Da kein
+                // exaktes, offiziell bestaetigtes Datum existiert, wird dem
+                // Modell hier kein falsches "richtiges" Datum vorgegeben,
+                // sondern die ehrliche, korrekte Auskunft dazu.
+                base += ' DeepSeek has not published an official knowledge cutoff date for the V4 model family. Do not claim a knowledge cutoff of July 2024 or October 2023 when asked - those dates belong to older DeepSeek models (V3 and R1), not to you. If asked about your knowledge cutoff, say that DeepSeek has not published an exact cutoff date for V4, and that since you were released in 2026, your training data extends well beyond mid-2024.';
             } else if (settings.apiService === 'google') {
                 const modelName = settings.selectedModel || 'gemini-2.5-flash';
                 base += ' You are Gemini, an AI assistant made by Google. You are currently running as the model "' + modelName + '". If asked which model or version you are, answer with this exact model name.';

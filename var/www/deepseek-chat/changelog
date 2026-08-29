@@ -1791,4 +1791,96 @@
       MODEL_CONFIG providerunabhaengig gepflegt wird
     - Dateien: index.html
 
+
+
+    100. [29.08.2026] Bild-Support fuer DeepSeek: deepseek-v4-flash-vision-exp
+         integriert
+    - Anlass: Nutzerfrage, ob DeepSeek V4 wirklich keine Bilder unterstuetzt
+      (bestaetigt durch fehlgeschlagenen Bild-Upload-Versuch mit
+      deepseek-v4-flash). Recherche ergab: deepseek-v4-flash/deepseek-v4-pro
+      unterstuetzen tatsaechlich keine Bilder, ABER DeepSeek hat am
+      21.08.2026 ein drittes, separates Modell veroeffentlicht -
+      deepseek-v4-flash-vision-exp - das erste bildfaehige Modell der
+      V4-Familie. Dieses Modell tauchte bereits live in der von
+      deepseek-models.py abgefragten Modellliste auf (Server-Log:
+      "models fetched: [..., 'deepseek-v4-flash-vision-exp']"), war aber
+      weder in MODEL_CONFIG/MODEL_CAPABILITIES noch im Modell-Dropdown
+      hinterlegt
+    - Recherche: Kontextfenster 1.048.576 Token, max. Output 384.000 Token
+      (identisch zu deepseek-v4-flash - gleiche Basis, Bild-Faehigkeit als
+      Erweiterung). Textleistung laut DeepSeek unveraendert zu
+      deepseek-v4-flash. Bilder NUR in User-Messages erlaubt (System-/
+      Assistant-Message mit Bild -> HTTP 400 von der DeepSeek-API). Vision-
+      API ist OpenAI-kompatibel: Bild wird als image_url-Content-Block mit
+      base64-Daten-URL gesendet (data:{mime};base64,{data}), identisches
+      Format zu openai-api.py. Quelle: DeepSeek API Docs
+      (https://api-docs.deepseek.com/guides/vision), Stand 29.08.2026
+    - Fix index.html:
+        - MODEL_CAPABILITIES: 'deepseek-v4-flash-vision-exp': { images: true,
+          text: true } ergaenzt
+        - MODEL_CONFIG: 'deepseek-v4-flash-vision-exp' mit denselben Werten
+          wie deepseek-v4-flash ergaenzt (maxContextTokens: 1048576,
+          maxOutputTokens: 384000, maxContextMessages: 50)
+        - DEEPSEEK_MODELS: 'deepseek-v4-flash-vision-exp' ergaenzt, dadurch
+          automatisch im Modell-Dropdown waehlbar (Dropdown-Befuellung nutzt
+          Modell-ID direkt als Anzeigetext, keine separate Label-Zuordnung
+          noetig). currentModelSupportsImages() funktioniert automatisch mit
+          der erweiterten MODEL_CAPABILITIES-Map, keine Aenderung an dieser
+          Funktion noetig
+    - Fix deepseek-api.py: image_data/image_mime_type werden jetzt aus dem
+      Request gelesen (wie bereits bei google-api.py/openai-api.py) und bei
+      Vorhandensein als image_url-Content-Block an die letzte Message mit
+      role='user' angehaengt (gezielt user-Message gesucht, nicht einfach
+      die letzte Message im Array, da DeepSeek Bilder in System-/Assistant-
+      Messages ablehnt). Logik direkt von openai-api.py uebernommen, da
+      DeepSeeks Vision-API dasselbe Content-Block-Format verwendet.
+      Header-Dokumentation aktualisiert: deepseek-v4-flash-vision-exp
+      ergaenzt; ausserdem laengst veraltete Output-Token-Angaben fuer
+      deepseek-v4-flash/deepseek-v4-pro im Header korrigiert (dort stand
+      noch 8.192/32.768 Token Output aus der V4-Preview-Phase vom 11.05.2026,
+      obwohl MODEL_CONFIG in index.html schon laenger korrekt 384.000 fuer
+      beide Modelle fuehrt - reine Dokumentations-Ungenauigkeit ohne
+      funktionale Auswirkung, da deepseek-api.py max_tokens ohnehin direkt
+      aus dem Request uebernimmt statt den Header-Kommentar auszuwerten)
+    - Nicht betroffen: Audio bleibt fuer DeepSeek weiterhin nicht
+      unterstuetzt (deepseek-v4-flash-vision-exp ist laut Doku reine Text+
+      Bild-Eingabe, Text-Ausgabe - kein Audio-Input/-Output)
+    - Dateien: index.html, deepseek-api.py
+
+    101. [29.08.2026] System-Prompt korrigiert falsche Selbstauskunft zum
+         Knowledge-Cutoff-Datum bei DeepSeek
+    - Anlass: Nutzerfrage nach dem eigenen Knowledge-Cutoff des Modells;
+      Antwort lautete faelschlicherweise "Juli 2024"
+    - Recherche: DeepSeek hat fuer die V4-Modellfamilie (deepseek-v4-flash,
+      deepseek-v4-pro, deepseek-v4-flash-vision-exp) kein offizielles
+      Knowledge-Cutoff-Datum veroeffentlicht. "Juli 2024" (teils auch
+      "Oktober 2023" in anderen Tests) ist der Cutoff der AELTEREN Modelle
+      DeepSeek-V3/R1 - V4 wurde erst im April 2026 als Preview
+      veroeffentlicht (GA 31.07.2026 Flash / 13.08.2026 Pro) und muss daher
+      deutlich neuere Trainingsdaten enthalten. Das Modell uebernimmt
+      offenbar unveraendert die Cutoff-Angabe seiner Vorgaenger aus
+      generischem Trainingswissen, obwohl das fuer V4 nicht mehr zutrifft
+    - Unterschied zu den Fixes 96/99: Bei Modellname und Kontextfenster-
+      Groesse existierte ein exakter, offiziell dokumentierter korrekter
+      Wert, der einfach vorgegeben werden konnte. Beim Cutoff-Datum gibt es
+      keinen solchen bestaetigten Wert - daher wird dem Modell kein neues,
+      moeglicherweise ebenso falsches Datum vorgegeben, sondern die
+      ehrliche, korrekte Auskunft: kein offiziell veroeffentlichtes
+      Cutoff-Datum fuer V4, Trainingsdaten reichen aber aufgrund des
+      Veroeffentlichungsjahrs 2026 deutlich ueber Mitte 2024 hinaus
+    - Fix index.html (buildSystemPrompt, deepseek-Branch): Anweisung
+      ergaenzt, die explizit von einer Antwort mit "Juli 2024" oder
+      "Oktober 2023" abhaelt und stattdessen zur oben beschriebenen,
+      korrekten Auskunft anleitet
+    - Scope: Nur fuer DeepSeek umgesetzt, da dies der konkret gemeldete
+      Fall war. Aehnliche falsche Selbstauskunften zum Cutoff sind bei
+      anderen Providern (Google/OpenAI/HuggingFace/GroqCloud) nicht
+      auszuschliessen, wurden in dieser Session aber nicht untersucht
+    - Dateien: index.html
+
+    ============================================================================
+
+
+
+
     ============================================================================
