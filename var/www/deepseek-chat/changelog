@@ -1727,4 +1727,44 @@
     - Dateien: index.html, deepseek-api.py, Readme_DE.md, Readme_EN.md,
       Readme_ES.md
 
+    98. [29.08.2026] Kritischer Fix: UTF-8-Dekodierung des Request-Body
+        in 11 CGI-Skripten (Emojis/Sonderzeichen fuehrten zu HTTP 400)
+    - Anlass: Waehrend eines Live-Tests zum Thinking-Mode-Fix (Eintrag 97)
+      schlug ein Request an save-session.py mit HTTP 400 fehl:
+      {"error": "Ungueltiges JSON", "details": "Invalid control character
+      at: line 1 column 437 (char 436)"}. Die zu speichernde Session
+      enthielt eine vorherige KI-Antwort mit einem Emoji ("...behilflich
+      sein? 😊")
+    - Root Cause: 11 von 16 CGI-Skripten lasen den POST-Body bisher per
+      post_data = sys.stdin.read(content_length) - Python-3-Textmodus,
+      dessen Zeichenkodierung von der CGI-Prozess-Locale abhaengt (unter
+      Apache oft nicht garantiert UTF-8). Mehrbyte-UTF-8-Sequenzen (z.B.
+      Emojis, 4 Byte in UTF-8) konnten dadurch fehlerhaft dekodiert werden,
+      wobei vereinzelte Bytes als rohe Steuerzeichen (C1-Kontrollzeichen)
+      landeten - json.loads() lehnt solche unescapten Steuerzeichen in
+      Strings standardmaessig strikt ab und wirft JSONDecodeError
+    - Entdeckt durch Vergleich mit dem bereits korrekten Muster in
+      export-rtf.py, export-txt.py und feedback-log.py: Diese drei
+      Skripte lasen den Body bereits sicher ueber
+      sys.stdin.buffer.read(content_length).decode('utf-8') - rohe Bytes,
+      explizit und zuverlaessig als UTF-8 dekodiert, unabhaengig von der
+      Locale-Konfiguration des CGI-Prozesses
+    - Fix: Alle 11 betroffenen Skripte auf dasselbe sichere Muster
+      umgestellt: compress-context.py, deepseek-api.py, delete-session.py,
+      export-markdown.py, export-pdf.py, google-api.py, groq-api.py,
+      hugging-api.py, load-session.py, openai-api.py, save-session.py
+    - Auswirkung vor dem Fix: Jede Anfrage (Chat-Nachricht senden, Session
+      speichern/laden, Export, Kompressor, Feedback) konnte fehlschlagen,
+      sobald Nutzer- ODER KI-Text ein Emoji oder ein anderes Mehrbyte-
+      Unicode-Zeichen ausserhalb des Basic Multilingual Plane bzw.
+      bestimmter Randfaelle enthielt - abhaengig von der jeweiligen
+      Server-Locale-Konfiguration. Kein reiner Rand-Fall: Emojis in
+      KI-Antworten sind im taeglichen Gebrauch haeufig
+    - Nicht betroffen: export-rtf.py, export-txt.py, feedback-log.py
+      (bereits korrekt), sowie get-log.py und deepseek-models.py (keine
+      POST-JSON-Verarbeitung dieser Art)
+    - Dateien: compress-context.py, deepseek-api.py, delete-session.py,
+      export-markdown.py, export-pdf.py, google-api.py, groq-api.py,
+      hugging-api.py, load-session.py, openai-api.py, save-session.py
+
     ============================================================================

@@ -76,7 +76,12 @@ def main():
             return
 
         # POST-Daten lesen
-        post_data = sys.stdin.read(content_length)
+        # Fix (29.08.2026): sys.stdin.read() im Textmodus kann je nach
+        # CGI-Locale Mehrbyte-UTF-8-Zeichen (z.B. Emojis) fehlerhaft dekodieren
+        # und dabei ungueltige Steuerzeichen einstreuen, was json.loads() mit
+        # "Invalid control character" zum Absturz bringt. Rohe Bytes lesen und
+        # explizit als UTF-8 dekodieren umgeht das CGI-Locale-Problem komplett.
+        post_data = sys.stdin.buffer.read(content_length).decode('utf-8')
         request_data = json.loads(post_data)
         session_id = request_data.get('sessionId')
 
@@ -113,7 +118,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
-
