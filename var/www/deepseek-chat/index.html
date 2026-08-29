@@ -3099,6 +3099,21 @@
                 const modelName = settings.selectedModel || 'an AI assistant';
                 base += ' You are ' + modelName + ', an AI assistant made by OpenAI. If asked which model or version you are, answer with this exact model name.';
             }
+            // Fix (29.08.2026): Kontextfenster-Groesse im System-Prompt nennen,
+            // analog zum Fix vom 28.08.2026 fuer den Modellnamen. Ohne diese
+            // Angabe rät das Modell bei Fragen nach der Kontextgroesse aus
+            // seinem Trainingswissen (haeufig veraltet oder falsch), statt den
+            // tatsaechlich von dieser App fuer das aktive Modell konfigurierten
+            // Wert aus MODEL_CONFIG zu nennen. Nutzt dieselbe Fallback-Logik
+            // wie sendMessage()/handleRegenerate() fuer die Modell-Ermittlung,
+            // unabhaengig vom jeweils oben verwendeten Anzeige-Modellnamen.
+            const contextModelName = (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq' || settings.apiService === 'openai')
+                ? (settings.selectedModel || (settings.apiService === 'google' ? 'gemini-2.5-flash' : (settings.apiService === 'groq' ? 'llama-3.3-70b-versatile' : (settings.apiService === 'openai' ? 'gpt-4o-mini' : 'Qwen/Qwen2.5-72B-Instruct'))))
+                : (settings.selectedModel || 'deepseek-v4-flash');
+            const contextCfg = MODEL_CONFIG[contextModelName];
+            if (contextCfg && contextCfg.maxContextTokens) {
+                base += ' Your maximum context window for this conversation is ' + contextCfg.maxContextTokens.toLocaleString('en-US') + ' tokens. If asked about your context size or context window, answer with this exact number.';
+            }
             if (isDeepThink) {
                 if (!meta || !meta.has_address_form) {
                     base += t(31);

@@ -1767,4 +1767,28 @@
       export-markdown.py, export-pdf.py, google-api.py, groq-api.py,
       hugging-api.py, load-session.py, openai-api.py, save-session.py
 
+    99. [29.08.2026] System-Prompt nennt jetzt die tatsaechlich konfigurierte
+        Kontextfenster-Groesse (analog zum Modellnamen-Fix aus Eintrag 96)
+    - Anlass: Nutzerwunsch, dass das Modell bei einer direkten Frage nach
+      seiner Kontextgroesse die korrekte, tatsaechlich von dieser App
+      verwendete Zahl nennt, statt zu raten
+    - Symptom/Ursache: Wie schon beim Modellnamen (Eintrag 96) hatte das
+      Modell keinen Zugriff auf die tatsaechlich konfigurierte
+      Kontextfenster-Groesse (MODEL_CONFIG[model].maxContextTokens) und
+      musste bei Nachfrage aus Trainingswissen antworten - potenziell
+      veraltet oder schlicht falsch fuer die hier eingesetzte Konfiguration
+    - Fix index.html (buildSystemPrompt): Nach der bestehenden Provider-
+      Identitaets-Ergaenzung wird jetzt zusaetzlich, providerunabhaengig,
+      die maxContextTokens-Zahl des aktiven Modells aus MODEL_CONFIG
+      ermittelt (mit derselben Fallback-Logik wie sendMessage()/
+      handleRegenerate() zur Modell-Ermittlung) und in den System-Prompt
+      aufgenommen: "Your maximum context window for this conversation is
+      X tokens. If asked about your context size or context window,
+      answer with this exact number."
+    - Beispiel: deepseek-v4-flash -> "1,048,576 tokens" (aus
+      MODEL_CONFIG['deepseek-v4-flash'].maxContextTokens)
+    - Gilt fuer alle fuenf Provider gleichermassen, nicht nur DeepSeek, da
+      MODEL_CONFIG providerunabhaengig gepflegt wird
+    - Dateien: index.html
+
     ============================================================================
