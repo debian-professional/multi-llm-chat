@@ -1016,6 +1016,15 @@
         <button id="deepThinkButton" class="pill-button-mode">
             <span class="mode-icon">&#10802;</span><span id="deepThinkButtonLabel">DeepThink</span>
         </button>
+        <!-- Feature (29.08.2026): Download-Modus - unterdrueckt die Live-Anzeige
+             der KI-Antwort im Chat (spart Renderzeit bei sehr langen Antworten,
+             z.B. korrigierten Textabschnitten) und zeigt stattdessen nur einen
+             Fortschritts-Hinweis; der bereits bestehende Download-Button unter
+             jeder Nachricht (showSingleExportDropdown) bleibt unveraendert
+             nutzbar, da er den Text aus contextHistory liest, nicht aus dem DOM. -->
+        <button id="downloadModeButton" class="pill-button-mode">
+            <span class="mode-icon">&#8595;</span><span id="downloadModeButtonLabel">Download Mode</span>
+        </button>
         <button id="audioButton" class="pill-button-mode" style="display:none;">Record Audio</button>
     </div>
 
@@ -1823,6 +1832,8 @@
             // --- DeepThink button ---
             document.getElementById('deepThinkButtonLabel').textContent = t(229);
             document.getElementById('deepThinkIndicator').textContent = t(204);
+            // --- Download-Modus button (Feature 29.08.2026) ---
+            document.getElementById('downloadModeButtonLabel').textContent = t(263);
 
             // --- Guthaben-Banner Text aktualisieren (falls sichtbar) ---
             const guthabenBanner = document.getElementById('guthabenBanner');
@@ -2843,7 +2854,16 @@
                                 const data = JSON.parse(dataStr);
                                 if (data.choices && data.choices[0] && data.choices[0].delta) {
                                     const token = data.choices[0].delta.content || '';
-                                    if (token) { fullText += token; aiText.textContent = userMsg.hasFile ? decodeUmlautsFromAI(fullText) : fullText; chat.scrollTop = chat.scrollHeight; }
+                                    if (token) {
+                                        fullText += token;
+                                        // Feature (29.08.2026): Download-Modus - Live-Anzeige unterdruecken
+                                        if (downloadModeActive) {
+                                            aiText.textContent = tf(264, fullText.length.toLocaleString('de-DE'));
+                                        } else {
+                                            aiText.textContent = userMsg.hasFile ? decodeUmlautsFromAI(fullText) : fullText;
+                                        }
+                                        chat.scrollTop = chat.scrollHeight;
+                                    }
                                 }
                             } catch (e) { }
                         }
@@ -2861,7 +2881,11 @@
                 fullText = fullText.replace(/^```[a-z]*\n?/i, '');
                 fullText = fullText.replace(/\n?```$/, '');
                 // 4. Stelle Umlaute wieder her (Platzhalter -> echte Umlaute)
-                fullText = decodeUmlautsFromAI(fullText); aiText.textContent = fullText;
+                fullText = decodeUmlautsFromAI(fullText);
+                // Feature (29.08.2026): Download-Modus - finalen Volltext nicht ins
+                // DOM schreiben, stattdessen Abschluss-Hinweis. fullText/contextHistory
+                // enthalten weiterhin den kompletten Text fuer Download/Kontext/Session.
+                aiText.textContent = downloadModeActive ? tf(265, fullText.length.toLocaleString('de-DE')) : fullText;
                 
                 const aiMsgId = addAIResponseToContext(fullText, userMsg.mode);
                 aiContainer.setAttribute('data-msg-id', aiMsgId);
@@ -2969,6 +2993,10 @@
         
         let settings = { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', hfTier: 'free', groqTier: 'free', openaiTier: 'free', selectedModel: 'deepseek-v4-flash', compressorEnabled: true, compressorService: 'deepseek', compressorModel: 'deepseek-v4-flash' };
         let currentMode = 'chat';
+        // Feature (29.08.2026): Download-Modus, orthogonal zu currentMode
+        // (kombinierbar mit Chat oder DeepThink) - unterdrueckt die Live-
+        // Anzeige der KI-Antwort im Chat, siehe sendMessage().
+        let downloadModeActive = false;
         // Kompressor: Schwellwert-Tracking (reset nach jeder Kompression)
         let compressorTriggered = { 70: false, 85: false, 95: false };
 
@@ -2979,6 +3007,7 @@
         const closeLlmSettings = document.getElementById('closeLlmSettings');
         const saveLlmSettingsButton = document.getElementById('saveLlmSettings');
         const deepThinkButton = document.getElementById('deepThinkButton');
+        const downloadModeButton = document.getElementById('downloadModeButton');
         const audioButton     = document.getElementById('audioButton');
         const kompressorToggle        = document.getElementById('kompressorToggle');
         const kompressorServiceSelect = document.getElementById('kompressorServiceSelect');
@@ -3715,7 +3744,22 @@
                                 const data = JSON.parse(dataStr);
                                 if (data.choices && data.choices[0] && data.choices[0].delta) {
                                     const token = data.choices[0].delta.content || '';
-                                    if (token) { fullText += token; aiText.textContent = hasFile ? decodeUmlautsFromAI(fullText) : fullText; chat.scrollTop = chat.scrollHeight; }
+                                    if (token) {
+                                        fullText += token;
+                                        // Feature (29.08.2026): Download-Modus - Live-Anzeige unterdruecken,
+                                        // stattdessen nur Fortschritt (Zeichenzahl) zeigen. Spart Renderzeit
+                                        // bei sehr langen Antworten (z.B. korrigierte Textabschnitte). Der
+                                        // volle Text landet unveraendert in fullText/contextHistory - nur
+                                        // die DOM-Anzeige wird uebersprungen. Bestehende Download-Buttons
+                                        // (showSingleExportDropdown) lesen ohnehin aus contextHistory, nicht
+                                        // aus dem DOM, und funktionieren daher unveraendert.
+                                        if (downloadModeActive) {
+                                            aiText.textContent = tf(264, fullText.length.toLocaleString('de-DE'));
+                                        } else {
+                                            aiText.textContent = hasFile ? decodeUmlautsFromAI(fullText) : fullText;
+                                        }
+                                        chat.scrollTop = chat.scrollHeight;
+                                    }
                                 }
                             } catch (e) { }
                         }
@@ -3733,7 +3777,11 @@
                 fullText = fullText.replace(/^```[a-z]*\n?/i, '');
                 fullText = fullText.replace(/\n?```$/, '');
                 // 4. Stelle Umlaute wieder her (Platzhalter -> echte Umlaute)
-                fullText = decodeUmlautsFromAI(fullText); aiText.textContent = fullText;
+                fullText = decodeUmlautsFromAI(fullText);
+                // Feature (29.08.2026): Download-Modus - finalen Volltext nicht ins
+                // DOM schreiben, stattdessen Abschluss-Hinweis. fullText/contextHistory
+                // enthalten weiterhin den kompletten Text fuer Download/Kontext/Session.
+                aiText.textContent = downloadModeActive ? tf(265, fullText.length.toLocaleString('de-DE')) : fullText;
                 
                 const aiMsgId = addAIResponseToContext(fullText, currentMode);
                 aiContainer.setAttribute('data-msg-id', aiMsgId);
@@ -4479,6 +4527,14 @@
             // --- DeepThink button ---
             addEventListenerWithCleanup(deepThinkButton, 'click', () => {
                 setMode(currentMode === 'deepthink' ? 'chat' : 'deepthink');
+            });
+
+            // --- Download-Modus button (Feature 29.08.2026) ---
+            // Orthogonal zu setMode()/currentMode - eigener, unabhaengiger
+            // Toggle, kombinierbar mit Chat oder DeepThink.
+            addEventListenerWithCleanup(downloadModeButton, 'click', () => {
+                downloadModeActive = !downloadModeActive;
+                downloadModeButton.classList.toggle('active', downloadModeActive);
             });
 
             // --- modelSelect change → Audio-Button Sichtbarkeit aktualisieren ---

@@ -1791,8 +1791,6 @@
       MODEL_CONFIG providerunabhaengig gepflegt wird
     - Dateien: index.html
 
-
-
     100. [29.08.2026] Bild-Support fuer DeepSeek: deepseek-v4-flash-vision-exp
          integriert
     - Anlass: Nutzerfrage, ob DeepSeek V4 wirklich keine Bilder unterstuetzt
@@ -1878,9 +1876,43 @@
       auszuschliessen, wurden in dieser Session aber nicht untersucht
     - Dateien: index.html
 
-    ============================================================================
-
-
-
+    102. [29.08.2026] Neues Feature: Download-Modus (Live-Anzeige der
+         KI-Antwort unterdruecken bei sehr langen Antworten)
+    - Anlass: Nutzer korrigiert grosse Textabschnitte (z.B. hochgeladene
+      Buecher wie Shogun.txt, mehrere Millionen Zeichen) und moechte das
+      Ergebnis direkt als Datei erhalten, ohne dass die komplette Antwort
+      erst Zeichen fuer Zeichen live im Chat gerendert wird - das kostet
+      bei sehr langen Antworten spuerbar Zeit und macht die Seite traege
+    - Vorhandene Infrastruktur wiederverwendet: Jede KI-Antwort hat bereits
+      einen Download-Button (showSingleExportDropdown -> TXT/MD/RTF/PDF via
+      exportSingleAsTxt/-Markdown/-Rtf/-Pdf). Diese Funktionen lesen den
+      Text aus contextHistory.messages, NICHT aus dem DOM - die Live-
+      Anzeige im Chat kann daher gefahrlos unterdrueckt werden, ohne den
+      bestehenden Download-Mechanismus zu beeintraechtigen
+    - Fix/Feature index.html:
+        - Neuer Button "Download Mode" neben DeepThink (eigene, von
+          currentMode unabhaengige Variable downloadModeActive - orthogonal
+          kombinierbar mit Chat oder DeepThink)
+        - sendMessage() und handleRegenerate(): Waehrend des SSE-Streamings
+          wird bei aktivem Download-Modus statt des vollen (wachsenden)
+          Texts nur ein Fortschritts-Hinweis mit laufender Zeichenzahl
+          angezeigt ("Antwort wird generiert... (X Zeichen bisher)").
+          fullText selbst wird unveraendert vollstaendig aufgebaut
+        - Nach Abschluss des Streamings wird bei aktivem Download-Modus
+          statt des vollen Texts nur ein Abschluss-Hinweis angezeigt
+          ("Antwort fertig (X Zeichen). Nutze den Download-Button unter
+          dieser Nachricht, um sie zu speichern.") - der volle Text wird
+          weiterhin unveraendert per addAIResponseToContext() in
+          contextHistory gespeichert, wodurch Kontext-Fortfuehrung,
+          Session-Speicherung und der bestehende Download-Button
+          uneingeschraenkt funktionieren
+    - language.xml: drei neue Text-IDs (263-265) fuer EN/DE/ES ergaenzt
+      (Button-Label, Fortschritts- und Abschluss-Hinweis mit {0}-Platzhalter
+      fuer die Zeichenzahl via tf())
+    - Nicht betroffen: Kontext-Fortfuehrung (Folgefragen sehen weiterhin den
+      vollen Text), Session-Speichern/Laden, PDF/RTF/MD/TXT-Einzelexport -
+      alle lesen aus contextHistory, nicht aus der (nun unterdrueckten)
+      DOM-Anzeige
+    - Dateien: index.html, language.xml
 
     ============================================================================

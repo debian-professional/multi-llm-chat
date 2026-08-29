@@ -142,6 +142,9 @@ Adding a new language:
     <text id="260">Start new chat with current context</text>
     <text id="261">Start new chat without context</text>
     <text id="262">This file (~{0} tokens) exceeds the context window of the current model ({1} tokens). Please select a model with a larger context window (e.g. Google Gemini) or upload only a portion of the file.</text>
+    <text id="263">Download Mode</text>
+    <text id="264">Generating response... ({0} characters so far)</text>
+    <text id="265">Response ready ({0} characters). Use the download button below this message to save it.</text>
 
     <text id="241">Hugging Face</text>
     <text id="242">HF Plan</text>
@@ -324,6 +327,9 @@ Adding a new language:
     <text id="260">Neuen Chat starten mit aktuellem Kontext</text>
     <text id="261">Neuen Chat starten ohne Kontext</text>
     <text id="262">Diese Datei (~{0} Token) überschreitet das Kontextfenster des aktuellen Modells ({1} Token). Bitte wähle ein Modell mit grösserem Kontextfenster (z.B. Google Gemini) oder lade nur einen Teil der Datei hoch.</text>
+    <text id="263">Download-Modus</text>
+    <text id="264">Antwort wird generiert... ({0} Zeichen bisher)</text>
+    <text id="265">Antwort fertig ({0} Zeichen). Nutze den Download-Button unter dieser Nachricht, um sie zu speichern.</text>
 
     <text id="241">Hugging Face</text>
     <text id="242">HF-Plan</text>
@@ -504,6 +510,9 @@ Adding a new language:
     <text id="260">Iniciar nuevo chat con contexto actual</text>
     <text id="261">Iniciar nuevo chat sin contexto</text>
     <text id="262">Este archivo (~{0} tokens) supera la ventana de contexto del modelo actual ({1} tokens). Por favor, seleccione un modelo con una ventana de contexto mayor (p.ej. Google Gemini) o cargue solo una parte del archivo.</text>
+    <text id="263">Modo Descarga</text>
+    <text id="264">Generando respuesta... ({0} caracteres hasta ahora)</text>
+    <text id="265">Respuesta lista ({0} caracteres). Usa el botón de descarga debajo de este mensaje para guardarla.</text>
 
     <text id="241">Hugging Face</text>
     <text id="242">Plan HF</text>
