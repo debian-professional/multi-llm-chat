@@ -1,4 +1,3 @@
-============================================================================
     MULTI-LLM CHAT CLIENT - DESIGN-MANIFEST & KONVENTIONEN
     ============================================================================
     
@@ -333,9 +332,16 @@
        - Automatisches Speichern nach jeder Nachricht
     
     3. SERVER-INFORMATIONEN:
-       - Titel zeigt Server-Name und interne IP
-       - IP wird aus window.location.hostname ermittelt
-       - Bei localhost wird "localhost" angezeigt
+       - Titel zeigt Server-Name und die feste interne Server-IP
+         (Konstante SERVER_INTERNAL_IP)
+       - AKTUALISIERT (10.09.2026, siehe Changelog 103): Bei Zugriff per
+         Domainname (z.B. swtor10-chat.ddnsfree.com) wird zusaetzlich der
+         verwendete Hostname in Klammern angezeigt ("IP: 172.29.255.1
+         (swtor10-chat.ddnsfree.com)"). Die IP wird NICHT mehr aus
+         window.location.hostname abgeleitet (das lieferte bei
+         Domainnamen keine IPv4-Ziffernfolge und schlug fehl), sondern ist
+         eine feste Konstante
+       - Bei localhost wird weiterhin "localhost" angezeigt
     
     4. FEHLERBEHANDLUNG:
        - User-freundliche Fehlermeldungen
@@ -425,6 +431,48 @@
          Datei wurde ins Repo aufgenommen (etc/apache2/sites-available/
          deepseek-chat-ssl.conf), ist damit jetzt versioniert und wird bei
          zukuenftigen Exports mit erfasst.
+    
+    9. SSL/TLS-ZERTIFIKAT (10.09.2026, Infrastrukturaenderung, nicht ueber
+       deploy.sh verwaltet):
+       - Vorher: selbstsigniertes mkcert-Zertifikat. Funktional gueltig,
+         aber jeder Browser auf jedem neuen Geraet zeigte "Not secure",
+         solange die mkcert-Root-CA nicht manuell importiert wurde -
+         insbesondere auf Android ohne Root praktisch nicht sauber loesbar
+       - Jetzt: echtes, oeffentlich vertrauenswuerdiges Let's-Encrypt-
+         Zertifikat via acme.sh + DNS-01-Challenge ueber den DynDNS-
+         Anbieter Dynu (ddnsfree.com). Kein manueller CA-Import mehr auf
+         Client-Geraeten noetig, funktioniert auf jedem Geraet inkl.
+         Android ohne Root
+       - Domainname: swtor10-chat.ddnsfree.com (bewusst NICHT
+         swtor10.ddnsfree.com - dieser Name ist bereits als WireGuard-
+         Endpoint fuer alle vier VPN-Netzwerke in Verwendung. Wuerde
+         derselbe Name gleichzeitig per internem DNS-Override auf die
+         Chat-IP umgebogen, koennte ein erneuter WireGuard-Verbindungs-
+         aufbau bei ungluecklichem Timing die falsche - interne statt
+         oeffentliche - Adresse aufloesen und fehlschlagen. Diese
+         Namenstrennung ist bewusst und darf nicht rueckgaengig gemacht
+         werden)
+       - DNS-A-Record von swtor10-chat.ddnsfree.com zeigt bewusst direkt
+         auf die private IP 172.29.255.1. Das macht die private IP
+         oeffentlich per DNS-Abfrage sichtbar, was aber unkritisch ist, da
+         der Server ohnehin nur per SSH/WireGuard erreichbar ist (siehe
+         Bedrohungsmodell Punkt 8) - kein Port-Forwarding, keine
+         Erreichbarkeit von aussen
+       - Automatische Erneuerung ueber den von acme.sh selbst
+         eingerichteten Cronjob, inkl. automatischem "systemctl reload
+         apache2" nach jeder Erneuerung (--reloadcmd)
+       - Zertifikat/Key liegen unter /etc/apache2/ssl/deepseek.crt bzw.
+         .key (gleiche Pfade wie zuvor bei mkcert, keine Aenderung an
+         deepseek-chat-ssl.conf noetig). Verwaltet durch acme.sh direkt
+         auf dem Server, NICHT Teil des Git-Repos und NICHT ueber
+         deploy.sh ausgerollt - daher hier im Manifest dokumentiert statt
+         im Code-Changelog
+       - Dynu-API-Zugangsdaten (Dynu_ClientId/Dynu_Secret) liegen in
+         /root/.acme.sh/account.conf auf dem Server, nicht im Repo
+       - Der Name swtor10.ddnsfree.com selbst wurde zwischenzeitlich kurz
+         fuer denselben Zweck getestet, dann aber bewusst verworfen (s.o.)
+         und das dabei ausgestellte Zertifikat wieder entfernt
+         (acme.sh --remove)
     
     E) ERWEITERUNGSRICHTLINIEN:
     ----------------------------
@@ -537,6 +585,9 @@
     WICHTIG: Jede Änderung an diesem Manifest muss in der Datei changelog dokumentiert werden!
     ============================================================================
 ================================================================================
+
+
+
 
 
 
