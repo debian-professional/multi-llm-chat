@@ -1813,7 +1813,7 @@
             if (!meta) return;
 
             // --- Server header ---
-            document.getElementById('serverInfo').textContent = 'IP: ' + (getServerIP() || '...');
+            updateServerTitle();
 
             // --- Buttons row 1 ---
             sendButton.textContent = t(205);
@@ -2237,15 +2237,28 @@
             else           contextInfoEl.classList.remove('warning');
         }
 
+        // Feste interne IP dieses Servers - fuer die Anzeige, unabhaengig
+        // davon, ob per IP oder per Domainname zugegriffen wird.
+        const SERVER_INTERNAL_IP = '172.29.255.1';
+
         function getServerIP() {
-            const info = document.getElementById('serverInfo').textContent;
-            const match = info.match(/(\d+\.\d+\.\d+\.\d+)/);
-            return match ? match[1] : null;
+            // Bugfix (10.09.2026): Vorher wurde per Regex versucht, eine
+            // IPv4-Adresse aus dem bereits gesetzten Anzeigetext zu lesen.
+            // Das schlug fehl, sobald ueber einen Domainnamen (statt einer
+            // IP) zugegriffen wurde, und zeigte dauerhaft "IP: ..." an.
+            // Jetzt wird die feste, bekannte Server-IP zurueckgegeben -
+            // unabhaengig vom verwendeten Zugriffsweg (IP oder Domain).
+            return SERVER_INTERNAL_IP;
         }
-        
+
         function updateServerTitle() {
             const serverInfoEl = document.getElementById('serverInfo');
-            serverInfoEl.textContent = 'IP: ' + window.location.hostname;
+            const host = window.location.hostname;
+            // Zeigt IP und Hostname gemeinsam an, wenn per Domainname
+            // zugegriffen wird; bei direktem IP-Zugriff keine Dopplung.
+            serverInfoEl.textContent = (host === SERVER_INTERNAL_IP)
+                ? 'IP: ' + host
+                : 'IP: ' + SERVER_INTERNAL_IP + ' (' + host + ')';
         }
 
         // =====================================================================
@@ -4615,3 +4628,6 @@
     </script>
 </body>
 </html>
+
+
+

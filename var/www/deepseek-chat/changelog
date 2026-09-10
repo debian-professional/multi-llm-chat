@@ -1915,4 +1915,33 @@
       DOM-Anzeige
     - Dateien: index.html, language.xml
 
+    103. [10.09.2026] Bugfix: IP/Hostname-Anzeige im Server-Header
+    - Anlass: Seit der Umstellung auf Zugriff per Domainname
+      (swtor10-chat.ddnsfree.com statt der nackten IP 172.29.255.1, siehe
+      SSL/Let's-Encrypt-Umstellung) zeigte der Server-Header dauerhaft nur
+      noch "IP: ..." an
+    - Ursache: getServerIP() versuchte per Regex (\d+\.\d+\.\d+\.\d+) eine
+      IPv4-Adresse aus dem bereits im DOM gesetzten Anzeigetext
+      auszulesen. Bei Zugriff per Domainname enthaelt dieser Text keine
+      Ziffernfolge mehr, die Funktion lieferte null, und die Anzeige fiel
+      auf den Platzhalter "..." zurueck. Betroffen war neben der
+      Kopfzeile auch jede Stelle, die getServerIP() weiterverwendet
+      (Export-Header von TXT/MD/RTF/PDF, serverInfo in Sitzungsdaten)
+    - Fix index.html:
+        - Neue Konstante SERVER_INTERNAL_IP = '172.29.255.1' (feste
+          interne Adresse dieses Servers)
+        - getServerIP() gibt jetzt zuverlaessig SERVER_INTERNAL_IP zurueck,
+          unabhaengig vom verwendeten Zugriffsweg
+        - updateServerTitle() zeigt bei Zugriff per Domainname jetzt IP
+          UND Hostname gemeinsam an ("IP: 172.29.255.1
+          (swtor10-chat.ddnsfree.com)"), bei direktem IP-Zugriff weiterhin
+          nur die IP ohne Dopplung
+        - applyLanguage() (lief bisher bei jedem Sprachwechsel und
+          ueberschrieb die Anzeige mit der fehlerhaften Alt-Logik) ruft
+          jetzt stattdessen updateServerTitle() auf, damit ein
+          Sprachwechsel die korrekte Anzeige nicht mehr zuruecksetzt
+    - Verifiziert: JS-Syntax-Check ok; Anzeigelogik fuer beide Zugriffsarten
+      (IP direkt / Domainname) simuliert und bestaetigt korrekt
+    - Dateien: index.html
+
     ============================================================================
