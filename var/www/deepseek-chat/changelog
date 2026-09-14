@@ -1995,5 +1995,40 @@
       JS-Syntax-Check (index.html) erfolgreich
     - Dateien: index.html, deepseek-api.py, openai-api.py
 
+    105. [14.09.2026] Doku-Update: DeepSeek V4.1 Flash und GPT-6 Astra in
+         Readme_DE/EN/ES.md und overview-LLM.md nachgezogen
+    - Anlass: Nachtrag zu Changelog 104 (Code-Ergaenzung der beiden neuen
+      Modelle) - die begleitende Dokumentation war noch nicht aktualisiert
+    - overview-LLM.md: Vollstaendig aktualisiert - Vergleichstabelle,
+      OpenAI-/DeepSeek-Modelltabellen, Preistabellen, Staerken/Schwaechen,
+      Decision Matrix, Fazit. Explizit vermerkt, welche Angaben am
+      14.09.2026 neu verifiziert wurden (OpenAI, DeepSeek) und welche
+      unveraendert vom 19.07.2026 stammen (Google, Hugging Face,
+      GroqCloud - nicht neu recherchiert)
+    - Readme_EN.md (Master), Readme_DE.md, Readme_ES.md: identische
+      strukturelle Aenderungen in allen drei Sprachversionen - Key-
+      Highlights-Bullets, Free-/Paid-Tier-Listen, MODEL_CONFIG- und
+      MODEL_CAPABILITIES-Referenzbloecke, Compressor-Modell-Tabelle,
+      Abschluss-Absaetze, Quellenangaben, Fussdatum. Zeilenanzahl in allen
+      drei Dateien identisch gehalten (1205 Zeilen, strukturelle Paritaet
+      gewahrt)
+    - Nebenbefund korrigiert (alle vier Dateien): deepseek-v4-flash und
+      deepseek-v4-pro waren dort durchgaengig mit maxOutputTokens 8192
+      bzw. 32768 dokumentiert - der tatsaechliche, im Code seit jeher
+      korrekte Wert ist 384000 (siehe MODEL_CONFIG in index.html). Reiner
+      Dokumentationsfehler, keine Code-Aenderung noetig
+    - Nebenbefund korrigiert (Readme_EN/DE/ES.md): Angabe "89-entry
+      changelog" / "89 Eintraege" / "89 entradas" war veraltet, jetzt auf
+      die tatsaechliche Anzahl (104) aktualisiert
+    - BEWUSST NICHT nachgezogen: Die drei Readme-Dateien waren inhaltlich
+      seit dem 19.07.2026 eingefroren und dokumentieren daher weiterhin
+      NICHT das DeepSeek-Vision-Exp-Feature (29.08.2026), den Download-
+      Modus (29.08.2026), den kompletten Sicherheitsaudit (Changelog
+      91-103) oder die SSL/Let's-Encrypt-Umstellung. Das Nachdokumentieren
+      dieser Luecke war nicht Teil dieses Auftrags (der sich auf die
+      Modell-Aktualitaet beschraenkte) und ist als separates, groesseres
+      Folgeprojekt zu behandeln, falls gewuenscht
+    - Dateien: overview-LLM.md, Readme_EN.md, Readme_DE.md, Readme_ES.md
+
     ============================================================================
 

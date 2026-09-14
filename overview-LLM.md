@@ -1,7 +1,7 @@
 # LLM Provider Overview — Decision Guide
 ## For the Multi-LLM Chat Client (OpenAI · DeepSeek · Google Gemini · Hugging Face · GroqCloud)
 
-> **As of: 19.07.2026** — All prices and limits are subject to change. Official sources:
+> **As of: 14.09.2026** — All prices and limits are subject to change. Official sources:
 > [platform.openai.com/docs](https://platform.openai.com/docs) · [api-docs.deepseek.com](https://api-docs.deepseek.com) · [ai.google.dev](https://ai.google.dev/gemini-api/docs) ·
 > [huggingface.co/docs](https://huggingface.co/docs/inference-providers) · [console.groq.com/docs](https://console.groq.com/docs/models)
 
@@ -26,7 +26,7 @@
 | Criterion | OpenAI | DeepSeek | Google Gemini | Hugging Face | GroqCloud |
 |-----------|--------|----------|---------------|--------------|-----------|
 | **Origin** | USA | China | USA (Google) | USA (Community) | USA |
-| **Own Models** | Yes (GPT-5.6, GPT-5.5, GPT-4.x) | Yes (V4 Flash/Pro) | Yes (Gemini 2.5) | No (Router) | No (Router) |
+| **Own Models** | Yes (GPT-6 Astra, GPT-5.6, GPT-5.5, GPT-4.x) | Yes (V4.1 Flash, V4 Flash/Pro) | Yes (Gemini 2.5) | No (Router) | No (Router) |
 | **Context Window** | up to 1.05M | 1.05M | up to 1.05M | 8K–128K | 8K–131K |
 | **Multimodal** | ✅ Text, Image, Audio¹ | ❌ Text only | ✅ Text, Image, Audio, Video | ❌ Text only* | ❌ Text only |
 | **Free Tier** | Limited (gpt-4o-mini, gpt-5.6-luna)² | 5M Tokens (30 days) | Yes (permanent) | Yes (monthly credits) | Yes (permanent) |
@@ -51,18 +51,19 @@
 
 OpenAI is an American AI research company founded in San Francisco in 2015. Originally a non-profit, it transitioned to a "capped-profit" structure in 2019 and has since attracted billions in investment, primarily from Microsoft. OpenAI is widely considered the originator of the modern LLM era — GPT-3 (2020) and ChatGPT (2022) fundamentally changed the public's relationship with AI. The company's models set the de facto industry standard against which all others are benchmarked.
 
-With the GPT-5.6 family — Sol, Terra, and Luna (released 9 July 2026) — OpenAI maintains its position at the frontier of language model capabilities, two full generations ahead of the GPT-5.4 model this client's configuration was originally built around.
+With **GPT-6 Astra** (released 3/4 September 2026) — following the GPT-5.6 family of Sol, Terra, and Luna (released 9 July 2026) — OpenAI maintains its position at the frontier of language model capabilities, three full generations ahead of the GPT-5.4 model this client's configuration was originally built around.
 
 ### 2.2 Technology
 
 **GPT Architecture:**
-OpenAI's GPT series uses a transformer-based decoder architecture. The GPT-5.6 family features a 1.05 million token context window and 128,000 token maximum output across all three variants, with instruction-following and reasoning significantly improved over the GPT-5.4 generation.
+OpenAI's GPT series uses a transformer-based decoder architecture. GPT-6 Astra and the GPT-5.6 family feature a 1.05 million token context window and 128,000 token maximum output, with instruction-following, agentic reliability, and cybersecurity capability significantly improved over prior generations.
 
 **Models in the Client:**
 
 | Model | Context | Max Output | Tier | Notes |
 |-------|---------|------------|------|-------|
-| `gpt-5.6-sol` | 1,050,000 Token | 128,000 Token | Paid | Flagship model (July 2026) — alias `gpt-5.6` points here |
+| `gpt-6-astra` | 1,050,000 Token | 128,000 Token | Paid | New flagship (September 2026), knowledge cutoff 30 April 2026 |
+| `gpt-5.6-sol` | 1,050,000 Token | 128,000 Token | Paid | Previous flagship (July 2026) — alias `gpt-5.6` points here |
 | `gpt-5.6-terra` | 1,050,000 Token | 128,000 Token | Paid | Balanced performance/cost |
 | `gpt-5.6-luna` | 1,050,000 Token | 128,000 Token | Free & Paid | Cheapest/fastest GPT-5.6 tier (successor to the old "nano" class) |
 | `gpt-5.5` | 1,050,000 Token | 128,000 Token | Paid | Previous-generation flagship (April 2026) |
@@ -74,12 +75,13 @@ OpenAI's GPT series uses a transformer-based decoder architecture. The GPT-5.6 f
 **API Endpoint:**
 OpenAI uses `https://api.openai.com/v1/chat/completions` — the original endpoint that defined the OpenAI-compatible format now used by most other providers. In this client, communication is handled by `openai-api.py`. As of 19 July 2026, the client sends `max_completion_tokens` rather than `max_tokens` — the GPT-5.x family rejects the older parameter with HTTP 400, while `max_completion_tokens` is accepted by the entire lineup including GPT-4o and GPT-4.1.
 
-### 2.3 Pricing (as of 19.07.2026)
+### 2.3 Pricing (as of 14.09.2026)
 
 All prices in USD per 1 million tokens:
 
 | Model | Input | Output | Free Tier |
 |-------|-------|--------|-----------|
+| `gpt-6-astra` | $10.00/M ($1.00/M cached) | $50.00/M | ❌ |
 | `gpt-5.6-sol` | $5.00/M | $30.00/M | ❌ |
 | `gpt-5.6-terra` | $2.50/M | $15.00/M | ❌ |
 | `gpt-5.6-luna` | $1.00/M | $6.00/M | ✅ (rate-limited) |
@@ -93,7 +95,7 @@ All prices in USD per 1 million tokens:
 
 ### 2.4 Strengths
 
-- **Quality Ceiling:** GPT-5.6 Sol represents the current frontier of language model capability
+- **Quality Ceiling:** GPT-6 Astra represents the current frontier of language model capability, with GPT-5.6 Sol as a still-strong, less expensive alternative
 - **Ecosystem:** The original OpenAI API format — the most widely documented and supported API in the industry
 - **Reliability:** Enterprise-grade uptime, well-established SLA, global infrastructure
 - **Multimodal (all current models):** Image input support alongside text across the entire GPT-4o/4.1/5.x lineup
@@ -103,7 +105,7 @@ All prices in USD per 1 million tokens:
 
 ### 2.5 Weaknesses
 
-- **Price:** The most expensive provider in this client — GPT-5.6 Sol costs roughly 36× more per input token than DeepSeek V4 Flash (cache miss)
+- **Price:** The most expensive provider in this client — GPT-6 Astra costs roughly 71× more per input token than DeepSeek V4/V4.1 Flash (cache miss), and GPT-5.6 Sol still costs roughly 36× more
 - **Free Tier:** Limited to `gpt-4o-mini` and `gpt-5.6-luna` with rate restrictions, not a genuine no-cost quota
 - **No Permanent Free Tier:** Free usage is rate-limited, not volume-limited like Google
 - **Approaching Retirement:** `gpt-4o` and `gpt-4o-mini` are scheduled for API-wide shutdown on 23 October 2026
@@ -120,7 +122,9 @@ Users who need **maximum quality and reliability** and for whom cost is secondar
 
 DeepSeek is a Chinese AI company founded in late 2023, belonging to Hangzhou DeepSeek Artificial Intelligence Co. The company gained worldwide attention in January 2025 when it released DeepSeek V3 and R1 — models that reached GPT-4-level performance with significantly less training effort. This sparked a broad discussion about the efficiency of AI training and caused a short-term drop in Nvidia's stock price.
 
-On 24 April 2026, DeepSeek released **DeepSeek V4** — the generation this client has used since 11 May 2026, replacing the earlier V3.2/R1-based `deepseek-chat`/`deepseek-reasoner` models. Legacy names are scheduled to stop working entirely on **24 July 2026**.
+On 24 April 2026, DeepSeek released **DeepSeek V4** — the generation this client has used since 11 May 2026, replacing the earlier V3.2/R1-based `deepseek-chat`/`deepseek-reasoner` models. Legacy names stopped working entirely on 24 July 2026.
+
+On 10 September 2026, DeepSeek released **DeepSeek V4.1 Flash** (`deepseek-flash`) — the first model built on DeepSeek's new Causal Encoder-Decoder (CED) architecture, with native (not bolted-on) multimodal image understanding. DeepSeek reports it exceeds V4 Pro on performance, speed, and cost. As of 14 September 2026, DeepSeek routes the legacy model names `deepseek-v4-flash`, `deepseek-v4-flash-vision-exp`, and `deepseek-v4-pro` server-side to V4.1 Flash; DeepSeek describes this routing as temporary, pending a future V4.1 Pro release.
 
 ### 3.2 Technology
 
@@ -131,21 +135,26 @@ DeepSeek V4 uses an expanded **Mixture-of-Experts (MoE)** architecture combined 
 
 | Model | Parameters | Active | Context | Max Output | Capabilities |
 |-------|-----------|--------|---------|-----------|--------------|
-| `deepseek-v4-flash` | 284B total | 13B | 1,048,576 Token | 8,192 Token | Text only, Thinking + Non-Thinking |
-| `deepseek-v4-pro` | 1.6T total | 49B | 1,048,576 Token | 32,768 Token | Text only, Thinking + Non-Thinking |
+| `deepseek-flash` | 552B total (new CED architecture) | 8B in / 16B out | 1,048,576 Token | 384,000 Token | Text + native image understanding, Thinking + Non-Thinking |
+| `deepseek-v4-flash` | 284B total | 13B | 1,048,576 Token | 384,000 Token | Text only, Thinking + Non-Thinking |
+| `deepseek-v4-pro` | 1.6T total | 49B | 1,048,576 Token | 384,000 Token | Text only, Thinking + Non-Thinking |
+
+**Correction (14.09.2026):** Earlier versions of this document listed 8,192 / 32,768 token maximum output for these models — this was incorrect. All DeepSeek V4/V4.1 models in this client support up to 384,000 output tokens, matching `MODEL_CONFIG` in `index.html`.
 
 **DeepThink (V4 Thinking Mode):**
-Both V4 models support a Thinking mode with three effort levels (non-think, think-high, think-max), accessible via API parameters. In this client, Thinking mode is activated via the DeepThink button and affects the system prompt; the underlying model (`deepseek-v4-flash` by default, or `deepseek-v4-pro` if selected in the model dropdown) is unaffected by the toggle itself.
+All V4/V4.1 models support a Thinking mode with three effort levels (non-think, think-high, think-max), accessible via API parameters. In this client, Thinking mode is activated via the DeepThink button and affects the system prompt; the underlying model (`deepseek-v4-flash` by default, or `deepseek-v4-pro`/`deepseek-flash` if selected in the model dropdown) is unaffected by the toggle itself.
 
-### 3.3 Pricing (as of 19.07.2026)
+### 3.3 Pricing (as of 14.09.2026)
 
-All prices in USD per 1 million tokens:
+All prices in USD per 1 million tokens (off-peak rates; DeepSeek doubles most rates during weekday peak hours):
 
-| Price Type | deepseek-v4-flash | deepseek-v4-pro |
-|------------|--------------------|--------------------|
-| **Cache Hit (Input)** | $0.0028 | $0.003625 |
-| **Cache Miss (Input)** | $0.14 | $0.435 |
-| **Output** | $0.28 | $0.87 |
+| Price Type | deepseek-flash | deepseek-v4-flash | deepseek-v4-pro |
+|------------|--------------------|--------------------|--------------------|
+| **Cache Hit (Input)** | $0.003 | $0.0028 | $0.003625 |
+| **Cache Miss (Input)** | $0.15 | $0.14 | $0.435 |
+| **Output** | $0.60 | $0.28 | $0.87 |
+
+**Note:** `deepseek-v4-flash` and `deepseek-v4-pro` requests are currently routed server-side to the `deepseek-flash` model and billed at `deepseek-flash` rates (see Section 3.1) — the older per-model prices above reflect DeepSeek's list pricing for the underlying model names, not necessarily what is actually billed today.
 
 **Context Caching:** Requests that share the same prefix (e.g. system prompt) are automatically cached. Cache hits cost 98% less than cache misses.
 
@@ -153,22 +162,23 @@ All prices in USD per 1 million tokens:
 
 ### 3.4 Strengths
 
-- **Price-Performance:** Unmatched value — V4 Flash is roughly 35–100× cheaper than GPT-5.5/5.6 at equivalent context lengths
+- **Price-Performance:** Unmatched value — DeepSeek Flash models are roughly 35–100× cheaper than GPT-5.5/5.6/GPT-6 Astra at equivalent context lengths
+- **Native Multimodality (deepseek-flash only):** DeepSeek's first model with true native image understanding, trained jointly with text from the start rather than added afterward
 - **Reasoning Capability (Thinking Mode):** V4 Pro undercuts Claude Sonnet 4.6 on price while remaining competitive on reasoning quality
 - **OpenAI Compatibility:** Drop-in replacement for OpenAI-based code
 - **Context Caching:** Automatic, no configuration needed
-- **1M Context as Standard:** Unlike the V3 generation, both V4 models ship with a 1M-token window by default
+- **1M Context as Standard:** All V4/V4.1 models ship with a 1M-token window by default
 
 ### 3.5 Weaknesses
 
-- **Text Only:** No image processing, no audio, no video
+- **Text Only (deepseek-v4-flash, deepseek-v4-pro):** No image processing, no audio, no video — only `deepseek-flash` supports image input
 - **Privacy:** Servers in China; data processed under Chinese law (see Section 8)
 - **No Permanent Free Tier:** The 5M free tokens expire after 30 days
-- **Self-Reporting Unreliable:** V4 models may misreport their own context window or version when asked directly — verify the actual deployed model via `curl https://api.deepseek.com/v1/models` instead
+- **Self-Reporting Unreliable:** DeepSeek models may misreport their own context window or version when asked directly — verify the actual deployed model via `curl https://api.deepseek.com/v1/models` instead
 
 ### 3.6 Ideal For
 
-Users who want to process **high request volumes** at **minimal cost** and whose data does not require a high level of privacy protection. Particularly strong for programming tasks, text analysis, translations, and complex reasoning (Thinking mode with `deepseek-v4-pro`).
+Users who want to process **high request volumes** at **minimal cost** and whose data does not require a high level of privacy protection. Particularly strong for programming tasks, text analysis, translations, and complex reasoning (Thinking mode with `deepseek-v4-pro`). Choose `deepseek-flash` if image input is needed alongside DeepSeek's price advantage.
 
 ---
 
@@ -193,7 +203,7 @@ Gemini is currently the only provider in this client that offers true **multimod
 
 **Upcoming retirement:** `gemini-2.5-flash` itself is scheduled for shutdown on **16 October 2026** (successor: `gemini-3.5-flash`, not yet integrated into this client).
 
-### 4.3 Pricing (as of 19.07.2026)
+### 4.3 Pricing (as of 19.07.2026, not re-verified in the 14.09.2026 update)
 
 | Model | Input | Output | Free Tier |
 |-------|-------|--------|-----------|
@@ -311,9 +321,9 @@ Users who prioritize **maximum speed** — for interactive applications, live ch
 
 | Use Case | Recommendation | Reason |
 |----------|----------------|--------|
-| **Analyze images / audio / video** | Google Gemini | Broadest multimodality; OpenAI (gpt-4o/4.1/5.x) also supports images |
+| **Analyze images / audio / video** | Google Gemini | Broadest multimodality; OpenAI (gpt-4o/4.1/5.x/gpt-6-astra) and DeepSeek (`deepseek-flash` only) also support images |
 | **Send microphone recordings** | Google Gemini or OpenAI (gpt-4o / gpt-4.1) | Built-in audio recording button — visible only for audio-capable models |
-| **Highest quality responses** | OpenAI GPT-5.6 Sol | Current frontier model |
+| **Highest quality responses** | OpenAI GPT-6 Astra | Current frontier model (GPT-5.6 Sol as cheaper alternative) |
 | **Complex math / logic** | DeepSeek V4 Pro (Thinking mode) | Best price-performance ratio for reasoning |
 | **Very long documents** | DeepSeek V4, Google Gemini, or GPT-5.x | All now offer ~1M token context |
 | **Maximum speed** | GroqCloud | LPU-accelerated inference — unmatched latency |
@@ -331,10 +341,10 @@ Users who prioritize **maximum speed** — for interactive applications, live ch
 → **GroqCloud** (`llama-3.1-8b-instant`) — fastest inference, free, ready immediately.
 
 **I want the absolute best answers:**
-→ **OpenAI** (`gpt-5.6-sol`) — current quality frontier. Cost-conscious alternative: **DeepSeek** (`deepseek-v4-pro`, Thinking mode).
+→ **OpenAI** (`gpt-6-astra`) — current quality frontier (`gpt-5.6-sol` as a cheaper alternative). Cost-conscious alternative outside OpenAI: **DeepSeek** (`deepseek-v4-pro`, Thinking mode).
 
 **I want to pay as little as possible:**
-→ **DeepSeek** (`deepseek-v4-flash`) — with context caching, the cheapest frontier-adjacent AI available.
+→ **DeepSeek** (`deepseek-v4-flash` or `deepseek-flash`) — with context caching, the cheapest frontier-adjacent AI available.
 
 **I don't want to use proprietary models:**
 → **Hugging Face** or **GroqCloud** — both based exclusively on open-source weights.
@@ -380,9 +390,9 @@ Users who prioritize **maximum speed** — for interactive applications, live ch
 
 All five providers are fully-featured, professional LLM services. There is no clear "winner" — each has its specific sweet spot:
 
-**OpenAI** is the choice for maximum quality and reliability. GPT-5.6 Sol represents the current frontier, and `gpt-5.6-luna` offers an excellent cost-quality ratio for everyday tasks at a fraction of the flagship price. The mature ecosystem and native API format make it the industry reference. `gpt-4o`, `gpt-4.1`, and the entire GPT-5.x family support image input, and `gpt-4o`/`gpt-4.1` additionally support direct audio input — this client exposes these capabilities via image upload/paste and a dedicated microphone recording button respectively.
+**OpenAI** is the choice for maximum quality and reliability. GPT-6 Astra represents the new frontier since September 2026, and GPT-5.6 Sol remains a strong, less expensive alternative; `gpt-5.6-luna` offers an excellent cost-quality ratio for everyday tasks at a fraction of the flagship price. The mature ecosystem and native API format make it the industry reference. `gpt-4o`, `gpt-4.1`, `gpt-6-astra`, and the entire GPT-5.x family support image input, and `gpt-4o`/`gpt-4.1` additionally support direct audio input — this client exposes these capabilities via image upload/paste and a dedicated microphone recording button respectively.
 
-**DeepSeek** is the choice for maximum cost efficiency and strong reasoning capabilities, now on the V4 generation with a 1M-token context window as standard. Those who produce a lot pay the least here. The privacy topic (China) is real and must be evaluated individually. Note the 24 July 2026 deadline: legacy `deepseek-chat`/`deepseek-reasoner` names stop working entirely five days after this document's publication date.
+**DeepSeek** is the choice for maximum cost efficiency and strong reasoning capabilities. Since 10 September 2026, `deepseek-flash` (V4.1 Flash) adds native image understanding at DeepSeek's usual price advantage — the first DeepSeek model in this client able to process images. Those who produce a lot pay the least here. The privacy topic (China) is real and must be evaluated individually. The legacy `deepseek-chat`/`deepseek-reasoner` names stopped working entirely on 24 July 2026, as scheduled.
 
 **Google Gemini** is the choice for multimodal tasks (image, audio, video), long contexts, and the best permanent free tier. Both Gemini models in this client support direct microphone recordings and, as of 19 July 2026, genuine image analysis — spoken input and uploaded images are processed natively by the model. Google's infrastructure is reliable and configurable for GDPR compliance, though the roster has shrunk — two previously available models have been retired in the past two months.
 
@@ -391,8 +401,11 @@ All five providers are fully-featured, professional LLM services. There is no cl
 **GroqCloud** is the choice for maximum speed. Those who build interactive applications or simply dislike waiting will be impressed by the LPU-accelerated inference. SOC 2 and HIPAA compliance also make it interesting for enterprise applications — just note that `moonshotai/kimi-k2-instruct-0905` breaks from Groq's usual bargain pricing.
 
 **Practical Recommendation for New Users:**
-Start with **GroqCloud Free** (free, fast, ready immediately) or **Google Gemini Free Tier** (permanent, multimodal). If you need maximum quality, add **OpenAI** (`gpt-5.6-luna` for cost-efficiency or `gpt-5.6-sol` for the frontier). Once you hit the limits or have specific requirements, decide purposefully using this overview.
+Start with **GroqCloud Free** (free, fast, ready immediately) or **Google Gemini Free Tier** (permanent, multimodal). If you need maximum quality, add **OpenAI** (`gpt-5.6-luna` for cost-efficiency or `gpt-6-astra` for the frontier). Once you hit the limits or have specific requirements, decide purposefully using this overview.
 
 ---
 
-*Updated: 19.07.2026 | For the Multi-LLM Chat Client github.com/debian-professional/multi-llm-chat*
+*Updated: 14.09.2026 | For the Multi-LLM Chat Client github.com/debian-professional/multi-llm-chat*
+
+
+
