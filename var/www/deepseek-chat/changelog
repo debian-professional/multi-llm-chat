@@ -1944,4 +1944,56 @@
       (IP direkt / Domainname) simuliert und bestaetigt korrekt
     - Dateien: index.html
 
+    104. [14.09.2026] Feature: DeepSeek V4.1 Flash und GPT-6 Astra ergaenzt
+    - Anlass: Routineueberpruefung aller API-Provider-Einstellungen auf
+      Aktualitaet. DeepSeek V4.1 Flash (veroeffentlicht 10.09.2026) und
+      GPT-6 Astra (veroeffentlicht 03./04.09.2026) waren im Client noch
+      nicht als Modelle verfuegbar
+    - DeepSeek: neues Modell 'deepseek-flash' (offizieller API-Name fuer
+      V4.1 Flash) ergaenzt. Identische Kontext-/Output-Limits wie
+      deepseek-v4-flash (1.048.576 / 384.000 Token), zusaetzlich natives
+      Bildverstehen (Vision- und Text-Embeddings von Anfang an gemeinsam
+      trainiert - im Gegensatz zu deepseek-v4-flash-vision-exp, wo Bild-
+      Faehigkeit nachtraeglich ergaenzt wurde)
+    - OpenAI: neues Modell 'gpt-6-astra' (neues Flaggschiff) ergaenzt.
+      1.050.000 Token Input / 128.000 Token Output, Text + Bilder.
+      gpt-5.6-sol bleibt als vormaliges Flaggschiff weiterhin verfuegbar
+    - Wichtiger Hinweis, in deepseek-api.py dokumentiert: DeepSeek leitet
+      seit 10.09.2026 die Modellnamen deepseek-v4-flash und
+      deepseek-v4-flash-vision-exp serverseitig temporaer auf V4.1 Flash
+      um; seit 14.09.2026 (12:00 Uhr Pekinger Zeit) gilt dasselbe auch fuer
+      deepseek-v4-pro. Diese alten Namen funktionieren also weiterhin,
+      liefern aber technisch bereits V4.1-Flash-Antworten. Da DeepSeek die
+      Umleitung ausdruecklich als "temporaer" bezeichnet, sollte
+      mittelfristig auf deepseek-flash umgestellt werden
+    - Fix index.html:
+        - MODEL_CAPABILITIES, MODEL_CONFIG: deepseek-flash und gpt-6-astra
+          ergaenzt
+        - DEEPSEEK_MODELS: deepseek-flash ergaenzt
+        - OPENAI_MODELS_PAID: gpt-6-astra ergaenzt (an erster Stelle als
+          neues Flaggschiff)
+        - COMPRESSOR_MODELS: deepseek-flash und gpt-6-astra auch fuer die
+          Kontext-Komprimierung waehlbar gemacht
+    - Fix deepseek-api.py, openai-api.py: Header-Dokumentation um die
+      neuen Modelle (Specs, Preise, Quellen) erweitert, jeweiliges
+      Aktualisierungsdatum nachgezogen
+    - Bewusst NICHT geaendert: Standard-Fallback-Werte (z.B.
+      settings.selectedModel || 'deepseek-v4-flash', getDefaultSettings())
+      bleiben auf den bisherigen Modellnamen - diese funktionieren dank
+      der oben beschriebenen Umleitung weiterhin korrekt, eine Aenderung
+      an allen ca. 15 Fallback-Stellen war fuer den gemeldeten Bedarf nicht
+      erforderlich. Ebenfalls unveraendert: Backend-Bilduebertragung in
+      deepseek-api.py (bereits modellagnostisch, kein Fix noetig) sowie
+      die beschreibenden Modus-Hinweistexte in language.xml
+      ("(deepseek-v4-flash)" etc., weiterhin technisch zutreffend)
+    - Nicht in dieser Runde aktualisiert (separat zu klaeren): overview-
+      LLM.md und die drei Readme-Dateien enthalten weiterhin Aussagen wie
+      "GPT-5.6 Sol represents the current frontier" sowie Preis-/
+      Empfehlungsvergleiche, die durch die beiden neuen Modelle ueberholt
+      sind
+    - Verifiziert: Python-Syntax-Check (deepseek-api.py, openai-api.py) und
+      JS-Syntax-Check (index.html) erfolgreich
+    - Dateien: index.html, deepseek-api.py, openai-api.py
+
     ============================================================================
+
