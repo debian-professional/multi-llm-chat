@@ -1502,6 +1502,16 @@
             // separates Modell, NICHT einfach eine Faehigkeit von Flash/Pro.
             // Siehe deepseek-api.py Header fuer Details zur Bild-Uebertragung.
             'deepseek-v4-flash-vision-exp': { images: true, text: true },
+            // Update (14.09.2026): DeepSeek V4.1 Flash (veroeffentlicht
+            // 10.09.2026), offizieller neuer Modellname 'deepseek-flash'.
+            // Natives multimodales Verstehen (Bild+Text von Beginn an
+            // gemeinsam trainiert, nicht nachtraeglich wie bei
+            // deepseek-v4-flash-vision-exp). DeepSeek leitet die alten
+            // Namen deepseek-v4-flash/-vision-exp sowie seit 14.09.2026
+            // auch deepseek-v4-pro serverseitig temporaer auf V4.1 Flash
+            // um - diese Aliase bleiben also vorerst funktional, gelten
+            // aber als abgeloest. Quelle: DeepSeek API Change Log.
+            'deepseek-flash': { images: true, text: true },
             // Google Gemini: alle aktuell angebotenen Modelle sind multimodal (siehe google-api.py Header)
             'gemini-2.5-flash':  { images: true,  text: true },
             'gemini-2.5-pro':    { images: true,  text: true },
@@ -1514,6 +1524,11 @@
             'gpt-5.6-sol':          { images: true,  text: true },
             'gpt-5.6-terra':        { images: true,  text: true },
             'gpt-5.6-luna':         { images: true,  text: true },
+            // Update (14.09.2026): GPT-6 Astra - neues Flaggschiff-Modell,
+            // veroeffentlicht 03./04.09.2026 (API-ID 'gpt-6-astra').
+            // Text- und Bild-Input. Quelle: OpenAI, siehe openai-api.py
+            // Header fuer Details.
+            'gpt-6-astra':          { images: true,  text: true },
             // GroqCloud: aktuell nur Text (siehe groq-api.py Header)
             'llama-3.3-70b-versatile':                    { images: false, text: true },
             'llama-3.1-8b-instant':                       { images: false, text: true },
@@ -1564,6 +1579,15 @@
             // Bild-Faehigkeit als Erweiterung). Quelle: DeepSeek API Docs /
             // OpenRouter Modellseite, Stand 29.08.2026.
             'deepseek-v4-flash-vision-exp': {
+                maxContextTokens:  1048576,
+                maxOutputTokens:   384000,
+                maxContextMessages: 50
+            },
+            // Update (14.09.2026): DeepSeek V4.1 Flash - identische
+            // Kontext-/Output-Limits wie deepseek-v4-flash, zusaetzlich
+            // native Bildfaehigkeit (siehe MODEL_CAPABILITIES). Quelle:
+            // DeepSeek API Docs / OpenRouter Modellseite, Stand 14.09.2026.
+            'deepseek-flash': {
                 maxContextTokens:  1048576,
                 maxOutputTokens:   384000,
                 maxContextMessages: 50
@@ -1668,11 +1692,20 @@
                 maxContextTokens:  1048576,
                 maxOutputTokens:   128000,
                 maxContextMessages: 100
+            },
+            // Update (14.09.2026): GPT-6 Astra - neues Flaggschiff,
+            // veroeffentlicht 03./04.09.2026. Kontext 1.050.000 Token
+            // (analog zu den gpt-5.6-Modellen als 1048576 gefuehrt),
+            // 128.000 Token Output. Quelle: OpenAI, Stand 14.09.2026.
+            'gpt-6-astra': {
+                maxContextTokens:  1048576,
+                maxOutputTokens:   128000,
+                maxContextMessages: 100
             }
         };
-        const DEEPSEEK_MODELS      = ['deepseek-v4-flash', 'deepseek-v4-pro', 'deepseek-v4-flash-vision-exp'];
+        const DEEPSEEK_MODELS      = ['deepseek-v4-flash', 'deepseek-v4-pro', 'deepseek-v4-flash-vision-exp', 'deepseek-flash'];
         const OPENAI_MODELS_FREE   = ['gpt-4o-mini', 'gpt-5.6-luna'];
-        const OPENAI_MODELS_PAID   = ['gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-5.4', 'gpt-4o', 'gpt-4.1', 'gpt-4o-mini'];
+        const OPENAI_MODELS_PAID   = ['gpt-6-astra', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-5.4', 'gpt-4o', 'gpt-4.1', 'gpt-4o-mini'];
         const GOOGLE_MODELS_FREE   = ['gemini-2.5-flash'];
         const GOOGLE_MODELS_PAID   = ['gemini-2.5-flash', 'gemini-2.5-pro'];
         const HF_MODELS_FREE       = ['Qwen/Qwen2.5-72B-Instruct', 'mistralai/Mistral-7B-Instruct-v0.3', 'microsoft/Phi-3.5-mini-instruct'];
@@ -1686,8 +1719,8 @@
         ];
         // Modelle je Kompressor-Anbieter (nur bezahlte Provider)
         const COMPRESSOR_MODELS = {
-            deepseek: ['deepseek-v4-flash', 'deepseek-v4-pro'],
-            openai:   ['gpt-4o-mini', 'gpt-5.6-luna', 'gpt-4o', 'gpt-4.1'],
+            deepseek: ['deepseek-v4-flash', 'deepseek-v4-pro', 'deepseek-flash'],
+            openai:   ['gpt-4o-mini', 'gpt-5.6-luna', 'gpt-4o', 'gpt-4.1', 'gpt-6-astra'],
             google:   ['gemini-2.5-flash', 'gemini-2.5-pro']
         };
         // =====================================================================
@@ -4631,3 +4664,7 @@
 
 
 
+
+
+
+############ FILE: var/www/deepseek-chat/language.xml ############

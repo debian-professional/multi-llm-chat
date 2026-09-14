@@ -4,7 +4,7 @@
 # =============================================================================
 # OPENAI API PROXY
 # Erstellt: 10.03.2026
-# Aktualisiert: 19.07.2026 (Bild-Uebertragung ergaenzt; Modelle auf GPT-5.5/5.6 aktualisiert)
+# Aktualisiert: 14.09.2026 (GPT-6 Astra ergaenzt)
 # =============================================================================
 #
 # Unterstuetzte Modelle:
@@ -27,11 +27,27 @@
 #
 #   --- PAID PLAN ---
 #
+#   gpt-6-astra  [Paid] [NEU seit 14.09.2026]
+#     Version      : GPT-6 Astra (Veroeffentlicht 03./04.09.2026, ChatGPT-GA
+#                    08.09.2026)
+#     Kontext      : 1.050.000 Token Input / 128.000 Token Output
+#     Faehigkeiten : Text, Bilder, Computer Use, Function Calling
+#     Preis        : $10 / Mio. Input-Token, $50 / Mio. Output-Token
+#                    ($1 / Mio. bei Cached Input) — deutlich teurer als
+#                    GPT-5.6 Sol (ca. 2,5x)
+#     Wissensstand : 30.04.2026
+#     Hinweis      : NEUES Flaggschiff-Modell, loest gpt-5.6-sol als
+#                    aktuellstes/leistungsfaehigstes Modell ab. gpt-5.6-sol
+#                    bleibt weiterhin verfuegbar (guenstigere Alternative)
+#     Quelle       : OpenAI-Ankuendigung / Yotta Labs, Stand 14.09.2026
+#
 #   gpt-5.6-sol  [Paid]
 #     Version      : GPT-5.6 Sol (Veroeffentlicht 09.07.2026)
 #     Kontext      : 1.050.000 Token Input / 128.000 Token Output
 #     Faehigkeiten : Text, Bilder, Computer Use, Function Calling, Tool Search
-#     Hinweis      : Aktuelles Flaggschiff-Modell (Alias 'gpt-5.6' zeigt auf Sol)
+#     Hinweis      : Vormaliges Flaggschiff-Modell (Alias 'gpt-5.6' zeigt auf
+#                    Sol), seit 14.09.2026 durch gpt-6-astra als aktuellstes
+#                    Modell abgeloest, aber weiterhin unterstuetzt
 #
 #   gpt-5.6-terra  [Paid]
 #     Version      : GPT-5.6 Terra (Veroeffentlicht 09.07.2026)
@@ -72,7 +88,7 @@
 #          offizieller kostenloser API-Tier (Stand 19.07.2026) — die "Free"-
 #          Einstufung hier bezeichnet lediglich die guenstigsten Modelle.
 #
-# Quelle: https://platform.openai.com/docs/models (Stand 19.07.2026)
+# Quelle: https://platform.openai.com/docs/models (Stand 14.09.2026)
 # =============================================================================
 
 import json
@@ -356,3 +372,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
+############ FILE: var/www/deepseek-chat/cgi-bin/save-session.py ############

@@ -4,25 +4,36 @@
 
 # =============================================================================
 # DEEPSEEK API PROXY
-# Importiert / aktualisiert: 29.08.2026 (Bild-Uebertragung ergaenzt fuer
-# deepseek-v4-flash-vision-exp)
+# Importiert / aktualisiert: 14.09.2026 (DeepSeek V4.1 Flash ergaenzt)
 # =============================================================================
 #
 # Unterstuetzte Modelle:
 #
-#   deepseek-v4-flash  (DeepSeek V4 Flash)
+#   deepseek-flash  (DeepSeek V4.1 Flash) [NEU seit 14.09.2026]
+#     Version      : V4.1 Flash GA, veroeffentlicht 10.09.2026
+#     Kontext      : 1.048.576 Token Input / 384.000 Token Output
+#     Faehigkeiten : Text + natives Bildverstehen (Vision- und Text-
+#                    Embeddings von Anfang an gemeinsam trainiert, nicht
+#                    nachtraeglich wie bei deepseek-v4-flash-vision-exp).
+#                    Neue Causal-Encoder-Decoder-Architektur.
+#     Hinweis      : Aktuelles empfohlenes Flash-Modell. Ersetzt fachlich
+#                    sowohl deepseek-v4-flash als auch
+#                    deepseek-v4-flash-vision-exp
+#     Quelle       : DeepSeek API Change Log / OpenRouter, Stand 14.09.2026
+#
+#   deepseek-v4-flash  (DeepSeek V4 Flash) [ALIAS, siehe Hinweis unten]
 #     Version      : V4 GA (0731, Stand 31.07.2026)
 #     Kontext      : 1.048.576 Token Input / 384.000 Token Output
 #     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
 #                    Thinking- und Non-Thinking-Mode verfuegbar
 #
-#   deepseek-v4-pro  (DeepSeek V4 Pro)
+#   deepseek-v4-pro  (DeepSeek V4 Pro) [ALIAS, siehe Hinweis unten]
 #     Version      : V4 GA (0813, Stand 13.08.2026)
 #     Kontext      : 1.048.576 Token Input / 384.000 Token Output
 #     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
 #                    Thinking- und Non-Thinking-Mode verfuegbar
 #
-#   deepseek-v4-flash-vision-exp  (DeepSeek V4 Flash Vision, experimentell)
+#   deepseek-v4-flash-vision-exp  (DeepSeek V4 Flash Vision, experimentell) [ALIAS, siehe Hinweis unten]
 #     Version      : Experimentell, veroeffentlicht 21.08.2026
 #     Kontext      : 1.048.576 Token Input / 384.000 Token Output
 #     Faehigkeiten : Text + Bild (Vision). Kein Audio, kein Video.
@@ -38,6 +49,18 @@
 #                    DeepSeek-Doku moeglich, aber vom Frontend aktuell nicht
 #                    vorgesehen). Thinking-Mode ebenfalls verfuegbar.
 #     Quelle       : https://api-docs.deepseek.com/guides/vision (Stand 29.08.2026)
+#
+# WICHTIGER HINWEIS (14.09.2026): Seit der Veroeffentlichung von V4.1 Flash
+# am 10.09.2026 leitet DeepSeek serverseitig die Modellnamen deepseek-v4-flash
+# und deepseek-v4-flash-vision-exp temporaer auf V4.1 Flash um. Seit heute,
+# 14.09.2026 (12:00 Uhr Pekinger Zeit), gilt dasselbe auch fuer
+# deepseek-v4-pro. Diese drei alten Namen funktionieren also weiterhin,
+# liefern aber technisch bereits V4.1-Flash-Antworten. Der neue, offizielle
+# Modellname ist deepseek-flash. Da DeepSeek diese Umleitung ausdruecklich
+# als "temporaer" bezeichnet (kein festes Enddatum bekannt), sollte
+# mittelfristig auf deepseek-flash als primaeres Modell umgestellt werden;
+# die alten Namen bleiben hier vorerst als Optionen erhalten, um Sessions
+# mit gespeicherter alter Modellauswahl nicht zu brechen.
 #
 # Hinweis: deepseek-chat und deepseek-reasoner werden ab 24.07.2026
 #          abgeschaltet (routen aktuell auf deepseek-v4-flash).
@@ -312,3 +335,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
+############ FILE: var/www/deepseek-chat/cgi-bin/deepseek-models.py ############
