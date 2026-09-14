@@ -3,6 +3,12 @@
 <head>
     <title>Privat-Chat</title>
     <meta charset="UTF-8">
+    <!-- Responsive-Fix (14.09.2026): Ohne diesen Tag rendern mobile Browser
+         (Android/iOS) die Seite auf einer virtuellen Desktop-Breite (~980px)
+         und zoomen verkleinert rein, statt die tatsaechliche Geraetebreite
+         zu nutzen. Das war die Hauptursache fuer die winzige, nur per
+         Pinch-Zoom bedienbare Darstellung auf Smartphone/Tablet. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     
     <!-- 
@@ -947,6 +953,52 @@
         /* === ZEILENUMBRUCH-FIX: Alle Nachrichteninhalte sollen Zeilenumbrüche erhalten === */
         .message-container * {
             white-space: pre-wrap !important;
+        }
+
+        /* =====================================================================
+           RESPONSIVE DESIGN (14.09.2026)
+           Ergaenzt fuer die Nutzung auf Smartphone (Android, kleiner
+           Bildschirm), Tablet und Desktop ueber WireGuard. Die bisherige
+           Grundstruktur war bereits weitgehend fluide (Flexbox, 100%-Breiten,
+           word-wrap) - es fehlte primaer der Viewport-Meta-Tag im <head>
+           (siehe dort) sowie diese Feinschliff-Anpassungen fuer sehr
+           schmale Bildschirme und Touch-Bedienung.
+           ===================================================================== */
+        @media (max-width: 600px) {
+            /* Weniger Rand auf kleinen Bildschirmen - mehr nutzbare Breite */
+            body {
+                padding: 10px;
+            }
+            .server-title-section h1 {
+                font-size: 20px;
+            }
+            /* Touch-Zielgroesse: 36px Hoehe ist knapp unter der empfohlenen
+               Mindestgroesse (44px) fuer komfortable Fingerbedienung */
+            .pill-button {
+                min-height: 44px;
+                padding: 8px 14px;
+            }
+            /* Settings-Panel etwas naeher an den Bildschirmrand, damit auf
+               sehr schmalen Geraeten (z.B. 320px breite Handys) mehr
+               nutzbare Breite fuer die Formularelemente bleibt */
+            #settingsPanel {
+                width: 95%;
+                padding: 18px;
+            }
+        }
+
+        /* Sehr schmale Geraete (z.B. aeltere/kleinere Android-Handys im Hochformat) */
+        @media (max-width: 360px) {
+            body {
+                padding: 8px;
+            }
+            .server-title-section h1 {
+                font-size: 18px;
+            }
+            .pill-button {
+                font-size: 13px;
+                padding: 8px 10px;
+            }
         }
     </style>
 </head>
