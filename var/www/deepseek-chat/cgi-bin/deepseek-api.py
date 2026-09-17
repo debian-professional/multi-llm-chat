@@ -14,11 +14,10 @@
 #     Kontext      : 1.048.576 Token Input / 384.000 Token Output
 #     Faehigkeiten : Text + natives Bildverstehen (Vision- und Text-
 #                    Embeddings von Anfang an gemeinsam trainiert, nicht
-#                    nachtraeglich wie bei deepseek-v4-flash-vision-exp).
+#                    nachtraeglich per separatem Vision-Modell ergaenzt).
 #                    Neue Causal-Encoder-Decoder-Architektur.
 #     Hinweis      : Aktuelles empfohlenes Flash-Modell. Ersetzt fachlich
-#                    sowohl deepseek-v4-flash als auch
-#                    deepseek-v4-flash-vision-exp
+#                    deepseek-v4-flash vollstaendig
 #     Quelle       : DeepSeek API Change Log / OpenRouter, Stand 14.09.2026
 #
 #   deepseek-v4-flash  (DeepSeek V4 Flash) [ALIAS, siehe Hinweis unten]
@@ -33,34 +32,25 @@
 #     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
 #                    Thinking- und Non-Thinking-Mode verfuegbar
 #
-#   deepseek-v4-flash-vision-exp  (DeepSeek V4 Flash Vision, experimentell) [ALIAS, siehe Hinweis unten]
-#     Version      : Experimentell, veroeffentlicht 21.08.2026
-#     Kontext      : 1.048.576 Token Input / 384.000 Token Output
-#     Faehigkeiten : Text + Bild (Vision). Kein Audio, kein Video.
-#                    Textleistung identisch zu deepseek-v4-flash, Bild-
-#                    Eingabe als Erweiterung. Bilder NUR in User-Messages
-#                    erlaubt (System-/Assistant-Messages mit Bild -> HTTP 400
-#                    von der DeepSeek-API). Bild wird als OpenAI-kompatibler
-#                    image_url-Content-Block mit base64-Daten-URL gesendet
-#                    (data:{mime};base64,{data}) - identisches Format zu
-#                    openai-api.py, da DeepSeeks Vision-API OpenAI-kompatibel
-#                    ist. Ein Bild wird pro Anfrage an die letzte User-
-#                    Message angehaengt (mehrere Bilder pro Anfrage sind laut
-#                    DeepSeek-Doku moeglich, aber vom Frontend aktuell nicht
-#                    vorgesehen). Thinking-Mode ebenfalls verfuegbar.
-#     Quelle       : https://api-docs.deepseek.com/guides/vision (Stand 29.08.2026)
+# Aufgeraeumt (17.09.2026): deepseek-v4-flash-vision-exp (experimentelles
+# Bild-Modell, veroeffentlicht 21.08.2026) wurde aus der Modellauswahl des
+# Frontends entfernt - vollstaendig durch deepseek-flash (V4.1 Flash, siehe
+# oben) abgeloest, das denselben Funktionsumfang nativ und stabil bietet.
+# Die Bild-Uebertragungslogik in diesem Skript (image_data/image_mime_type,
+# siehe unten) ist modellunabhaengig implementiert und funktioniert
+# unveraendert fuer deepseek-flash weiter.
 #
 # WICHTIGER HINWEIS (14.09.2026): Seit der Veroeffentlichung von V4.1 Flash
-# am 10.09.2026 leitet DeepSeek serverseitig die Modellnamen deepseek-v4-flash
-# und deepseek-v4-flash-vision-exp temporaer auf V4.1 Flash um. Seit heute,
-# 14.09.2026 (12:00 Uhr Pekinger Zeit), gilt dasselbe auch fuer
-# deepseek-v4-pro. Diese drei alten Namen funktionieren also weiterhin,
-# liefern aber technisch bereits V4.1-Flash-Antworten. Der neue, offizielle
-# Modellname ist deepseek-flash. Da DeepSeek diese Umleitung ausdruecklich
-# als "temporaer" bezeichnet (kein festes Enddatum bekannt), sollte
-# mittelfristig auf deepseek-flash als primaeres Modell umgestellt werden;
-# die alten Namen bleiben hier vorerst als Optionen erhalten, um Sessions
-# mit gespeicherter alter Modellauswahl nicht zu brechen.
+# am 10.09.2026 leitet DeepSeek serverseitig den Modellnamen deepseek-v4-flash
+# temporaer auf V4.1 Flash um. Seit heute, 14.09.2026 (12:00 Uhr Pekinger
+# Zeit), gilt dasselbe auch fuer deepseek-v4-pro. Diese beiden alten Namen
+# funktionieren also weiterhin, liefern aber technisch bereits V4.1-Flash-
+# Antworten. Der neue, offizielle Modellname ist deepseek-flash. Da DeepSeek
+# diese Umleitung ausdruecklich als "temporaer" bezeichnet (kein festes
+# Enddatum bekannt), sollte mittelfristig auf deepseek-flash als primaeres
+# Modell umgestellt werden; die alten Namen bleiben hier vorerst als
+# Optionen erhalten, um Sessions mit gespeicherter alter Modellauswahl
+# nicht zu brechen.
 #
 # Hinweis: deepseek-chat und deepseek-reasoner werden ab 24.07.2026
 #          abgeschaltet (routen aktuell auf deepseek-v4-flash).
@@ -194,8 +184,9 @@ def main():
         # damit verhaelt sich ein Client ohne dieses Feld wie "Chat"-Modus statt
         # unbemerkt mit vollem Reasoning-Aufwand zu laufen.
         thinking_enabled = bool(request_data.get('thinking_enabled', False))
-        # Fix (29.08.2026): Bild-Uebertragung fuer deepseek-v4-flash-vision-exp.
-        # image_data/image_mime_type kommen vom Frontend genau wie bei
+        # Fix (29.08.2026), aktualisiert (17.09.2026): Bild-Uebertragung,
+        # aktuell fuer deepseek-flash (siehe Header). image_data/
+        # image_mime_type kommen vom Frontend genau wie bei
         # google-api.py/openai-api.py als separate Top-Level-Felder, nicht
         # bereits eingebettet in messages[].
         image_data = request_data.get('image_data', None)
@@ -338,4 +329,3 @@ if __name__ == '__main__':
 
 
 
-############ FILE: var/www/deepseek-chat/cgi-bin/deepseek-models.py ############
