@@ -1746,11 +1746,11 @@
         // Getrennt von der tatsaechlichen API-Modell-ID: der an den jeweiligen
         // Anbieter gesendete "value" bleibt unveraendert die rohe Modell-ID,
         // nur die im Dropdown SICHTBARE Beschriftung wird hier ueberschrieben.
-        // Schrittweise Einfuehrung: DeepSeek (14.09.2026) und OpenAI
-        // (17.09.2026) sind befuellt. Google Gemini, Hugging Face und
-        // GroqCloud zeigen weiterhin ihre rohe Modell-ID, bis sie in einem
-        // spaeteren Schritt ergaenzt werden - siehe getModelDisplayLabel()
-        // Fallback.
+        // Schrittweise Einfuehrung: DeepSeek (14.09.2026), OpenAI
+        // (17.09.2026) und Google Gemini (17.09.2026) sind befuellt.
+        // Hugging Face und GroqCloud zeigen weiterhin ihre rohe Modell-ID,
+        // bis sie in einem spaeteren Schritt ergaenzt werden - siehe
+        // getModelDisplayLabel() Fallback.
         // =====================================================================
         const MODEL_DISPLAY_LABELS = {
             'deepseek-v4-flash': 'DeepSeek V4.0 Flash (31.07.2026)',
@@ -1769,6 +1769,10 @@
             'gpt-5.6-terra': 'OpenAI GPT-5.6 Terra (09.07.2026)',
             'gpt-5.6-luna':  'OpenAI GPT-5.6 Luna (09.07.2026)',
             'gpt-6-astra':   'OpenAI GPT-6 Astra (04.09.2026)',
+            // Google Gemini (17.09.2026). Beide Modelle erreichten am
+            // 17.06.2025 gemeinsam die allgemeine Verfuegbarkeit (GA).
+            'gemini-2.5-flash': 'Google Gemini 2.5 Flash (17.06.2025)',
+            'gemini-2.5-pro':   'Google Gemini 2.5 Pro (17.06.2025)',
         };
 
         /**

@@ -3,20 +3,23 @@
 
 # =============================================================================
 # GOOGLE GEMINI API PROXY
-# Importiert / aktualisiert: 19.07.2026 (Bild-Uebertragung ergaenzt: image_data/image_mime_type)
+# Importiert / aktualisiert: 19.07.2026 (Bild-Uebertragung ergaenzt: image_data/image_mime_type);
+# 17.09.2026 (Korrektur: gemini-2.5-flash/-pro zeigten faelschlich das
+# Aktualisierungsdatum dieser Datei als "Version"-Datum statt des echten
+# GA-Datums - jetzt korrigiert)
 # =============================================================================
 #
 # Unterstuetzte Modelle:
 #
 #   gemini-2.5-flash  [Free + Paid]
-#     Version      : Gemini 2.5 Flash (Stand 19.07.2026)
+#     Version      : Gemini 2.5 Flash (GA seit 17.06.2025)
 #     Kontext      : 1.048.576 Token Input / 8.192 Token Output
 #     Faehigkeiten : Text, Bilder, Audio, Video
 #     Free-Limit   : 20 Anfragen/Tag, 5 Anfragen/Minute
 #     Achtung      : Abschaltung angekuendigt fuer 16.10.2026 (Nachfolger: gemini-3.5-flash)
 #
 #   gemini-2.5-pro  [Paid]
-#     Version      : Gemini 2.5 Pro (Stand 19.07.2026)
+#     Version      : Gemini 2.5 Pro (GA seit 17.06.2025)
 #     Kontext      : 1.048.576 Token Input / 65.536 Token Output
 #     Faehigkeiten : Text, Bilder, Audio, Video
 #
@@ -327,3 +330,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
