@@ -1746,11 +1746,11 @@
         // Getrennt von der tatsaechlichen API-Modell-ID: der an den jeweiligen
         // Anbieter gesendete "value" bleibt unveraendert die rohe Modell-ID,
         // nur die im Dropdown SICHTBARE Beschriftung wird hier ueberschrieben.
-        // Schrittweise Einfuehrung: DeepSeek (14.09.2026), OpenAI
-        // (17.09.2026), Google Gemini (17.09.2026) und Hugging Face
-        // (17.09.2026) sind befuellt. GroqCloud zeigt weiterhin seine rohe
-        // Modell-ID, bis es in einem spaeteren Schritt ergaenzt wird -
-        // siehe getModelDisplayLabel() Fallback.
+        // Vollstaendig eingefuehrt (17.09.2026): DeepSeek (14.09.2026),
+        // OpenAI, Google Gemini, Hugging Face und GroqCloud sind alle
+        // befuellt. getModelDisplayLabel() faellt weiterhin auf die rohe
+        // ID zurueck, falls ein zukuenftig neu hinzugefuegtes Modell noch
+        // kein Label hat.
         // =====================================================================
         const MODEL_DISPLAY_LABELS = {
             'deepseek-v4-flash': 'DeepSeek V4.0 Flash (31.07.2026)',
@@ -1781,6 +1781,14 @@
             'microsoft/Phi-3.5-mini-instruct':         'Phi-3.5 Mini Instruct (21.08.2024)',
             'meta-llama/Meta-Llama-3.1-70B-Instruct':  'Llama 3.1 70B Instruct (23.07.2024)',
             'meta-llama/Meta-Llama-3.1-405B-Instruct': 'Llama 3.1 405B Instruct (23.07.2024)',
+            // GroqCloud (17.09.2026). Echte historische Release-Daten
+            // (nicht das Datei-Erstellungsdatum, das faelschlich als
+            // "Stand 19.07.2026" im groq-api.py-Header stand).
+            'llama-3.3-70b-versatile':                   'Llama 3.3 70B Versatile (06.12.2024)',
+            'llama-3.1-8b-instant':                      'Llama 3.1 8B Instant (23.07.2024)',
+            'meta-llama/llama-4-scout-17b-16e-instruct': 'Llama 4 Scout 17B (05.04.2025)',
+            'qwen/qwen3-32b':                            'Qwen 3 32B (28.04.2025)',
+            'moonshotai/kimi-k2-instruct-0905':          'Kimi K2 Instruct 0905 (09.09.2025)',
         };
 
         /**
