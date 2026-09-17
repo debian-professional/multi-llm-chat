@@ -4,7 +4,10 @@
 # =============================================================================
 # OPENAI API PROXY
 # Erstellt: 10.03.2026
-# Aktualisiert: 14.09.2026 (GPT-6 Astra ergaenzt)
+# Aktualisiert: 14.09.2026 (GPT-6 Astra ergaenzt); 17.09.2026 (Korrektur:
+# gpt-4o-mini/gpt-4o/gpt-4.1 zeigten faelschlich das Erstellungsdatum
+# dieser Datei als "Version"-Datum statt des echten historischen
+# Veroeffentlichungsdatums - jetzt korrigiert)
 # =============================================================================
 #
 # Unterstuetzte Modelle:
@@ -13,7 +16,7 @@
 #                   keinen echten kostenlosen API-Tier — siehe Hinweis unten) ---
 #
 #   gpt-4o-mini  [Free]
-#     Version      : GPT-4o Mini (Stand 10.03.2026)
+#     Version      : GPT-4o Mini (Veroeffentlicht 18.07.2024)
 #     Kontext      : 128.000 Token Input / 16.384 Token Output
 #     Faehigkeiten : Text, Bilder (Vision), JSON-Mode, Function Calling
 #     Achtung      : Abschaltung angekuendigt fuer 23.10.2026 (mit GPT-4o,
@@ -66,13 +69,13 @@
 #     Faehigkeiten : Text, Bilder, Computer Use, Function Calling, Tool Search
 #
 #   gpt-4o  [Paid]
-#     Version      : GPT-4o (Stand 10.03.2026)
+#     Version      : GPT-4o (Veroeffentlicht 13.05.2024)
 #     Kontext      : 128.000 Token Input / 16.384 Token Output
 #     Faehigkeiten : Text, Bilder, Audio, Function Calling
 #     Achtung      : Abschaltung angekuendigt fuer 23.10.2026
 #
 #   gpt-4.1  [Paid]
-#     Version      : GPT-4.1 (Stand 10.03.2026)
+#     Version      : GPT-4.1 (Veroeffentlicht 14.04.2025)
 #     Kontext      : 1.048.576 Token Input / 32.768 Token Output
 #     Faehigkeiten : Text, Bilder, Function Calling (optimiert fuer Coding)
 #

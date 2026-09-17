@@ -1746,15 +1746,29 @@
         // Getrennt von der tatsaechlichen API-Modell-ID: der an den jeweiligen
         // Anbieter gesendete "value" bleibt unveraendert die rohe Modell-ID,
         // nur die im Dropdown SICHTBARE Beschriftung wird hier ueberschrieben.
-        // Schrittweise Einfuehrung: bisher nur DeepSeek befuellt. Andere
-        // Anbieter (OpenAI, Google, Hugging Face, GroqCloud) zeigen weiterhin
-        // ihre rohe Modell-ID, bis sie in einem spaeteren Schritt ergaenzt
-        // werden - siehe getModelDisplayLabel() Fallback.
+        // Schrittweise Einfuehrung: DeepSeek (14.09.2026) und OpenAI
+        // (17.09.2026) sind befuellt. Google Gemini, Hugging Face und
+        // GroqCloud zeigen weiterhin ihre rohe Modell-ID, bis sie in einem
+        // spaeteren Schritt ergaenzt werden - siehe getModelDisplayLabel()
+        // Fallback.
         // =====================================================================
         const MODEL_DISPLAY_LABELS = {
             'deepseek-v4-flash': 'DeepSeek V4.0 Flash (31.07.2026)',
             'deepseek-v4-pro':   'DeepSeek V4.0 Pro (13.08.2026)',
             'deepseek-flash':    'DeepSeek V4.1 Flash (10.09.2026)',
+            // OpenAI (17.09.2026). Hinweis: gpt-4o/-mini und gpt-4.1 zeigen
+            // ihr tatsaechliches historisches Veroeffentlichungsdatum, NICHT
+            // das Erstellungsdatum von openai-api.py (10.03.2026) - dieses
+            // stand faelschlich im Datei-Header und wurde dort uebernommen.
+            'gpt-4o-mini':   'OpenAI GPT-4o Mini (18.07.2024)',
+            'gpt-4o':        'OpenAI GPT-4o (13.05.2024)',
+            'gpt-4.1':       'OpenAI GPT-4.1 (14.04.2025)',
+            'gpt-5.4':       'OpenAI GPT-5.4 (05.03.2026)',
+            'gpt-5.5':       'OpenAI GPT-5.5 (23.04.2026)',
+            'gpt-5.6-sol':   'OpenAI GPT-5.6 Sol (09.07.2026)',
+            'gpt-5.6-terra': 'OpenAI GPT-5.6 Terra (09.07.2026)',
+            'gpt-5.6-luna':  'OpenAI GPT-5.6 Luna (09.07.2026)',
+            'gpt-6-astra':   'OpenAI GPT-6 Astra (04.09.2026)',
         };
 
         /**
