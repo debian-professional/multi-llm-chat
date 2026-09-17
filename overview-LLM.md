@@ -1,7 +1,7 @@
 # LLM Provider Overview — Decision Guide
 ## For the Multi-LLM Chat Client (OpenAI · DeepSeek · Google Gemini · Hugging Face · GroqCloud)
 
-> **As of: 14.09.2026** — All prices and limits are subject to change. Official sources:
+> **As of: 14.09.2026, reviewed 17.09.2026** — All prices and limits are subject to change. The 17.09.2026 review confirmed this guide's OpenAI/DeepSeek model lineup and pricing remain accurate following the client's model-display-label cleanup that day (removal of the already-superseded `deepseek-v4-flash-vision-exp` from the client's own dropdown; no effect on the provider facts below). Official sources:
 > [platform.openai.com/docs](https://platform.openai.com/docs) · [api-docs.deepseek.com](https://api-docs.deepseek.com) · [ai.google.dev](https://ai.google.dev/gemini-api/docs) ·
 > [huggingface.co/docs](https://huggingface.co/docs/inference-providers) · [console.groq.com/docs](https://console.groq.com/docs/models)
 
@@ -405,7 +405,10 @@ Start with **GroqCloud Free** (free, fast, ready immediately) or **Google Gemini
 
 ---
 
-*Updated: 14.09.2026 | For the Multi-LLM Chat Client github.com/debian-professional/multi-llm-chat*
+*Updated: 14.09.2026, reviewed 17.09.2026 | For the Multi-LLM Chat Client github.com/debian-professional/multi-llm-chat*
+
+
+
 
 
 

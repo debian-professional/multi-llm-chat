@@ -4,9 +4,14 @@
 
 Key highlights:
 - **Multi-LLM support** – Switch between OpenAI, DeepSeek, Google Gemini, Hugging Face, and GroqCloud via a provider toggle in the LLM Settings panel. Each provider has its own model list, tier selection, and configuration options.
-- **DeepSeek V4.1 Flash** – Since 10 September 2026, `deepseek-flash` adds DeepSeek's first native (not bolted-on) image understanding, alongside the existing `deepseek-v4-flash`/`deepseek-v4-pro` (1M token context windows; legacy `deepseek-chat`/`deepseek-reasoner` names retired 24 July 2026 as scheduled).
+- **Clear model labels with release dates** – Model dropdowns show readable labels with the actual release date instead of raw API IDs (e.g. "OpenAI GPT-6 Astra (04.09.2026)" instead of `gpt-6-astra`). Covers all 23 models across all five providers. The underlying value sent to the API is unchanged; only the visible label is friendlier.
+- **DeepSeek V4.1 Flash** – Since 10 September 2026, `deepseek-flash` adds DeepSeek's first native (not bolted-on) image understanding, alongside the existing `deepseek-v4-flash`/`deepseek-v4-pro` (1M token context windows; legacy `deepseek-chat`/`deepseek-reasoner` names retired 24 July 2026 as scheduled; the interim experimental `deepseek-v4-flash-vision-exp` was removed on 17 September 2026, fully superseded by `deepseek-flash`).
 - **GPT-6 Astra ready** – OpenAI's new flagship (`gpt-6-astra`, released 3/4 September 2026) joins the existing GPT-5.6 family (Sol, Terra, Luna), GPT-5.5, GPT-4o, and GPT-4.1. Requests use `max_completion_tokens`, the parameter required by all current-generation OpenAI models.
-- **Working vision pipeline** – Image upload and clipboard paste are fully wired end-to-end for Google Gemini and OpenAI: images are base64-encoded client-side and delivered as native `inline_data` (Gemini) or `image_url` (OpenAI) content blocks. Model capability detection (`MODEL_CAPABILITIES`) is now populated per provider instead of defaulting to "no image support" for everything outside DeepSeek.
+- **Real HTTPS via Let's Encrypt** – Since 15 September 2026, the client is reachable via a publicly trusted TLS certificate (`swtor10-chat.ddnsfree.com`, issued via `acme.sh` and a DNS-01 challenge against Dynu), replacing the earlier self-signed `mkcert` certificate that required manual trust setup on every device. No public port-forwarding is involved — the domain resolves to the server's private VPN address, which stays unreachable from the internet at large.
+- **Hardened against DNS-over-TLS/HTTPS leakage** and **security-audited** – A structured multi-stage security review (26 July – 15 September 2026) closed stored-XSS, path-traversal, CORS-wildcard, and request-size gaps across the whole CGI backend, added log-line limiting, fixed a Host-header injection risk, and closed a separate DNS-over-TLS bypass in the surrounding VPN gateway. See [Security Hardening](#security-hardening-26-july--15-september-2026) below for the full account, including what was deliberately left as-is and why.
+- **Responsive design** – The interface adapts to phone and tablet screens (viewport meta tag plus targeted media queries for touch-friendly button sizing and reduced padding on narrow screens), on top of the already-fluid flexbox layout.
+- **Download Mode** – For very long AI responses, an optional toggle suppresses the live token-by-token rendering in the chat and shows only a running character count instead, then offers the existing export buttons once the response is complete — noticeably faster for multi-hundred-thousand-character answers on modest hardware.
+- **Working vision pipeline** – Image upload and clipboard paste are fully wired end-to-end for Google Gemini, OpenAI, and DeepSeek (`deepseek-flash`): images are base64-encoded client-side and delivered as native `inline_data` (Gemini) or `image_url` (OpenAI/DeepSeek, OpenAI-compatible format) content blocks. Model capability detection (`MODEL_CAPABILITIES`) is populated per provider instead of defaulting to "no image support".
 - **Multi-file upload** – Select and send multiple files simultaneously. Contents are combined and sent as context with per-file headers and separators.
 - **Audio recording via microphone** – Record audio directly in the browser and send it to the AI. Supported natively by Google Gemini (`gemini-2.5-flash`, `gemini-2.5-pro`) and OpenAI (`gpt-4o`, `gpt-4.1`). The Record Audio button appears automatically only when an audio-capable model is active.
 - **Unique context management** – Delete any individual message along with all subsequent ones. The chat remains consistent and token usage is dynamically recalculated.
@@ -51,9 +56,14 @@ Key highlights:
   - [Kompressor — Intelligent Context Compression](#kompressor--intelligent-context-compression)
   - [Quota & Limit Banners](#quota--limit-banners)
   - [Context Window Exceeded Handling](#context-window-exceeded-handling)
+  - [Download Mode](#download-mode)
+  - [Responsive Design](#responsive-design)
 - [DeepSeek V4 Migration](#deepseek-v4-migration)
 - [19 July 2026 Maintenance & Feature Update](#19-july-2026-maintenance--feature-update)
 - [28 August 2026 Fix: Explicit DeepSeek Thinking Mode Control](#28-august-2026-fix-explicit-deepseek-thinking-mode-control)
+- [Security Hardening (26 July – 15 September 2026)](#security-hardening-26-july--15-september-2026)
+- [HTTPS Migration: From Self-Signed to Let's Encrypt](#https-migration-from-self-signed-to-lets-encrypt)
+- [17 September 2026: Model Display Labels & Cleanup](#17-september-2026-model-display-labels--cleanup)
 - [The Helper Script `repo2text.sh`](#the-helper-script-repo2textsh)
 - [Security Architecture in Detail](#security-architecture-in-detail)
 - [Deployment & Usage](#deployment--usage)
@@ -356,11 +366,11 @@ At startup, `index.html` queries `/cgi-bin/deepseek-models.py`, which calls the 
 - A `MODEL_CAPABILITIES` map defines which models support which input types, populated per provider based on each backend's documented capabilities:
   ```javascript
   const MODEL_CAPABILITIES = {
-      // DeepSeek: text only, except deepseek-flash (native image understanding, added 14.09.2026)
-      'deepseek-v4-flash':            { images: false, text: true },
-      'deepseek-v4-pro':              { images: false, text: true },
-      'deepseek-v4-flash-vision-exp': { images: true,  text: true },
-      'deepseek-flash':               { images: true,  text: true },
+      // DeepSeek: text only, except deepseek-flash (native image understanding, added 14.09.2026;
+      // deepseek-v4-flash-vision-exp was removed 17.09.2026, fully superseded by deepseek-flash)
+      'deepseek-v4-flash': { images: false, text: true },
+      'deepseek-v4-pro':   { images: false, text: true },
+      'deepseek-flash':    { images: true,  text: true },
       // Google Gemini: multimodal
       'gemini-2.5-flash':  { images: true,  text: true },
       'gemini-2.5-pro':    { images: true,  text: true },
@@ -373,11 +383,13 @@ At startup, `index.html` queries `/cgi-bin/deepseek-models.py`, which calls the 
       'gpt-5.6-sol':   { images: true, text: true },
       'gpt-5.6-terra': { images: true, text: true },
       'gpt-5.6-luna':  { images: true, text: true },
-      'gpt-6-astra':   { images: true, text: true }, // NEW 14.09.2026
+      'gpt-6-astra':   { images: true, text: true },
       // GroqCloud / Hugging Face: text only (current model lineup)
       // ... (see index.html for the full list)
       'default': { images: false, text: true },
   };
+  ```
+- Since 17 September 2026, a separate `MODEL_DISPLAY_LABELS` map (with a `getModelDisplayLabel(modelId)` helper) decouples the dropdown's visible text from the API value actually sent — see [Model Display Labels & Cleanup](#17-september-2026-model-display-labels--cleanup) for the full story.
   ```
 - `currentModelSupportsImages()` checks `settings.selectedModel` (falling back to the current `modelSelect` dropdown value) against `MODEL_CAPABILITIES`. Earlier versions checked `detectedModels` instead — a DeepSeek-only array that was never populated for other providers — which meant image upload and paste were silently blocked for **every** provider and model, including genuinely vision-capable ones. This was corrected on 19 July 2026.
 - If an image is pasted via clipboard or a `.jpg`/`.png` file is uploaded, and the current model does not support images, the operation is blocked with an alert before any upload occurs.
@@ -660,6 +672,23 @@ Each of the five CGI proxy scripts (`openai-api.py`, `deepseek-api.py`, `google-
 
 This ensures all model specifications are traceable directly in the source code without consulting external documentation.
 
+### Download Mode
+
+For very long AI responses (e.g. summarizing an entire novel, several million characters), rendering the full text token-by-token in the DOM as it streams in becomes visibly slow on modest hardware. **Download Mode** is an optional toggle button next to DeepThink:
+
+- While streaming, instead of the growing full text, only a progress notice with a running character count is shown (*"Generating response... (X characters so far)"*).
+- Once streaming completes, a completion notice replaces it (*"Response complete (X characters). Use the download button below this message to save it."*) instead of the full text.
+- The full response text is unaffected internally — it is still built completely in memory and stored via `addAIResponseToContext()` exactly as before, so context continuation, session saving, and the existing per-message download button (TXT/MD/RTF/PDF) all work exactly as they did without Download Mode.
+- Download Mode is independent of Chat/DeepThink mode — the two toggles combine orthogonally.
+
+### Responsive Design
+
+The interface was originally built desktop-first. As of 14 September 2026, it also adapts cleanly to smartphone and tablet screens:
+
+- **Viewport meta tag** — the single most impactful fix: without `<meta name="viewport" content="width=device-width, initial-scale=1.0">`, mobile browsers render the page at a virtual desktop width (~980px) and zoom out, forcing pinch-to-zoom navigation. Its absence was the main cause of the interface appearing tiny on phones.
+- **Two targeted media query breakpoints** (`max-width: 600px` and `max-width: 360px`) reduce body padding, slightly shrink the header title, and raise button height to the recommended 44px minimum touch target — on top of the pre-existing fluid flexbox layout (button row already wrapped, message bubbles already used `word-wrap`, the input field was already `width: 100%`).
+- No other structural changes were needed — the existing CSS architecture (all styling lives in a single inline `<style>` block in `index.html`, no separate CSS file) was already close to mobile-friendly.
+
 ---
 
 ## DeepSeek V4 Migration
@@ -812,6 +841,94 @@ This removes the need for a separate manual `md5sum` step after every deploy to 
 
 ---
 
+## Security Hardening (26 July – 15 September 2026)
+
+A structured, staged security review of the entire application — prompted by a second LLM's independent audit of the codebase — closed a series of real vulnerabilities across the frontend and all CGI backend scripts. Each stage was implemented, deployed, and verified (MD5 checksum against the source repo, plus a live exploit-attempt test) before moving to the next.
+
+### Stage 1 — Stored XSS and Path Traversal
+
+Three stored cross-site-scripting points were found and fixed in `index.html`, all sharing the same root cause: user-controlled text rendered via `innerHTML` instead of `textContent`:
+
+- **Chat messages** — `addMessageToChat()` rendered the user's own message via `innerHTML`. A message like `<img src=x onerror=alert(1)>` executed arbitrary JavaScript for anyone viewing the chat history (AI responses were already safely rendered via `textContent`).
+- **Session list preview** — `loadSessionsList()` inserted `session.sessionId` and `session.preview` (the first user message of a saved session) directly into an `innerHTML` template.
+- **PDF upload filename** — the upload progress indicator inserted `file.name` via `innerHTML`; a maliciously named PDF (`<img src=x onerror=...>.pdf`) sent to a victim would execute on upload.
+
+All three were fixed by switching to `textContent`, or by building the static HTML skeleton via `innerHTML` and filling in only the dynamic, untrusted parts afterward via `element.textContent`.
+
+Separately, `save-session.py`, `load-session.py`, and `delete-session.py` validated only the date/time portion of the session ID, never the random suffix — a session ID such as `2026-07-26_120000_../../../etc/cron.d/evil` passed the old check and allowed arbitrary file read/write/delete on the server. Fixed with two independent layers: a strict `^\d{4}-\d{2}-\d{2}_\d{6}_[A-Za-z0-9]{6}$` regex, plus a `resolve_session_path()` helper that resolves the final path via `pathlib` and rejects it if it escapes the sessions directory — either layer alone stops the attack.
+
+### Stage 2 — CORS Wildcard and Request Size Limits
+
+Every CGI endpoint sent `Access-Control-Allow-Origin: *`, meaning any website — including one opened in another tab on the same VPN-connected device — could make cross-site requests against the API and read the responses. Replaced with a fixed allowed origin across all 16 affected scripts. Two export scripts (`export-rtf.py`, `export-txt.py`) already omitted the CORS header entirely, which is the strictest possible default and was left untouched.
+
+No endpoint enforced a request size limit, an available denial-of-service vector. Added a `MAX_REQUEST_SIZE` check (20 MB for endpoints that may carry embedded images, 64 KB for the deliberately tiny `feedback-log.py` payload) with an HTTP 413 response on violation, verified against both an oversized and a normal-sized request via a live simulated CGI call.
+
+### Stage 3 — Log Exposure and Host Header Injection
+
+`get-log.py` returned the entire log file unfiltered; limited to the last 300 lines via `collections.deque(maxlen=300)` for efficient tail-reading without loading the whole file into memory.
+
+The Apache HTTP→HTTPS redirect used the client-supplied `%{HTTP_HOST}` header unvalidated in the target URL — a forged `Host` header could redirect victims to an attacker-controlled domain. Replaced with the server's own fixed address. (This particular vhost, `deepseek-chat.conf`, later turned out to be disabled in production via `a2dissite` — the fix is correct and in place for if it's ever re-enabled, but doesn't currently execute; documented in the design manifest rather than presented as an active production fix.)
+
+### Stage 4 — Deliberately Not Implemented: Endpoint Authentication
+
+No authentication layer exists in front of `/cgi-bin/`. Given the server's actual threat model — unreachable from the public internet, accessible only via SSH or the WireGuard VPN gateway (see [Architecture](#architecture)), single operator — the added complexity of Basic Auth or a shared-secret header was judged disproportionate to the marginal security gain. This is a considered decision, not an oversight, and is recorded as such in the project's design manifest so a future audit (human or AI) does not need to re-flag it.
+
+### Stage 5 — Documentation Gap and Deferred Modularization
+
+`deepseek-chat-ssl.conf` existed on the production server but was never committed to this repository — fixed by adding it. A related architectural observation — `index.html` has grown to roughly 4,700 lines with all JavaScript in one inline `<script>` block — was raised and deliberately left as-is; splitting it into modules is a larger refactor with no functional benefit, tracked as an open, low-priority item rather than acted on.
+
+### Residual XSS Follow-Up (14 September 2026)
+
+A second pass caught spots the first round missed: the magic-byte detection error path and four `infoLines.push(...)` calls in the upload handler still inserted `file.name` via `innerHTML`, and the session-list load error handler inserted `e.message` the same way. Fixed with a new `escapeHtml(str)` helper (the standard `div.textContent → div.innerHTML` browser trick) wrapped around every remaining untrusted value. Verified live by uploading a file literally named `<img src=x onerror=alert(1)>.pdf` — both on a parse failure and on magic-byte executable detection, the name rendered as inert text.
+
+All fixes are recorded in changelog entries 91–103, with MD5 checksums for every deployed file.
+
+---
+
+## HTTPS Migration: From Self-Signed to Let's Encrypt
+
+Through 14 September 2026, the client used a self-signed certificate generated with `mkcert`. Functionally valid TLS, but every new device showed a "Not secure" warning until its browser was taught to trust the `mkcert` root CA manually — workable on a Linux workstation, painful on Android (no straightforward CA-import path for a browser without extra apps).
+
+### The Fix
+
+A real, publicly trusted certificate via **Let's Encrypt**, issued through `acme.sh` using a **DNS-01 challenge** against the DynDNS provider Dynu (`ddnsfree.com`). DNS-01 was essential here: it proves domain ownership purely via a temporary TXT record, without ever needing the server to be reachable from the public internet — the actual chat traffic stays exactly as unreachable as before.
+
+### A Naming Trap, Caught Before Deployment
+
+The obvious choice — reusing the existing `swtor10.ddnsfree.com` hostname, already registered for the WireGuard endpoint — was tested and then deliberately abandoned. That hostname is resolved by every WireGuard client *before* the VPN tunnel exists, to find the server at all; overriding its DNS answer for browser traffic once inside the tunnel would risk the client resolving the *wrong* address during a reconnect and being unable to re-establish the tunnel at all. A second, dedicated hostname — `swtor10-chat.ddnsfree.com` — was registered instead, with its public DNS A-record pointing directly at the server's private VPN address. This makes the private IP visible to anyone who looks it up publicly, which was judged acceptable: the server remains unreachable from outside the VPN/SSH path regardless of what its address is.
+
+### Result
+
+- Certificate auto-renews via the cron job `acme.sh` installs itself.
+- No CA import needed on any client device, ever again — including Android, without root.
+- The original WireGuard endpoint hostname is untouched and still resolves publicly as before.
+
+### Side Effects Found Along the Way
+
+Validating this change surfaced three unrelated bugs in the underlying VPN gateway infrastructure (tracked in the separate `debian-vpn-gateway` repository, mentioned here only because they were found while working on this project's HTTPS setup): a duplicated YAML key in the shared DNS resolver's config silently dropped two of three intended upstream DNS-over-TLS providers down to just one; a leftover test instance of `dnsmasq` was squatting on the same port the intended resolver needed, causing intermittent resolution failures; and an overly permissive firewall rule forwarded outbound DNS-over-TLS (port 853) through an unrelated VPN egress path, letting a Chromium-based browser's automatic secure-DNS probing bypass the intended resolver entirely. All three are fixed in that repository; none affect this application's own code.
+
+---
+
+## 17 September 2026: Model Display Labels & Cleanup
+
+### Removed: `deepseek-v4-flash-vision-exp`
+
+DeepSeek's original experimental vision model was removed from the model selection entirely. Since 10 September 2026, DeepSeek itself routes this model name server-side to `deepseek-flash` (V4.1 Flash) anyway — keeping it as a separate, selectable option was purely redundant. The generic, model-agnostic image-upload code path in `deepseek-api.py` needed no change; it continues to work unchanged for `deepseek-flash`.
+
+### Added: Readable Model Labels with Release Dates
+
+Model dropdowns previously showed the raw API model ID directly (e.g. `gpt-6-astra`, `Qwen/Qwen2.5-72B-Instruct`) — functional, but not obviously informative about which generation or how current a model is. A new `MODEL_DISPLAY_LABELS` map plus a `getModelDisplayLabel(modelId)` helper decouples the value actually sent to the provider's API from the text shown in the dropdown: labels read `"<Provider> <Model name> (DD.MM.YYYY)"`, deliberately without any language-specific word (an initial version used the German "Stand", which broke for English/Spanish UI users — removed in favor of a bare date, which needs no `language.xml` translation entry at all). Covers all 23 models across all five providers; any future model without an entry falls back cleanly to its raw ID.
+
+Every release date was individually verified against public sources rather than assumed — several of the dates already documented in the `*-api.py` header comments turned out to be the *file's own* edit date rather than the model's actual historical release date (most visibly for `gpt-4o`, `gpt-4o-mini`, and `gpt-4.1`, which are considerably older than the proxy script that documents them). Corrected in `openai-api.py`, `google-api.py`, `hugging-api.py`, and `groq-api.py`.
+
+### A Bug in the First Pass
+
+The initial implementation updated only the one function that rebuilds the model dropdown when switching providers — missing four separate functions that *also* rebuild it, triggered when toggling a provider's Free/Paid tier (and when restoring saved settings on page load). Since DeepSeek has no tier toggle, the gap went unnoticed there and only surfaced once OpenAI and Google were labeled. Fixed in all four functions; every subsequent provider (Hugging Face, GroqCloud) was then checked with an exhaustive search across the entire file for *every* place that ever constructs a model `<option>`, not just the first one found.
+
+All changes recorded in changelog entry 106.
+
+---
+
 ## The Helper Script `repo2text.sh`
 
 This Bash script was specifically developed to **export the entire source code of a GitHub repository as a single text file** — ideal for passing the complete project context to an AI assistant in a single upload.
@@ -898,6 +1015,7 @@ Security was a top priority throughout development. All key measures:
 
 - HTTPS enforced via `deepseek-chat-ssl.conf` with Apache mod_ssl.
 - Plain HTTP configuration (`deepseek-chat.conf`) disabled via `a2dissite`.
+- Since 15 September 2026, the TLS certificate is a real, publicly trusted Let's Encrypt certificate (auto-renewing via `acme.sh`), replacing an earlier self-signed `mkcert` certificate — see [HTTPS Migration](#https-migration-from-self-signed-to-lets-encrypt) for the full story, including why the certificate's domain is deliberately separate from the WireGuard VPN endpoint hostname.
 
 ---
 
@@ -953,16 +1071,17 @@ chmod 700 /var/www/deepseek-chat/sessions
 
 ### Configuration
 
-**Model configuration** (`MODEL_CONFIG` in `index.html`) — single point of truth for all model limits, current as of 14.09.2026:
+**Model configuration** (`MODEL_CONFIG` in `index.html`) — single point of truth for all model limits, current as of 17.09.2026:
 ```javascript
 const MODEL_CONFIG = {
     // DeepSeek V4 / V4.1 (correction 14.09.2026: maxOutputTokens for
     // deepseek-v4-flash/-pro was previously misdocumented here as
-    // 8192/32768 — the actual, correct value has always been 384000)
-    'deepseek-v4-flash':            { maxContextTokens: 1048576, maxOutputTokens: 384000, maxContextMessages: 50  },
-    'deepseek-v4-pro':              { maxContextTokens: 1048576, maxOutputTokens: 384000, maxContextMessages: 50  },
-    'deepseek-v4-flash-vision-exp': { maxContextTokens: 1048576, maxOutputTokens: 384000, maxContextMessages: 50  },
-    'deepseek-flash':               { maxContextTokens: 1048576, maxOutputTokens: 384000, maxContextMessages: 50  }, // NEW 14.09.2026 — V4.1 Flash, native image understanding
+    // 8192/32768 — the actual, correct value has always been 384000.
+    // deepseek-v4-flash-vision-exp removed 17.09.2026, superseded by
+    // deepseek-flash)
+    'deepseek-v4-flash': { maxContextTokens: 1048576, maxOutputTokens: 384000, maxContextMessages: 50 },
+    'deepseek-v4-pro':   { maxContextTokens: 1048576, maxOutputTokens: 384000, maxContextMessages: 50 },
+    'deepseek-flash':    { maxContextTokens: 1048576, maxOutputTokens: 384000, maxContextMessages: 50 }, // V4.1 Flash, native image understanding
     // Google Gemini
     'gemini-2.5-flash':     { maxContextTokens: 1048576, maxOutputTokens: 8192,   maxContextMessages: 100 },
     'gemini-2.5-pro':       { maxContextTokens: 1048576, maxOutputTokens: 65536,  maxContextMessages: 100 },
@@ -987,9 +1106,9 @@ const MODEL_CONFIG = {
     'gpt-5.6-sol':    { maxContextTokens: 1048576, maxOutputTokens: 128000, maxContextMessages: 100 },
     'gpt-5.6-terra':  { maxContextTokens: 1048576, maxOutputTokens: 128000, maxContextMessages: 100 },
     'gpt-5.6-luna':   { maxContextTokens: 1048576, maxOutputTokens: 128000, maxContextMessages: 100 },
-    'gpt-6-astra':    { maxContextTokens: 1048576, maxOutputTokens: 128000, maxContextMessages: 100 }, // NEW 14.09.2026 — new flagship
+    'gpt-6-astra':    { maxContextTokens: 1048576, maxOutputTokens: 128000, maxContextMessages: 100 }, // new flagship, added 14.09.2026
 };
-const DEEPSEEK_MODELS    = ['deepseek-v4-flash', 'deepseek-v4-pro', 'deepseek-v4-flash-vision-exp', 'deepseek-flash'];
+const DEEPSEEK_MODELS    = ['deepseek-v4-flash', 'deepseek-v4-pro', 'deepseek-flash'];
 const OPENAI_MODELS_FREE = ['gpt-4o-mini', 'gpt-5.6-luna'];
 const OPENAI_MODELS_PAID = ['gpt-6-astra', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-5.4', 'gpt-4o', 'gpt-4.1', 'gpt-4o-mini'];
 const GOOGLE_MODELS_FREE = ['gemini-2.5-flash'];
@@ -1000,6 +1119,8 @@ const GROQ_MODELS_FREE   = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', '
 const GROQ_MODELS_PAID   = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'meta-llama/llama-4-scout-17b-16e-instruct', 'qwen/qwen3-32b', 'moonshotai/kimi-k2-instruct-0905'];
 const AUDIO_CAPABLE_MODELS = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gpt-4o', 'gpt-4.1'];
 ```
+
+Since 17 September 2026, the visible label for every model in the dropdowns above is looked up separately via `MODEL_DISPLAY_LABELS` / `getModelDisplayLabel()` — see [Model Display Labels & Cleanup](#17-september-2026-model-display-labels--cleanup). The arrays above still define which raw IDs are valid and sent to each provider's API; only the on-screen text differs.
 
 **Language configuration** (`language.xml`): Add a `<language id="custom" name="..." visible="true">` block to activate the custom language slot. Set `has_address_form="true"` for languages with formal/informal distinction.
 
@@ -1038,7 +1159,7 @@ This caught out a live deployment during the 19 July 2026 session — `sudo depl
 │   ├── index.html                      Main application (~5,000 lines, all JS/CSS/HTML)
 │   ├── language.xml                    All UI texts in all languages (EN, DE, ES, Custom)
 │   ├── manifest                        Design manifest (all conventions and rules)
-│   ├── changelog                       Complete development history (104 entries)
+│   ├── changelog                       Complete development history (106 entries)
 │   ├── files-directorys                File overview / directory listing
 │   ├── cgi-bin/
 │   │   ├── openai-api.py              Streaming proxy to OpenAI Chat Completions API
@@ -1070,7 +1191,7 @@ The `MODEL_CONFIG` object in `index.html` is the **single point of truth** for a
 
 **Updating model configuration**: When a provider updates their models (new model, changed context limits, deprecated model), only the `MODEL_CONFIG` block in `index.html` needs to be updated. No other files require changes unless the model name is also used in the provider model lists (`DEEPSEEK_MODELS`, `GOOGLE_MODELS_*`, etc.), in `MODEL_CAPABILITIES`, or in `AUDIO_CAPABLE_MODELS`.
 
-Sources: [OpenAI API Docs](https://platform.openai.com/docs), [DeepSeek API Docs](https://api-docs.deepseek.com), [Google Gemini Docs](https://ai.google.dev/gemini-api/docs), [Hugging Face Inference Providers](https://huggingface.co/docs/inference-providers), [GroqCloud Docs](https://console.groq.com/docs/models). OpenAI and DeepSeek entries re-verified 14.09.2026; Google/Hugging Face/GroqCloud entries as of 19.07.2026 (not re-checked in the 14.09.2026 update).
+Sources: [OpenAI API Docs](https://platform.openai.com/docs), [DeepSeek API Docs](https://api-docs.deepseek.com), [Google Gemini Docs](https://ai.google.dev/gemini-api/docs), [Hugging Face Inference Providers](https://huggingface.co/docs/inference-providers), [GroqCloud Docs](https://console.groq.com/docs/models). OpenAI and DeepSeek pricing/context entries re-verified 14.09.2026; Google/Hugging Face/GroqCloud pricing/context entries as of 19.07.2026 (not re-checked in the 14.09.2026 update). Individual model release dates for all 23 models across all five providers were independently verified on 17.09.2026 for the model display label feature (see [Model Display Labels & Cleanup](#17-september-2026-model-display-labels--cleanup)).
 
 ---
 
@@ -1184,22 +1305,25 @@ This project demonstrates professional-level web development in a minimalist, se
 - Precise compressor summary discard: summary invalidated when context drops below the last triggered threshold after manual deletion.
 - Dynamic upload limit: 75% of the active model's context window in characters — automatically scales from 384k chars (`gpt-4o`) to ~3.1M chars (`deepseek-v4-flash`, `gemini-2.5-flash`, the GPT-5.6 family).
 - Deploy verification built into the deployment pipeline — `deploy.sh` prints MD5 checksums of every copied file, catching stale/mismatched deploys immediately rather than discovering them through unexplained runtime behavior.
-- Complete audit trail via Git, detailed 104-entry changelog, and design manifest.
+- Complete audit trail via Git, detailed 106-entry changelog, and design manifest.
 
-**DeepSeek V4.1 ready** — `deepseek-flash` (native image understanding) joins `deepseek-v4-flash`/`deepseek-v4-pro` (1M token context windows), well ahead of the (already-passed) 24 July 2026 legacy model retirement deadline.
+**DeepSeek V4.1 ready** — `deepseek-flash` (native image understanding) joins `deepseek-v4-flash`/`deepseek-v4-pro` (1M token context windows), well ahead of the (already-passed) 24 July 2026 legacy model retirement deadline. The interim experimental `deepseek-v4-flash-vision-exp` was removed 17 September 2026, fully superseded.
 
 **GPT-6 Astra ready** — OpenAI lineup current through the new Astra flagship (3/4 September 2026) and the Sol/Terra/Luna generation (9 July 2026), with `max_completion_tokens` used throughout for compatibility across the full model range.
 
+**Security-audited and publicly trusted** — a staged security review (26 July – 15 September 2026) closed stored-XSS, path-traversal, CORS, and request-size gaps across the backend; the site now serves a real Let's Encrypt certificate instead of a self-signed one, with no public port exposure required.
+
+**Readable model labels** — all 23 models across all five providers show a plain-language name and real release date instead of a raw API ID, added 17 September 2026.
+
 **For a professional developer**, this project demonstrates:
 - **Security awareness** — API key protection, executable detection, secure session storage, no path traversal.
-- **Structured discipline** — design manifest, version tags, strict UI conventions, 104-entry changelog.
+- **Structured discipline** — design manifest, version tags, strict UI conventions, 106-entry changelog.
 - **Problem-solving depth** — X11 paste behavior, umlaut corruption, PDF binary output issues, "Lost in the Middle", context overflow chaining, and a same-day root-cause chain from a blank error message to a missing OpenAI request parameter.
 - **Complete documentation** — inline code comments, dedicated manifest, per-script documentation headers, three-language README.
 
 ---
 
-*Last updated: 14.09.2026*
+*Last updated: 17.09.2026*
 
 
 
-############ FILE: Readme_ES.md ############
