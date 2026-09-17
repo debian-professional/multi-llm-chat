@@ -3,7 +3,10 @@
 
 # =============================================================================
 # GROQCLOUD API PROXY
-# Importiert / aktualisiert: 19.07.2026
+# Importiert / aktualisiert: 19.07.2026; 17.09.2026 (Korrektur: alle fuenf
+# Modelle zeigten faelschlich das Datei-Aktualisierungsdatum als "Version"-
+# Datum statt des echten historischen Veroeffentlichungsdatums - jetzt
+# korrigiert)
 # =============================================================================
 #
 # Unterstuetzte Modelle (siehe MODEL_CONFIG / GROQ_MODELS_FREE / GROQ_MODELS_PAID
@@ -12,29 +15,29 @@
 #   --- FREE PLAN ---
 #
 #   llama-3.3-70b-versatile  [Free + Paid]
-#     Version      : Llama 3.3 70B Versatile (Stand 19.07.2026)
+#     Version      : Llama 3.3 70B Versatile (Veroeffentlicht 06.12.2024)
 #     Kontext      : 128.000 Token Input / 8.192 Token Output
 #     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
 #
 #   llama-3.1-8b-instant  [Free + Paid]
-#     Version      : Llama 3.1 8B Instant (Stand 19.07.2026)
+#     Version      : Llama 3.1 8B Instant (Veroeffentlicht 23.07.2024)
 #     Kontext      : 131.072 Token Input / 8.192 Token Output
 #     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
 #
 #   meta-llama/llama-4-scout-17b-16e-instruct  [Free + Paid]
-#     Version      : Llama 4 Scout 17B (Stand 19.07.2026)
+#     Version      : Llama 4 Scout 17B (Veroeffentlicht 05.04.2025)
 #     Kontext      : 131.072 Token Input / 8.192 Token Output
 #     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
 #
 #   qwen/qwen3-32b  [Free + Paid]
-#     Version      : Qwen 3 32B (Stand 19.07.2026)
+#     Version      : Qwen 3 32B (Veroeffentlicht 28.04.2025)
 #     Kontext      : 131.072 Token Input / 40.960 Token Output
 #     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
 #
 #   --- PAID PLAN (zusaetzlich) ---
 #
 #   moonshotai/kimi-k2-instruct-0905  [Paid]
-#     Version      : Kimi K2 Instruct 0905 (Stand 19.07.2026)
+#     Version      : Kimi K2 Instruct 0905 (Veroeffentlicht 09.09.2025)
 #     Kontext      : 131.072 Token Input / 8.192 Token Output (siehe MODEL_CONFIG)
 #     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
 #
@@ -299,3 +302,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
