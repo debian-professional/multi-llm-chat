@@ -1476,8 +1476,8 @@
                     <div class="group-title" id="kompressorModelTitle" style="font-size:13px;color:#aaa;margin-bottom:6px;">Compressor Model</div>
                     <div class="model-select-wrapper">
                         <select id="kompressorModelSelect">
-                            <option value="deepseek-v4-flash">deepseek-v4-flash</option>
-                            <option value="deepseek-v4-pro">deepseek-v4-pro</option>
+                            <option value="deepseek-v4-flash">DeepSeek V4.0 Flash (Stand 31.07.2026)</option>
+                            <option value="deepseek-v4-pro">DeepSeek V4.0 Pro (Stand 13.08.2026)</option>
                         </select>
                     </div>
                 </div>
@@ -1490,8 +1490,8 @@
                 </div>
                 <div class="model-select-wrapper">
                     <select id="modelSelect">
-                        <option value="deepseek-v4-flash">deepseek-v4-flash</option>
-                        <option value="deepseek-v4-pro">deepseek-v4-pro</option>
+                        <option value="deepseek-v4-flash">DeepSeek V4.0 Flash (Stand 31.07.2026)</option>
+                        <option value="deepseek-v4-pro">DeepSeek V4.0 Pro (Stand 13.08.2026)</option>
                     </select>
                 </div>
             </div>
@@ -1549,20 +1549,14 @@
             // DeepSeek: reiner Text, kein Bild (siehe deepseek-api.py Header)
             'deepseek-v4-flash': { images: false, text: true },
             'deepseek-v4-pro':   { images: false, text: true },
-            // Fix (29.08.2026): deepseek-v4-flash-vision-exp (veroeffentlicht
-            // 21.08.2026) ist DeepSeeks erstes bildfaehiges V4-Modell -
-            // separates Modell, NICHT einfach eine Faehigkeit von Flash/Pro.
-            // Siehe deepseek-api.py Header fuer Details zur Bild-Uebertragung.
-            'deepseek-v4-flash-vision-exp': { images: true, text: true },
             // Update (14.09.2026): DeepSeek V4.1 Flash (veroeffentlicht
             // 10.09.2026), offizieller neuer Modellname 'deepseek-flash'.
             // Natives multimodales Verstehen (Bild+Text von Beginn an
-            // gemeinsam trainiert, nicht nachtraeglich wie bei
-            // deepseek-v4-flash-vision-exp). DeepSeek leitet die alten
-            // Namen deepseek-v4-flash/-vision-exp sowie seit 14.09.2026
-            // auch deepseek-v4-pro serverseitig temporaer auf V4.1 Flash
-            // um - diese Aliase bleiben also vorerst funktional, gelten
-            // aber als abgeloest. Quelle: DeepSeek API Change Log.
+            // gemeinsam trainiert). DeepSeek leitet die alten Namen
+            // deepseek-v4-flash sowie seit 14.09.2026 auch deepseek-v4-pro
+            // serverseitig temporaer auf V4.1 Flash um - diese Aliase
+            // bleiben also vorerst funktional, gelten aber als abgeloest.
+            // Quelle: DeepSeek API Change Log.
             'deepseek-flash': { images: true, text: true },
             // Google Gemini: alle aktuell angebotenen Modelle sind multimodal (siehe google-api.py Header)
             'gemini-2.5-flash':  { images: true,  text: true },
@@ -1621,16 +1615,6 @@
                 maxContextMessages: 50
             },
             'deepseek-v4-pro': {
-                maxContextTokens:  1048576,
-                maxOutputTokens:   384000,
-                maxContextMessages: 50
-            },
-            // Fix (29.08.2026): deepseek-v4-flash-vision-exp - erstes
-            // bildfaehiges DeepSeek-V4-Modell (veroeffentlicht 21.08.2026).
-            // Kontext/Output identisch zu deepseek-v4-flash (gleiche Basis,
-            // Bild-Faehigkeit als Erweiterung). Quelle: DeepSeek API Docs /
-            // OpenRouter Modellseite, Stand 29.08.2026.
-            'deepseek-v4-flash-vision-exp': {
                 maxContextTokens:  1048576,
                 maxOutputTokens:   384000,
                 maxContextMessages: 50
@@ -1755,7 +1739,31 @@
                 maxContextMessages: 100
             }
         };
-        const DEEPSEEK_MODELS      = ['deepseek-v4-flash', 'deepseek-v4-pro', 'deepseek-v4-flash-vision-exp', 'deepseek-flash'];
+        const DEEPSEEK_MODELS      = ['deepseek-v4-flash', 'deepseek-v4-pro', 'deepseek-flash'];
+
+        // =====================================================================
+        // MODELL-ANZEIGE-BESCHRIFTUNGEN (17.09.2026)
+        // Getrennt von der tatsaechlichen API-Modell-ID: der an den jeweiligen
+        // Anbieter gesendete "value" bleibt unveraendert die rohe Modell-ID,
+        // nur die im Dropdown SICHTBARE Beschriftung wird hier ueberschrieben.
+        // Schrittweise Einfuehrung: bisher nur DeepSeek befuellt. Andere
+        // Anbieter (OpenAI, Google, Hugging Face, GroqCloud) zeigen weiterhin
+        // ihre rohe Modell-ID, bis sie in einem spaeteren Schritt ergaenzt
+        // werden - siehe getModelDisplayLabel() Fallback.
+        // =====================================================================
+        const MODEL_DISPLAY_LABELS = {
+            'deepseek-v4-flash': 'DeepSeek V4.0 Flash (Stand 31.07.2026)',
+            'deepseek-v4-pro':   'DeepSeek V4.0 Pro (Stand 13.08.2026)',
+            'deepseek-flash':    'DeepSeek V4.1 Flash (Stand 10.09.2026)',
+        };
+
+        /**
+         * Liefert die Anzeige-Beschriftung fuer eine Modell-ID. Faellt auf
+         * die rohe ID zurueck, falls (noch) keine Beschriftung hinterlegt ist.
+         */
+        function getModelDisplayLabel(modelId) {
+            return MODEL_DISPLAY_LABELS[modelId] || modelId;
+        }
         const OPENAI_MODELS_FREE   = ['gpt-4o-mini', 'gpt-5.6-luna'];
         const OPENAI_MODELS_PAID   = ['gpt-6-astra', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-5.4', 'gpt-4o', 'gpt-4.1', 'gpt-4o-mini'];
         const GOOGLE_MODELS_FREE   = ['gemini-2.5-flash'];
@@ -2159,7 +2167,7 @@
             models.forEach(m => {
                 const opt = document.createElement('option');
                 opt.value = m;
-                opt.textContent = m;
+                opt.textContent = getModelDisplayLabel(m);
                 kompressorModelSelect.appendChild(opt);
             });
             // gespeichertes Modell wiederherstellen falls passend
@@ -3494,7 +3502,7 @@
             modelSelect.innerHTML = '';
             models.forEach(m => {
                 const opt = document.createElement('option');
-                opt.value = m; opt.textContent = m;
+                opt.value = m; opt.textContent = getModelDisplayLabel(m);
                 modelSelect.appendChild(opt);
             });
             // Gespeichertes Modell wiederherstellen
@@ -4713,3 +4721,6 @@
     </script>
 </body>
 </html>
+
+
+
