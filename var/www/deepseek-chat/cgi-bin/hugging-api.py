@@ -3,7 +3,10 @@
 
 # =============================================================================
 # HUGGING FACE INFERENCE API PROXY
-# Importiert / aktualisiert: 08.03.2026
+# Importiert / aktualisiert: 08.03.2026; 17.09.2026 (Korrektur: alle fuenf
+# Modelle zeigten faelschlich das Erstellungsdatum dieser Datei als
+# "Version"-Datum statt des echten historischen Veroeffentlichungsdatums -
+# jetzt korrigiert)
 # =============================================================================
 #
 # Unterstuetzte Modelle:
@@ -11,34 +14,34 @@
 #   --- FREE PLAN ---
 #
 #   Qwen/Qwen2.5-72B-Instruct  [Free]
-#     Version      : Qwen 2.5 72B Instruct (Stand 08.03.2026)
+#     Version      : Qwen 2.5 72B Instruct (Veroeffentlicht 19.09.2024)
 #     Kontext      : 128.000 Token Input / 8.192 Token Output
 #     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
 #
 #   mistralai/Mistral-7B-Instruct-v0.3  [Free]
-#     Version      : Mistral 7B Instruct v0.3 (Stand 08.03.2026)
+#     Version      : Mistral 7B Instruct v0.3 (Veroeffentlicht 22.05.2024)
 #     Kontext      : 32.768 Token Input / 4.096 Token Output
 #     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
 #
 #   microsoft/Phi-3.5-mini-instruct  [Free]
-#     Version      : Phi-3.5 Mini Instruct (Stand 08.03.2026)
+#     Version      : Phi-3.5 Mini Instruct (Veroeffentlicht 21.08.2024)
 #     Kontext      : 128.000 Token Input / 4.096 Token Output
 #     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
 #
 #   --- PAID PLAN ---
 #
 #   meta-llama/Meta-Llama-3.1-70B-Instruct  [Paid]
-#     Version      : Llama 3.1 70B Instruct (Stand 08.03.2026)
+#     Version      : Llama 3.1 70B Instruct (Veroeffentlicht 23.07.2024)
 #     Kontext      : 128.000 Token Input / 8.192 Token Output
 #     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
 #
 #   meta-llama/Meta-Llama-3.1-405B-Instruct  [Paid]
-#     Version      : Llama 3.1 405B Instruct (Stand 08.03.2026)
+#     Version      : Llama 3.1 405B Instruct (Veroeffentlicht 23.07.2024)
 #     Kontext      : 128.000 Token Input / 8.192 Token Output
 #     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
 #
 #   Qwen/Qwen2.5-72B-Instruct  [Paid]
-#     Version      : Qwen 2.5 72B Instruct (Stand 08.03.2026)
+#     Version      : Qwen 2.5 72B Instruct (Veroeffentlicht 19.09.2024)
 #     Kontext      : 128.000 Token Input / 8.192 Token Output
 #     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
 #
@@ -289,3 +292,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+

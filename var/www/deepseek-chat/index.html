@@ -1747,10 +1747,10 @@
         // Anbieter gesendete "value" bleibt unveraendert die rohe Modell-ID,
         // nur die im Dropdown SICHTBARE Beschriftung wird hier ueberschrieben.
         // Schrittweise Einfuehrung: DeepSeek (14.09.2026), OpenAI
-        // (17.09.2026) und Google Gemini (17.09.2026) sind befuellt.
-        // Hugging Face und GroqCloud zeigen weiterhin ihre rohe Modell-ID,
-        // bis sie in einem spaeteren Schritt ergaenzt werden - siehe
-        // getModelDisplayLabel() Fallback.
+        // (17.09.2026), Google Gemini (17.09.2026) und Hugging Face
+        // (17.09.2026) sind befuellt. GroqCloud zeigt weiterhin seine rohe
+        // Modell-ID, bis es in einem spaeteren Schritt ergaenzt wird -
+        // siehe getModelDisplayLabel() Fallback.
         // =====================================================================
         const MODEL_DISPLAY_LABELS = {
             'deepseek-v4-flash': 'DeepSeek V4.0 Flash (31.07.2026)',
@@ -1773,6 +1773,14 @@
             // 17.06.2025 gemeinsam die allgemeine Verfuegbarkeit (GA).
             'gemini-2.5-flash': 'Google Gemini 2.5 Flash (17.06.2025)',
             'gemini-2.5-pro':   'Google Gemini 2.5 Pro (17.06.2025)',
+            // Hugging Face (17.09.2026). Echte historische Release-Daten
+            // (nicht das Datei-Erstellungsdatum 08.03.2026 aus dem
+            // hugging-api.py-Header, das faelschlich als "Stand" diente).
+            'Qwen/Qwen2.5-72B-Instruct':               'Qwen2.5 72B Instruct (19.09.2024)',
+            'mistralai/Mistral-7B-Instruct-v0.3':      'Mistral 7B Instruct v0.3 (22.05.2024)',
+            'microsoft/Phi-3.5-mini-instruct':         'Phi-3.5 Mini Instruct (21.08.2024)',
+            'meta-llama/Meta-Llama-3.1-70B-Instruct':  'Llama 3.1 70B Instruct (23.07.2024)',
+            'meta-llama/Meta-Llama-3.1-405B-Instruct': 'Llama 3.1 405B Instruct (23.07.2024)',
         };
 
         /**
@@ -3401,7 +3409,7 @@
                 modelSelect.innerHTML = '';
                 models.forEach(m => {
                     const opt = document.createElement('option');
-                    opt.value = m; opt.textContent = m;
+                    opt.value = m; opt.textContent = getModelDisplayLabel(m);
                     modelSelect.appendChild(opt);
                 });
                 // Altes Modell wieder auswählen falls noch verfügbar
@@ -3428,7 +3436,7 @@
                 modelSelect.innerHTML = '';
                 models.forEach(m => {
                     const opt = document.createElement('option');
-                    opt.value = m; opt.textContent = m;
+                    opt.value = m; opt.textContent = getModelDisplayLabel(m);
                     modelSelect.appendChild(opt);
                 });
                 const exists = models.includes(currentModel);
@@ -3454,7 +3462,7 @@
                 modelSelect.innerHTML = '';
                 models.forEach(m => {
                     const opt = document.createElement('option');
-                    opt.value = m; opt.textContent = m;
+                    opt.value = m; opt.textContent = getModelDisplayLabel(m);
                     modelSelect.appendChild(opt);
                 });
                 const exists = models.includes(currentModel);
@@ -3479,7 +3487,7 @@
                 modelSelect.innerHTML = '';
                 models.forEach(m => {
                     const opt = document.createElement('option');
-                    opt.value = m; opt.textContent = m;
+                    opt.value = m; opt.textContent = getModelDisplayLabel(m);
                     modelSelect.appendChild(opt);
                 });
                 const exists = models.includes(currentModel);
