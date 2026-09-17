@@ -2030,5 +2030,75 @@
       Folgeprojekt zu behandeln, falls gewuenscht
     - Dateien: overview-LLM.md, Readme_EN.md, Readme_DE.md, Readme_ES.md
 
+    106. [17.09.2026] Feature: sprachneutrale Modell-Anzeige-Beschriftungen
+         mit Datum fuer alle fuenf Provider; Bereinigung veralteter Modelle
+    - Anlass: Auf Nutzerwunsch sollten Modell-Dropdowns statt kryptischer
+      API-IDs (z.B. "deepseek-v4-flash") lesbare Beschriftungen mit
+      Veroeffentlichungsdatum zeigen (z.B. "DeepSeek V4.0 Flash
+      (31.07.2026)"). Schrittweise umgesetzt, zuerst DeepSeek, danach
+      OpenAI, Google Gemini, Hugging Face und GroqCloud
+    - Vorab: deepseek-v4-flash-vision-exp vollstaendig aus der
+      Modellauswahl entfernt (in index.html und deepseek-api.py) - seit
+      10.09.2026 ohnehin von DeepSeek serverseitig auf V4.1 Flash
+      (deepseek-flash) umgeleitet, daher redundant. Bild-Uebertragungslogik
+      in deepseek-api.py ist modellagnostisch und blieb unveraendert
+      funktionsfaehig fuer deepseek-flash
+    - Neuer Mechanismus in index.html: MODEL_DISPLAY_LABELS (Objekt,
+      Modell-ID -> Anzeigetext) plus getModelDisplayLabel(modelId)
+      (Fallback auf die rohe ID, falls kein Label hinterlegt). Die an den
+      jeweiligen Anbieter gesendete Modell-ID (option.value) bleibt in
+      jedem Fall unveraendert, nur der sichtbare Text (option.textContent)
+      wird ueberschrieben
+    - Format bewusst sprachneutral gehalten: nur "<Anbieter> <Modellname>
+      (TT.MM.JJJJ)", ohne eingebettete Woerter wie das anfangs verwendete
+      deutsche "Stand" - funktioniert unabhaengig von der UI-Sprache
+      (EN/DE/ES) ohne eigene language.xml-Text-ID
+    - Alle fuenf Provider mit Labels befuellt (23 Modelle total):
+        * DeepSeek (3): deepseek-v4-flash, deepseek-v4-pro, deepseek-flash
+        * OpenAI (9): gpt-4o-mini, gpt-4o, gpt-4.1, gpt-5.4, gpt-5.5,
+          gpt-5.6-sol/-terra/-luna, gpt-6-astra
+        * Google Gemini (2): gemini-2.5-flash, gemini-2.5-pro
+        * Hugging Face (5): Qwen2.5-72B-Instruct, Mistral-7B-Instruct-v0.3,
+          Phi-3.5-mini-instruct, Llama-3.1-70B/-405B-Instruct
+        * GroqCloud (5): llama-3.3-70b-versatile, llama-3.1-8b-instant,
+          llama-4-scout-17b-16e-instruct, qwen3-32b,
+          kimi-k2-instruct-0905
+    - Alle Veroeffentlichungsdaten fuer real existierende (nicht
+      fiktive/zukuenftige) Modelle per Websuche verifiziert, nicht aus dem
+      Gedaechtnis uebernommen (Lehre aus einem Zwischenfall in dieser
+      Session, siehe Bugfix unten)
+    - Nebenbefund und Korrektur in allen vier betroffenen *-api.py-Dateien
+      (openai-api.py, google-api.py, hugging-api.py, groq-api.py): Die
+      "Version"-Datumsangabe im Header-Kommentar zeigte bei ca. 16 Modellen
+      faelschlich das Erstellungs-/Aktualisierungsdatum der jeweiligen
+      Proxy-Datei selbst (z.B. "Stand 10.03.2026") statt des echten
+      historischen Veroeffentlichungsdatums des Modells. Betraf u.a.
+      gpt-4o (fael. 10.03.2026 -> echt 13.05.2024), alle 5 Hugging-Face-
+      und alle 5 GroqCloud-Modelle. In allen vier Dateien korrigiert, mit
+      erklaerendem Vermerk im jeweiligen Aktualisierungs-Datumsfeld
+    - BUGFIX (waehrend dieser Session gefunden und behoben): Die erste
+      Umsetzung fuer DeepSeek befuellte nur die eine Stelle
+      (updateApiServiceUI), die den Haupt-Modell-Dropdown beim Wechsel des
+      Anbieters neu aufbaut. Es existieren jedoch vier WEITERE, separate
+      Funktionen (setOpenAITierToggle, setGoogleTierToggle,
+      setHFTierToggle, setGroqTierToggle), die den Dropdown beim
+      Umschalten zwischen Free/Paid-Tarif (bzw. beim Wiederherstellen
+      gespeicherter Einstellungen) ERNEUT aufbauen - alle vier nutzten
+      weiterhin die alte, unlabelte Zuweisung. Da DeepSeek keinen
+      Free/Paid-Umschalter hat, blieb der Fehler dort unbemerkt und zeigte
+      sich erst bei OpenAI und Google. Alle vier Stellen korrigiert. Ab da
+      vor jeder weiteren Provider-Runde eine erschoepfende Suche nach
+      *jeder* Stelle durchgefuehrt, die Modell-Dropdown-Optionen erzeugt
+      (insgesamt 6 Stellen im gesamten index.html: 1x Compressor-Dropdown,
+      4x Tier-Toggle-Funktionen, 1x Haupt-Dropdown bei Anbieterwechsel)
+    - Verifiziert: Python- und JS-Syntax-Checks fuer alle fuenf *-api.py-
+      Dateien und index.html bei jeder Teilrunde; Label-Mapping und
+      Fallback-Verhalten per Simulationstest direkt aus der jeweils
+      aktuellen Datei extrahiert und geprueft; nach dem Tier-Toggle-Bugfix
+      zusaetzlich Live-Verifikation im Browser fuer alle fuenf Provider
+      inkl. Free/Paid-Umschalter durch den Nutzer bestaetigt
+    - Dateien: index.html, deepseek-api.py, openai-api.py, google-api.py,
+      hugging-api.py, groq-api.py
+
     ============================================================================
 
