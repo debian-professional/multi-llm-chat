@@ -63,6 +63,24 @@
             0%, 100% { opacity: 1; }
             50%       { opacity: 0.3; }
         }
+        /* Feature (17.09.2026), Ueberarbeitung: der Anonymous-Hinweis nutzte
+           urspruenglich dieselbe unauffaellige .context-info-Optik wie
+           IP/Context/Model - dadurch wurde er im Praxistest uebersehen.
+           Jetzt als deutlich sichtbares Badge, angelehnt an das lila
+           "Inkognito"-Farbschema gaengiger Browser. */
+        .anonymous-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #fff;
+            background: #6b2fb3;
+            padding: 5px 12px;
+            border-radius: 14px;
+            margin-top: 6px;
+            box-shadow: 0 0 8px rgba(107, 47, 179, 0.6);
+        }
         /* Sende-Banner */
         #sendeBanner {
             position: fixed;
@@ -1040,7 +1058,7 @@
                  waehrend isAnonymousChat true ist (siehe startNewChatAnonymous()),
                  analog zum privaten/Inkognito-Modus eines Browsers als staendige
                  visuelle Erinnerung, dass dieser Chat NICHT gespeichert wird. -->
-            <div class="context-info" id="anonymousNotice" style="display:none;"></div>
+            <div class="anonymous-badge" id="anonymousNotice" style="display:none;"></div>
         </div>
     </div>
 
@@ -2032,7 +2050,7 @@
             bookmarksButton.textContent = t(268);
             document.getElementById('saveBookmarkButtonLabel').textContent = t(271);
             saveBookmarkButton.title = t(271);
-            if (isAnonymousChat) document.getElementById('anonymousNotice').textContent = t(269);
+            if (isAnonymousChat) document.getElementById('anonymousNotice').textContent = '\u{1F576}\u{FE0F} ' + t(269);
 
             // --- DeepThink button ---
             document.getElementById('deepThinkButtonLabel').textContent = t(229);
@@ -4277,8 +4295,10 @@
         function setAnonymousMode(active) {
             isAnonymousChat = active;
             const notice = document.getElementById('anonymousNotice');
-            notice.style.display = active ? 'block' : 'none';
-            if (active) notice.textContent = t(269);
+            // Fix (17.09.2026): 'block' ueberschrieb das inline-flex-Layout
+            // des neuen auffaelligen Badges (siehe .anonymous-badge CSS).
+            notice.style.display = active ? 'inline-flex' : 'none';
+            if (active) notice.textContent = '\u{1F576}\u{FE0F} ' + t(269);
         }
 
         /**
