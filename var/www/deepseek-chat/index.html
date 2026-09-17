@@ -724,6 +724,32 @@
             overflow-y: auto;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
+        /* Feature (17.09.2026): Bookmarks-Panel (gespeicherte Prompts) -
+           identisches Layout wie das Sessions-Panel, daher exakte Kopie
+           der beiden Overlay-/Panel-Regeln. Die Listeneintraege selbst
+           nutzen bewusst dieselben .session-item-Klassen wieder (siehe
+           loadBookmarksList()), statt eigene Klassen zu duplizieren. */
+        #bookmarksOverlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1001;
+            align-items: center;
+            justify-content: center;
+        }
+        #bookmarksPanel {
+            background: #1e1e1e;
+            border: 2px solid #0056b3;
+            border-radius: 10px;
+            padding: 25px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
         .session-item {
             background: #2d2d2d;
             border: 1px solid #444;
@@ -1010,7 +1036,21 @@
             <div class="context-info" id="contextInfo">Context: 0%</div>
             <div class="context-info" id="modelInfo">Model: ...</div>
             <div class="context-info" id="compressorInfo" style="display:none;"></div>
+            <!-- Feature (17.09.2026): Anonymous-Chat-Hinweis - sichtbar nur
+                 waehrend isAnonymousChat true ist (siehe startNewChatAnonymous()),
+                 analog zum privaten/Inkognito-Modus eines Browsers als staendige
+                 visuelle Erinnerung, dass dieser Chat NICHT gespeichert wird. -->
+            <div class="context-info" id="anonymousNotice" style="display:none;"></div>
         </div>
+    </div>
+
+    <!-- Feature (17.09.2026): New Chat / New Chat Anonymous / Bookmarks -
+         eigene Button-Reihe direkt unter der Modell-Anzeige, noch vor dem
+         Chat-Verlauf. -->
+    <div class="buttons-row">
+        <button id="newChatButton" class="pill-button">New Chat</button>
+        <button id="newChatAnonymousButton" class="pill-button">New Chat Anonymous</button>
+        <button id="bookmarksButton" class="pill-button">Bookmarks</button>
     </div>
     
     <div id="sendeBanner" style="display:none;">
@@ -1032,6 +1072,16 @@
     <div id="chat"></div>
     
     <textarea id="input" placeholder="Enter your message here..." rows="1"></textarea>
+
+    <!-- Feature (17.09.2026): Bookmark-Speichern-Button direkt am Eingabefeld -
+         speichert den aktuell im Eingabefeld stehenden Text (nicht den Chat-
+         Verlauf) als benannten, wiederverwendbaren Prompt. Wiederverwendung
+         von .buttons-row-mode (identisches Layout wie DeepThink/Download Mode). -->
+    <div class="buttons-row-mode">
+        <button id="saveBookmarkButton" class="pill-button-mode" title="Save as bookmark">
+            <span class="mode-icon">&#128190;</span><span id="saveBookmarkButtonLabel">Save as bookmark</span>
+        </button>
+    </div>
     
     <div id="deepThinkIndicator" class="mode-indicator deepthink-indicator">
         DeepThink Mode active: In-depth analysis in progress
@@ -1523,6 +1573,23 @@
     </div>
 
     <!-- =====================================================================
+         BOOKMARKS OVERLAY (Feature 17.09.2026)
+         Gespeicherte, wiederverwendbare Prompts - unabhaengig von Chat-Sessions.
+         Struktur identisch zum Sessions-Overlay; die Listeneintraege selbst
+         nutzen absichtlich dieselben .session-item-Klassen wieder (siehe
+         loadBookmarksList()).
+         ===================================================================== -->
+    <div id="bookmarksOverlay">
+        <div id="bookmarksPanel">
+            <div class="settings-header">
+                <div class="settings-title" id="bookmarksTitleText">Saved Prompts</div>
+                <button class="close-settings" id="closeBookmarks" title="Close">&times;</button>
+            </div>
+            <div id="bookmarksList"></div>
+        </div>
+    </div>
+
+    <!-- =====================================================================
          LOG OVERLAY
          ===================================================================== -->
     <div id="logOverlay">
@@ -1593,6 +1660,10 @@
         const SAVE_SESSION_URL = '/cgi-bin/save-session.py';
         const LOAD_SESSION_URL = '/cgi-bin/load-session.py';
         const DELETE_SESSION_URL = '/cgi-bin/delete-session.py';
+        // Feature (17.09.2026): Bookmarks (gespeicherte, wiederverwendbare Prompts)
+        const SAVE_BOOKMARK_URL = '/cgi-bin/save-bookmark.py';
+        const LOAD_BOOKMARK_URL = '/cgi-bin/load-bookmark.py';
+        const DELETE_BOOKMARK_URL = '/cgi-bin/delete-bookmark.py';
         const EXPORT_PDF_URL = '/cgi-bin/export-pdf.py';
         const EXPORT_MARKDOWN_URL = '/cgi-bin/export-markdown.py';
         const EXPORT_TXT_URL = '/cgi-bin/export-txt.py';
@@ -1955,6 +2026,13 @@
             document.getElementById('loadSessionBtn').textContent = t(212);
             settingsButton.textContent = t(213);
             logButton.textContent = t(214);
+            // --- New Chat / New Chat Anonymous / Bookmarks (Feature 17.09.2026) ---
+            newChatButton.textContent = t(266);
+            newChatAnonymousButton.textContent = t(267);
+            bookmarksButton.textContent = t(268);
+            document.getElementById('saveBookmarkButtonLabel').textContent = t(271);
+            saveBookmarkButton.title = t(271);
+            if (isAnonymousChat) document.getElementById('anonymousNotice').textContent = t(269);
 
             // --- DeepThink button ---
             document.getElementById('deepThinkButtonLabel').textContent = t(229);
@@ -2097,6 +2175,8 @@
 
             // Sessions overlay
             document.getElementById('sessionsTitleText').textContent = t(215);
+            // --- Bookmarks overlay title (Feature 17.09.2026) ---
+            document.getElementById('bookmarksTitleText').textContent = t(270);
 
             // Log overlay
             document.getElementById('logTitleText').textContent = t(214);
@@ -2400,7 +2480,10 @@
         }
         
         async function saveSession() {
-            if (!currentSessionId || contextHistory.messages.length === 0) return;
+            // Feature (17.09.2026): Im Anonymous-Modus wird nichts gespeichert.
+            // Diese eine Stelle deckt alle Aufrufstellen von saveSession() ab,
+            // ohne jede einzeln absichern zu muessen.
+            if (!currentSessionId || contextHistory.messages.length === 0 || isAnonymousChat) return;
             try {
                 const response = await fetch(SAVE_SESSION_URL, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -2474,6 +2557,7 @@
                     messageIdCounter = 0;
                     document.getElementById('chat').innerHTML = '';
                     currentSessionId = sessionId;
+                    setAnonymousMode(false); // Feature (17.09.2026): geladene Session ist nie anonym
                     data.chatData.messages.forEach(msg => {
                         const newId = 'msg_' + (++messageIdCounter);
                         msg.id = newId;
@@ -2502,6 +2586,109 @@
                 }
                 itemElement.remove();
             } catch (e) { alert(tf(45, e.message)); }
+        }
+
+        // =====================================================================
+        // BOOKMARKS (Feature 17.09.2026): gespeicherte, wiederverwendbare
+        // Prompts - unabhaengig von Chat-Sessions. Nutzt bewusst dasselbe
+        // ID-Format wie Sessions (generateSessionId()) und dasselbe
+        // Sicherheits-Muster (CORS, Request-Groessenlimit, ID-Regex +
+        // Path-Traversal-Schutz) im jeweiligen CGI-Skript.
+        // =====================================================================
+
+        async function saveBookmark() {
+            const promptText = inputField.value;
+            if (!promptText || !promptText.trim()) return;
+            const title = window.prompt(t(272), '');
+            if (title === null) return; // Nutzer hat abgebrochen
+            const trimmedTitle = title.trim() || promptText.slice(0, 50);
+            try {
+                const response = await fetch(SAVE_BOOKMARK_URL, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        bookmarkId: generateSessionId(),
+                        title: trimmedTitle,
+                        promptText: promptText
+                    })
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    alert(tf(274, data.error || response.status));
+                }
+            } catch (e) { alert(tf(274, e.message)); }
+        }
+
+        async function loadBookmarksList() {
+            const bookmarksList = document.getElementById('bookmarksList');
+            bookmarksList.innerHTML = '<div style="color:#aaa;text-align:center;padding:20px;">...</div>';
+            try {
+                const response = await fetch(LOAD_BOOKMARK_URL);
+                const data = await response.json();
+                if (!data.bookmarks || data.bookmarks.length === 0) {
+                    bookmarksList.innerHTML = `<div class="no-sessions">${t(273)}</div>`;
+                    return;
+                }
+                bookmarksList.innerHTML = '';
+                data.bookmarks.forEach(bookmark => {
+                    // Wiederverwendung der .session-item-Klassen (identisches Layout).
+                    const item = document.createElement('div');
+                    item.className = 'session-item';
+                    const bookmarkDate = bookmark.timestamp ? new Date(bookmark.timestamp).toLocaleString() : '';
+                    item.innerHTML = `
+                        <div class="session-header">
+                            <div class="session-id"></div>
+                            <div class="session-date">${bookmarkDate}</div>
+                        </div>
+                        <div class="session-preview"></div>
+                        <div class="session-actions">
+                            <button class="session-load-btn">${t(223)}</button>
+                            <button class="session-delete-btn">${t(224)}</button>
+                        </div>`;
+                    // XSS-Fix: title/preview stammen aus Nutzereingaben und
+                    // werden daher per textContent statt innerHTML gesetzt.
+                    item.querySelector('.session-id').textContent = bookmark.title;
+                    item.querySelector('.session-preview').textContent = (bookmark.preview || '...');
+                    item.querySelector('.session-load-btn').onclick = () => loadBookmark(bookmark.bookmarkId);
+                    item.querySelector('.session-delete-btn').onclick = () => deleteBookmark(bookmark.bookmarkId, item);
+                    bookmarksList.appendChild(item);
+                });
+            } catch (e) {
+                bookmarksList.innerHTML = `<div class="no-sessions">${escapeHtml(tf(274, e.message))}</div>`;
+            }
+        }
+
+        async function loadBookmark(bookmarkId) {
+            try {
+                const response = await fetch(LOAD_BOOKMARK_URL, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bookmarkId })
+                });
+                const data = await response.json();
+                if (data.success && data.bookmarkData) {
+                    // Anforderung: aktueller Inhalt des Eingabefelds wird ohne
+                    // Rueckfrage geloescht und durch den Bookmark-Text ersetzt.
+                    inputField.value = data.bookmarkData.promptText || '';
+                    inputField.dispatchEvent(new Event('input'));
+                    document.getElementById('bookmarksOverlay').style.display = 'none';
+                    inputField.focus();
+                }
+            } catch (e) { console.error('Bookmark load error:', e); }
+        }
+
+        async function deleteBookmark(bookmarkId, itemElement) {
+            if (!confirm(t(276))) return;
+            try {
+                const response = await fetch(DELETE_BOOKMARK_URL, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bookmarkId })
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    alert(tf(275, data.error || response.status));
+                    return;
+                }
+                itemElement.remove();
+            } catch (e) { alert(tf(275, e.message)); }
         }
 
         // =====================================================================
@@ -3173,6 +3360,13 @@
         const loadSessionBtn = document.getElementById('loadSessionBtn');
         const sessionsOverlay = document.getElementById('sessionsOverlay');
         const closeSessions = document.getElementById('closeSessions');
+        // Feature (17.09.2026): New Chat / New Chat Anonymous / Bookmarks
+        const newChatButton = document.getElementById('newChatButton');
+        const newChatAnonymousButton = document.getElementById('newChatAnonymousButton');
+        const bookmarksButton = document.getElementById('bookmarksButton');
+        const bookmarksOverlay = document.getElementById('bookmarksOverlay');
+        const closeBookmarks = document.getElementById('closeBookmarks');
+        const saveBookmarkButton = document.getElementById('saveBookmarkButton');
         const logButton = document.getElementById('logButton');
         const logOverlay = document.getElementById('logOverlay');
         const closeLog = document.getElementById('closeLog');
@@ -3229,6 +3423,10 @@
         let eventListeners = [];
         let isSending = false;
         let currentSessionId = null;
+        // Feature (17.09.2026): true waehrend eines via startNewChatAnonymous()
+        // gestarteten Chats - unterdrueckt jeden saveSession()-Aufruf (siehe
+        // dort) und blendet den anonymousNotice-Hinweis ein.
+        let isAnonymousChat = false;
         let messageIdCounter = 0;
         let activeSingleExportDropdown = null;
         
@@ -4065,6 +4263,34 @@
             currentSessionId = generateSessionId();
             document.getElementById('chat').innerHTML = '';
             updateContextEstimation();
+            // Feature (17.09.2026): jeder normale Reset verlaesst den
+            // Anonymous-Modus wieder - startNewChatAnonymous() setzt das Flag
+            // direkt danach explizit erneut, falls gewuenscht.
+            setAnonymousMode(false);
+        }
+
+        /**
+         * Feature (17.09.2026): setzt/entfernt den Anonymous-Modus und
+         * blendet den zugehoerigen Hinweistext ein/aus. Zentrale Stelle,
+         * damit Flag und sichtbarer Hinweis nie auseinanderlaufen koennen.
+         */
+        function setAnonymousMode(active) {
+            isAnonymousChat = active;
+            const notice = document.getElementById('anonymousNotice');
+            notice.style.display = active ? 'block' : 'none';
+            if (active) notice.textContent = t(269);
+        }
+
+        /**
+         * Feature (17.09.2026): startet einen neuen Chat, der NICHT
+         * gespeichert wird - bewusst kein saveSession()-Aufruf vorab (der
+         * bisherige Chat wird ja gerade verlassen, nicht fortgesetzt; ein
+         * zuvor bereits gespeicherter, nicht-anonymer Chat bleibt dabei
+         * unangetastet auf dem Server erhalten).
+         */
+        function startNewChatAnonymous() {
+            resetChat();
+            setAnonymousMode(true);
         }
 
         function addMessageToChat(text, isUser, msgId, mode, fileCardHTML) {
@@ -4402,6 +4628,15 @@
                 sessionsOverlay.style.display = 'flex';
             });
             addEventListenerWithCleanup(closeSessions, 'click', () => sessionsOverlay.style.display = 'none');
+            // Feature (17.09.2026): New Chat / New Chat Anonymous / Bookmarks
+            addEventListenerWithCleanup(newChatButton, 'click', () => startNewChatWithoutContext());
+            addEventListenerWithCleanup(newChatAnonymousButton, 'click', () => startNewChatAnonymous());
+            addEventListenerWithCleanup(bookmarksButton, 'click', async () => {
+                await loadBookmarksList();
+                bookmarksOverlay.style.display = 'flex';
+            });
+            addEventListenerWithCleanup(closeBookmarks, 'click', () => bookmarksOverlay.style.display = 'none');
+            addEventListenerWithCleanup(saveBookmarkButton, 'click', () => saveBookmark());
             addEventListenerWithCleanup(logButton, 'click', async () => { logOverlay.style.display = 'flex'; await fetchLog(); });
             addEventListenerWithCleanup(closeLog, 'click', () => logOverlay.style.display = 'none');
             addEventListenerWithCleanup(refreshLog, 'click', fetchLog);
@@ -4482,6 +4717,7 @@
                 if (e.key === 'Escape') {
                     logOverlay.style.display = 'none'; sessionsOverlay.style.display = 'none';
                     settingsOverlay.style.display = 'none'; llmSettingsOverlay.style.display = 'none';
+                    bookmarksOverlay.style.display = 'none';
                     exportMenu.classList.remove('show');
                     if (activeSingleExportDropdown) { activeSingleExportDropdown.classList.remove('show'); activeSingleExportDropdown = null; }
                 }
@@ -4755,6 +4991,9 @@
     </script>
 </body>
 </html>
+
+
+
 
 
 
