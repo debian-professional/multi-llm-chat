@@ -2100,5 +2100,86 @@
     - Dateien: index.html, deepseek-api.py, openai-api.py, google-api.py,
       hugging-api.py, groq-api.py
 
+    107. [17.09.2026] Feature: New Chat / New Chat Anonymous / Bookmarks
+         (gespeicherte, wiederverwendbare Prompts)
+    - Anlass: Auf Nutzerwunsch drei neue Buttons direkt unter der
+      Modell-Anzeige, noch vor dem Chat-Verlauf: "New Chat", "New Chat
+      Anonymous" und "Bookmarks"
+    - "New Chat": nutzt die bereits bestehende Funktion
+      startNewChatWithoutContext() unveraendert (Session speichern,
+      Chat leeren, bei 0% Kontext neu starten) - keine neue Logik noetig
+    - "New Chat Anonymous": neue Funktion startNewChatAnonymous() startet
+      einen Chat, der NICHT als Session gespeichert wird
+        * Neuer globaler Zustand isAnonymousChat; die Sperre sitzt an
+          einer einzigen zentralen Stelle direkt im saveSession()-Guard
+          (`if (!currentSessionId || contextHistory.messages.length === 0
+          || isAnonymousChat) return;`), statt an jeder der 7
+          Aufrufstellen von saveSession() einzeln - dadurch kann kein
+          Speicherpfad versehentlich uebersehen werden
+        * Kontext-Zaehlung (Prozentanzeige, Kompressor-Triggerung) bleibt
+          davon unberuehrt, da sie rein clientseitig ueber
+          contextHistory.messages laeuft, komplett unabhaengig vom
+          saveSession()-Aufruf
+        * Neue zentrale Helper-Funktion setAnonymousMode(active), die
+          Flag und sichtbaren Hinweis synchron haelt; resetChat() setzt
+          sie bei jedem normalen Neustart auf false, loadSession() beim
+          Laden einer gespeicherten Session ebenfalls
+        * Visueller Hinweis direkt unter der Modell-Anzeige: zunaechst in
+          unauffaelligem Grau (gleiche Optik wie IP/Context/Model) -
+          im Praxistest vom Nutzer prompt uebersehen. Ueberarbeitet zu
+          einem deutlich sichtbaren lila Badge (🕶️ "This chat is not
+          being saved", angelehnt an das Inkognito-Farbschema gaengiger
+          Browser) mit Leuchteffekt; dabei einen Folgefehler behoben
+          (display: 'block' ueberschrieb das noetige inline-flex-Layout
+          des Badges)
+    - "Bookmarks": neue Prompt-Bibliothek, unabhaengig von Chat-Sessions
+        * Neuer 💾-Button direkt unter dem Eingabefeld speichert den
+          aktuell eingegebenen Text mit kurzem, per prompt() erfragten
+          Titel (konsistent mit dem bereits bestehenden confirm()-Muster
+          der App fuer Nachrichten-Loeschung)
+        * Drei neue CGI-Skripte (save-bookmark.py, load-bookmark.py,
+          delete-bookmark.py) 1:1 nach dem bereits sicherheitsgehaerteten
+          Muster der Session-Skripte gebaut: gleiche ID-Regex-Form
+          (YYYY-MM-DD_HHMMSS_xxxxxx, client-seitig ueber die bestehende
+          generateSessionId() erzeugt), gleicher Path-Traversal-Schutz
+          via resolve_bookmark_path(), gleiche CORS-/
+          Request-Groessenlimit-Absicherung (1 MB, da nur ein einzelner
+          Prompt-Text statt eines ganzen Chat-Verlaufs)
+        * Serverseitige, gemeinsame Ablage unter
+          /var/www/deepseek-chat/bookmarks/ (ein JSON pro Bookmark:
+          title, promptText, timestamp) - bewusst als einzige,
+          gemeinsame Liste vorbereitet fuer ein spaeter geplantes
+          Multi-User-System
+        * Bookmarks-Panel (Overlay + Liste) nutzt bewusst dieselben
+          .session-item-CSS-Klassen wie das bestehende Sessions-Panel
+          wieder, statt eigene Klassen zu duplizieren - nur
+          #bookmarksOverlay/#bookmarksPanel sind als neue IDs ergaenzt
+          (exakte Kopie der sessionsOverlay/-Panel-Regeln)
+        * Klick auf einen Bookmark-Eintrag ersetzt den aktuellen
+          Eingabefeld-Inhalt sofort ohne Rueckfrage durch den
+          gespeicherten Prompt-Text (Nutzeranforderung)
+    - Neue Uebersetzungs-IDs 266-276 in language.xml (EN/DE/ES) fuer alle
+      neuen Button-Beschriftungen, den Anonymous-Hinweis, das
+      Bookmarks-Panel und dessen Fehlermeldungen. Der bereits vorher
+      bestehende Rueckstand im "custom"-Sprachblock (endet bei ID 240,
+      nicht bei 265) wurde als unabhaengiger, vorbestehender Zustand
+      bewusst nicht mit angefasst
+    - Verifiziert: JS-Syntax-Check bei jeder Teilrunde; alle 11 neuen
+      Element-IDs im HTML gegen die JS-Referenzen gegengeprueft; Python-
+      Syntax-Check fuer alle drei neuen CGI-Skripte; vollstaendiger
+      End-to-End-Funktionstest der Bookmark-Skripte in simulierter
+      CGI-Umgebung (Speichern -> Auflisten -> Laden -> gezielter
+      Path-Traversal-Angriffsversuch, korrekt abgelehnt -> Loeschen ->
+      leerer Endzustand, inkl. Umlaut-/UTF-8-Test); language.xml nach
+      jeder Aenderung als wohlgeformtes XML gegengeprueft; alle drei
+      Funktionen anschliessend vom Nutzer live im Browser bestaetigt
+      (inkl. Bookmark speichern/laden, Anonymous-Hinweis, Sichtbarkeit
+      des Badges)
+    - Einmaliger manueller Schritt beim Deployment (nicht Teil von
+      deploy.sh): Anlage von /var/www/deepseek-chat/bookmarks/ mit
+      Besitzer www-data und Rechten 700
+    - Dateien: index.html, language.xml, cgi-bin/save-bookmark.py (neu),
+      cgi-bin/load-bookmark.py (neu), cgi-bin/delete-bookmark.py (neu)
+
     ============================================================================
 

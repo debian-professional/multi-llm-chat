@@ -1029,6 +1029,32 @@
                 width: 95%;
                 padding: 18px;
             }
+            /* Fix (18.09.2026): .feedback-buttons (Kopieren/Mag ich/Mag ich
+               nicht/Regenerieren) und .message-buttons-right (Download/X)
+               sind zwei unabhaengige, absolut positionierte Reihen (links-
+               bzw. rechts-verankert), die nur bei Maus-Hover erscheinen.
+               Auf breiten Bildschirmen (Desktop/Tablet) genug Platz
+               dazwischen - auf schmalen Handybildschirmen ueberlappen sich
+               beide Reihen jedoch exakt in der Mitte, da keine von beiden
+               umbricht. Ausserdem greift ":hover" auf Touch-Geraeten ohnehin
+               nicht zuverlaessig. Fix: auf schmalen Bildschirmen beide Reihen
+               aus dem absoluten Layout herausnehmen (normaler Dokumentfluss,
+               untereinander statt uebereinander), staendig sichtbar statt
+               hover-abhaengig, und mit Zeilenumbruch. */
+            .feedback-buttons, .message-buttons-right {
+                position: static;
+                display: flex !important;
+                flex-wrap: wrap;
+                margin-top: 6px;
+            }
+            /* padding-bottom war exakt auf EINE absolut positionierte
+               Button-Reihe bemessen (36px Button + Rand); jetzt fliessen
+               zwei Reihen normal untereinander und beanspruchen ihren
+               Platz selbst - das feste Padding wuerde sonst zusaetzlichen,
+               ungenutzten Leerraum am Nachrichtenende erzeugen. */
+            .message-container {
+                padding-bottom: 8px;
+            }
         }
 
         /* Sehr schmale Geraete (z.B. aeltere/kleinere Android-Handys im Hochformat) */
