@@ -2181,5 +2181,56 @@
     - Dateien: index.html, language.xml, cgi-bin/save-bookmark.py (neu),
       cgi-bin/load-bookmark.py (neu), cgi-bin/delete-bookmark.py (neu)
 
+    108. [18.09.2026] Fix: Nachrichten-Aktions-Buttons ueberlappten auf
+         schmalen Android-Handybildschirmen
+    - Symptom (per Screenshot gemeldet): Auf dem Smartphone ueberlappten
+      sich die Buttons unter einer Nachricht ("Kopieren", "Mag ich",
+      "Mag ich gar nicht", "Regenerieren", "Exportieren", das rote
+      Loeschen-X) chaotisch, Text abgeschnitten und ineinanderlaufend.
+      Auf Computer und Tablet war die Darstellung unveraendert korrekt
+    - Ursache: .feedback-buttons (Kopieren/Mag ich/Mag ich nicht/
+      Regenerieren, links verankert) und .message-buttons-right
+      (Download/Loeschen, rechts verankert) sind zwei unabhaengige,
+      absolut positionierte Button-Reihen unter jeder Nachricht, die
+      standardmaessig nur bei Maus-Hover erscheinen
+        * Auf breiten Bildschirmen (Desktop/Tablet) genug horizontaler
+          Platz zwischen den beiden links-/rechts-verankerten Reihen -
+          auf schmalen Handybildschirmen ueberlappen sie sich jedoch
+          exakt in der Mitte, da keine von beiden umbricht
+        * Zusaetzlich verhaelt sich ":hover" auf Touch-Geraeten ohnehin
+          nicht zuverlaessig wie am Desktop (kein echter Mauszeiger) -
+          ein Antippen der Nachricht loeste vermutlich einen
+          haengengebliebenen Hover-Zustand aus
+        * War eine echte Luecke in der Responsive-Design-Arbeit vom
+          14.09.2026 (Changelog-Eintrag zur Viewport-/Media-Query-
+          Einfuehrung): dieses separate, absolut positionierte
+          Nachrichten-Button-System wurde dabei nicht mit abgedeckt
+    - Fix: gezielte Ergaenzung innerhalb der bereits bestehenden
+      @media (max-width: 600px)-Regel, Desktop/Tablet dadurch komplett
+      unberuehrt (CSS-Media-Queries wirken ausschliesslich unterhalb der
+      angegebenen Bildschirmbreite):
+        * .feedback-buttons und .message-buttons-right wechseln auf
+          schmalen Bildschirmen von position: absolute in den normalen
+          Dokumentfluss (stapeln sich sauber untereinander statt
+          uebereinander), mit flex-wrap: wrap gegen weiteres Ueberlaufen
+        * Staendig sichtbar (display: flex !important) statt
+          hover-abhaengig - sinnvoller fuer Touch-Bedienung ohne
+          verlaesslichen Hover-Zustand
+        * .message-container padding-bottom (war exakt auf eine
+          absolut positionierte Button-Reihe bemessen: 42px) auf
+          schmalen Bildschirmen auf 8px reduziert, da die jetzt zwei
+          normal fliessenden Reihen ihren Platz selbst beanspruchen -
+          sonst waere ungenutzter Leerraum am Nachrichtenende entstanden
+    - Verifiziert: JS-Syntax-Check OK (reine CSS-Aenderung, JS
+      unveraendert); CSS-Klammern-Bilanz gegengeprueft (176/176);
+      explizit bestaetigt, dass ausserhalb der Media Query keine
+      einzige weitere Definition der drei betroffenen Klassen existiert
+      (nur die eine, unveraenderte Basis-Definition plus die neue,
+      strikt media-query-gebundene Ergaenzung) - Computer und Tablet
+      bleiben dadurch nachweislich unberuehrt. Fix anschliessend vom
+      Nutzer live auf dem Android-Smartphone bestaetigt
+    - Dateien: index.html
+
     ============================================================================
+
 
