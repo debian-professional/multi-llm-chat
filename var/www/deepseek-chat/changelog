@@ -2642,5 +2642,11 @@
     - Dateien: shell-scripts/web-test.py, Readme_EN.md, Readme_DE.md,
       Readme_ES.md
 
+122. 12.10.2026 - tag-release.sh: Versionsvorschlag mit Buchstaben-Suffix
+   - Bisher: "v0.97a" fuehrte zu "syntax error" und dem Vorschlag "v0.".
+   - Neu: Nur Tags der Form v0.NN oder v0.NNx werden beruecksichtigt (sort -V).
+   - v0.97 -> v0.98, v0.97a -> v0.97b, v0.97z -> v0.98.
+   Dateien: shell-scripts/tag-release.sh
+
     ============================================================================
 
