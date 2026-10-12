@@ -2668,5 +2668,14 @@
    - Fehlt das Programm ping, erscheint die Installationsanleitung (iputils-ping).
    - Dateien: shell-scripts/web-test.py
 
+125. 12.10.2026 - web-test.py: VPN-Test per TCP statt ICMP (ersetzt Eintrag 124)
+   - ICMP-Ping auf 172.29.255.1 ist unbrauchbar (keine Antwort trotz laufendem Betrieb moeglich).
+   - Neu: TCP-Verbindungsversuch auf die interne Server-IP, Ports 443, 22, 80.
+     Verbindung offen oder "Connection refused" = Route durch den Tunnel funktioniert (PASS);
+     Zeitueberschreitung / "Network unreachable" auf allen Ports = Tunnel down (FAIL).
+   - Kein ping-Programm mehr noetig. Optionen: --vpn-ip=IP, --no-vpn (--no-ping bleibt als Alias).
+   - --check und die Kurzpruefung vor dem Lauf nutzen denselben Test.
+   - Dateien: shell-scripts/web-test.py
+
     ============================================================================
 

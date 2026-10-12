@@ -13,8 +13,8 @@ API-Kosten und es werden keine Daten auf dem Server angelegt. Die Export-Skripte
 Server.
 
 Tests (Gruppen):
-  vpn          nur bei --url: VPN-Tunnel ok? (ICMP-Ping auf die interne Server-IP
-               172.29.255.1; laeuft der Tunnel nicht, antwortet sie nicht)
+  vpn          nur bei --url: VPN-Tunnel ok? (TCP-Verbindungsversuch auf die interne
+               Server-IP 172.29.255.1, Ports 443/22/80; kein ICMP noetig)
   laden        Seite laedt, Texte da, keine JavaScript-Fehler
   sprache      en/de/es: jede sichtbare Beschriftung muss zur gewaehlten Sprache
                gehoeren (findet deutsche Reste in en/es und umgekehrt), in der
@@ -49,8 +49,8 @@ Aufruf (aus dem Repo-Verzeichnis):
   --keep=DIR    Downloads der Exporte in DIR behalten (zum Nachschauen)
   --check       nur die installierte Zusatzsoftware pruefen, kein Test
   --no-check    die kurze Voraussetzungspruefung vor dem Test ueberspringen
-  --vpn-ip=IP   Adresse fuer den VPN-Ping (Standard 172.29.255.1)
-  --no-ping     den VPN-Ping bei --url weglassen
+  --vpn-ip=IP   Adresse fuer den VPN-Test (Standard 172.29.255.1)
+  --no-vpn      den VPN-Test bei --url weglassen (--no-ping wird weiter akzeptiert)
 
 Ohne --url wird die Seite aus var/www/deepseek-chat/ im Repo ueber einen lokalen
 Mini-Server (127.0.0.1) ausgeliefert - getestet wird also der Stand VOR dem
@@ -87,23 +87,33 @@ CGI = os.path.join(WEBROOT, 'cgi-bin')
 VPN_IP = '172.29.255.1'   # interne Adresse des Servers im VPN (ICMP erreichbar, wenn der Tunnel laeuft)
 
 
-def ping_host(ip, count=3, wait=2):
-    """ICMP-Ping. Rueckgabe: (ok, Detail). Detail: Laufzeit oder Fehlergrund."""
-    exe = shutil.which('ping')
-    if not exe:
-        return False, 'Programm "ping" fehlt (sudo apt install iputils-ping)'
-    try:
-        r = subprocess.run([exe, '-c', str(count), '-W', str(wait), ip],
-                           capture_output=True, timeout=count * (wait + 1) + 5)
-    except subprocess.TimeoutExpired:
-        return False, 'Zeitueberschreitung'
-    out = r.stdout.decode('utf-8', 'replace')
-    m = re.search(r'(\d+) (?:packets )?received', out)
-    got = int(m.group(1)) if m else 0
-    if r.returncode == 0 and got > 0:
-        rtt = re.search(r'=\s*[\d.]+/([\d.]+)/', out)
-        return True, f'{got}/{count} Antworten' + (f', Mittel {rtt.group(1)} ms' if rtt else '')
-    return False, f'keine Antwort von {ip} ({got}/{count})'
+def NOVPN(args):
+    return '--no-vpn' in args or '--no-ping' in args
+
+
+def vpn_probe(ip, ports=(443, 22, 80), timeout=3):
+    """Prueft den VPN-Tunnel per TCP statt ICMP: Verbindungsversuch auf die interne Server-IP.
+    Antwortet der Server (Verbindung oder 'Connection refused'), ist die Route durch den
+    Tunnel da. Nur Zeitueberschreitung / 'Network unreachable' bedeutet: Tunnel down.
+    Rueckgabe: (ok, Detail)."""
+    import socket
+    import time
+    reasons = []
+    for port in ports:
+        t0 = time.time()
+        try:
+            with socket.create_connection((ip, port), timeout=timeout):
+                ms = (time.time() - t0) * 1000
+                return True, f'TCP {ip}:{port} offen, {ms:.0f} ms'
+        except ConnectionRefusedError:
+            ms = (time.time() - t0) * 1000
+            # RST kam von der Gegenseite zurueck -> Route/Tunnel funktioniert
+            return True, f'TCP {ip}:{port} antwortet (geschlossen), {ms:.0f} ms - Tunnel ok'
+        except socket.timeout:
+            reasons.append(f'{port}: Zeitueberschreitung')
+        except OSError as e:
+            reasons.append(f'{port}: {e.strerror or e}')
+    return False, f'keine TCP-Antwort von {ip} (' + '; '.join(reasons) + ')'
 
 
 # ---------------------------------------------------------------------------
@@ -351,13 +361,13 @@ def ignore_errors(page, patterns=()):
 @test('vpn')
 def t_vpn(C):
     if not C.url_mode:
-        add('vpn', f'VPN-Tunnel (Ping {C.vpn_ip})', None, 'lokaler Modus - kein Server, nicht noetig')
+        add('vpn', f'VPN-Tunnel (TCP {C.vpn_ip})', None, 'lokaler Modus - kein Server, nicht noetig')
         return
-    if C.no_ping:
-        add('vpn', f'VPN-Tunnel (Ping {C.vpn_ip})', None, '--no-ping')
+    if C.no_vpn:
+        add('vpn', f'VPN-Tunnel (TCP {C.vpn_ip})', None, '--no-vpn')
         return
-    ok, detail = ping_host(C.vpn_ip)
-    add('vpn', f'VPN-Tunnel (Ping {C.vpn_ip})', ok,
+    ok, detail = vpn_probe(C.vpn_ip)
+    add('vpn', f'VPN-Tunnel (TCP {C.vpn_ip})', ok,
         detail if ok else detail + ' - VPN-Tunnel pruefen')
 
 
@@ -1023,18 +1033,15 @@ def check_requirements(url=None, insecure=False, launch=True, vpn_ip=VPN_IP, pin
         row('OK', 'Repo-Kopie der Webseite', WEBROOT)
 
     if url and ping:
-        ok, detail = ping_host(vpn_ip)
+        ok, detail = vpn_probe(vpn_ip)
         if ok:
-            row('OK', f'VPN-Tunnel (Ping {vpn_ip})', detail)
+            row('OK', f'VPN-Tunnel (TCP {vpn_ip})', detail)
         else:
-            if 'ping" fehlt' in detail:
-                how = ('  sudo apt install iputils-ping\n'
-                       '  (oder den Ping mit --no-ping weglassen)')
-            else:
-                how = ('  VPN-Verbindung starten/pruefen; ohne laufenden Tunnel ist der Server nicht erreichbar.\n'
-                       '  Manuell testen: ping -c 3 ' + vpn_ip + '\n'
-                       '  Nur lokale Repo-Kopie testen (ohne Server): --url weglassen.')
-            row('FEHLT', f'VPN-Tunnel (Ping {vpn_ip})', detail, how)
+            how = ('  VPN-Verbindung starten/pruefen; ohne laufenden Tunnel ist der Server nicht erreichbar.\n'
+                   '  Manuell testen: nc -vz -w 3 ' + vpn_ip + ' 443\n'
+                   '  Nur lokale Repo-Kopie testen (ohne Server): --url weglassen.\n'
+                   '  Test weglassen: --no-vpn')
+            row('FEHLT', f'VPN-Tunnel (TCP {vpn_ip})', detail, how)
 
     if url:
         import ssl
@@ -1103,7 +1110,7 @@ def main():
 
     if '--check' in args:
         print('web-test.py - Pruefung der Voraussetzungen')
-        must, optl, rows = check_requirements(url, '--insecure' in args, vpn_ip=vpn_ip, ping='--no-ping' not in args)
+        must, optl, rows = check_requirements(url, '--insecure' in args, vpn_ip=vpn_ip, ping=not NOVPN(args))
         print_requirements(rows)
         if must:
             print(f'\n=== {len(must)} Pflicht-Voraussetzung(en) fehlen - Test kann nicht laufen ===')
@@ -1119,7 +1126,7 @@ def main():
               'Pruefen: web-test.py --check')
         return 2
     if '--no-check' not in args:
-        must, optl, rows = check_requirements(url, '--insecure' in args, vpn_ip=vpn_ip, ping='--no-ping' not in args)
+        must, optl, rows = check_requirements(url, '--insecure' in args, vpn_ip=vpn_ip, ping=not NOVPN(args))
         if must:
             print('web-test.py - Voraussetzungen fehlen:')
             print_requirements([r_ for r_ in rows if r_[0] != 'OK'])
@@ -1131,7 +1138,7 @@ def main():
     C = Ctx()
     C.url_mode = bool(url)
     C.vpn_ip = vpn_ip
-    C.no_ping = '--no-ping' in args
+    C.no_vpn = NOVPN(args)
     C.insecure = '--insecure' in args
     C.keep = opt('--keep')
     if C.keep:
