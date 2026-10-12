@@ -2821,6 +2821,13 @@
                  .replace(/Ä/g, "Ae").replace(/Ö/g, "Oe").replace(/Ü/g, "Ue");
         }
 
+        // Fix (12.10.2026): Die Ersetzung (a/o/u-Umlaut -> ae/oe/ue, ss) ist fuer deutsche Eingaben
+        // gedacht. In anderen Sprachen veraendert sie Text: im Spanischen wurde z.B. aus
+        // "pinguino" mit u-Trema "pingueino". Daher nur noch bei deutscher Oberflaeche anwenden.
+        function umlautsForProvider(text) {
+            return currentLang === 'de' ? replaceGermanUmlauts(text) : text;
+        }
+
         // =====================================================================
         // UMLAUT PLACEHOLDER FUNCTIONS (for file uploads)
         // =====================================================================
@@ -3229,7 +3236,7 @@
             const sbRegen = document.getElementById('sendeBanner'); if (sbRegen) sbRegen.style.display = 'block';
             const systemPrompt = buildSystemPrompt(userMsg.mode === 'deepthink', userMsg.hasFile);
             updateSystemPromptTokens(systemPrompt);
-            const processedSystem = userMsg.hasFile ? systemPrompt : replaceGermanUmlauts(systemPrompt);
+            const processedSystem = userMsg.hasFile ? systemPrompt : umlautsForProvider(systemPrompt);
             const aiContainer = document.createElement('div');
             aiContainer.className = 'message-container';
             const aiText = document.createElement('div');
@@ -3248,7 +3255,7 @@
                 const messages = [{ role: 'system', content: effectiveSystem }];
                 contextHistory.messages.forEach(msg => {
                     if (msg.compressed) return; // bereits im System-Prompt
-                    const content = msg.hasFile ? msg.content : replaceGermanUmlauts(msg.content);
+                    const content = msg.hasFile ? msg.content : umlautsForProvider(msg.content);
                     messages.push({ role: msg.role, content });
                 });
                 const modelName = (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq' || settings.apiService === 'openai')
@@ -4110,7 +4117,7 @@
             inputField.value = '';
             const systemPrompt = buildSystemPrompt(currentMode === 'deepthink', hasFile);
             updateSystemPromptTokens(systemPrompt);
-            const processedSystem = hasFile ? systemPrompt : replaceGermanUmlauts(systemPrompt);
+            const processedSystem = hasFile ? systemPrompt : umlautsForProvider(systemPrompt);
             const aiContainer = document.createElement('div');
             aiContainer.className = 'message-container';
             const aiText = document.createElement('div');
@@ -4129,7 +4136,7 @@
                 const messages = [{ role: 'system', content: effectiveSystem }];
                 contextHistory.messages.forEach(msg => {
                     if (msg.compressed) return; // bereits im System-Prompt
-                    const content = msg.hasFile ? msg.content : replaceGermanUmlauts(msg.content);
+                    const content = msg.hasFile ? msg.content : umlautsForProvider(msg.content);
                     messages.push({ role: msg.role, content });
                 });
                 const modelName = (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq' || settings.apiService === 'openai')

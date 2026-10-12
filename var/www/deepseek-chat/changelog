@@ -2704,5 +2704,20 @@
    - Reproduziert mit kuenstlich verzoegerter language.xml: vorher 2 FAIL, nachher alles PASS.
    - Dateien: shell-scripts/web-test.py
 
+128. 12.10.2026 - Umlaut-Ersetzung nur noch bei deutscher Oberflaeche (index.html)
+   - Fehler (gefunden mit web-test.py, Gruppe "sonderzeichen"): replaceGermanUmlauts() ersetzte in
+     jeder getippten Nachricht (und im System-Prompt) ae/oe/ue/ss-Zeichen: ä->ae, ö->oe, ü->ue,
+     ß->ss. Das war fuer deutsche Eingaben gedacht, veraenderte aber andere Sprachen: im Spanischen
+     wurde "pingüino" zu "pingueino", "vergüenza" zu "verguenza", "Müller" (en) zu "Mueller".
+   - Neu: umlautsForProvider() wendet die Ersetzung nur an, wenn die Oberflaeche auf Deutsch steht.
+     Deutsch verhaelt sich wie bisher, Spanisch und Englisch senden ü/Ü unveraendert.
+   - Betrifft: Nachrichtenverlauf, System-Prompt, Regenerieren. Datei-Uploads (Platzhalter
+     [[UE]] usw.) und Fehlermeldungen im Dialog bleiben unveraendert.
+   - web-test.py: neue Gruppe "sonderzeichen" (alle 18 spanischen Sonderzeichen auf dem ganzen
+     Weg: Eingabe, Anfrage, Anzeige, Sitzung, Datei, Einfuegen, alle Exporte) und Pruefungen,
+     dass Deutsch weiter ersetzt und Englisch nichts ersetzt.
+   - Dateien: var/www/deepseek-chat/index.html, shell-scripts/web-test.py
+
+
     ============================================================================
 

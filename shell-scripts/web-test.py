@@ -1422,6 +1422,20 @@ def t_sonderzeichen(C):
     es_check('sonderzeichen', 'Gespeicherte Sitzung enthaelt alle Zeichen', saved)
     close(p)
 
+    # Deutsch: Umlaute werden wie bisher ersetzt (gewollt); Englisch: unveraendert
+    p = new_page(C, IMG_MODEL, lang='de')
+    send(p, 'Grüße: äöü ß ÄÖÜ')
+    msgs = last_payload(C).get('messages', [])
+    sent = msgs[-1]['content'] if msgs else ''
+    add('sonderzeichen', 'Deutsche Oberflaeche: Umlaute wie bisher ersetzt (ae/oe/ue/ss, gewollt)', sent == 'Gruesse: aeoeue ss AeOeUe', sent[:50])
+    close(p)
+    p = new_page(C, IMG_MODEL, lang='en')
+    send(p, 'Müller: äöü ß')
+    msgs = last_payload(C).get('messages', [])
+    sent = msgs[-1]['content'] if msgs else ''
+    add('sonderzeichen', 'Englische Oberflaeche: Umlaute unveraendert', sent == 'Müller: äöü ß', sent[:50])
+    close(p)
+
     # Textdatei hochladen
     p = new_page(C, IMG_MODEL, lang='es')
     f = os.path.join(C.tmpdir, 'espanol.txt')
