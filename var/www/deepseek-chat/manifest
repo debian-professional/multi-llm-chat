@@ -508,9 +508,12 @@
            anbietet oder ein bestehendes Modell diese Fähigkeit erhält, MUSS AUDIO_CAPABLE_MODELS
            sofort aktualisiert werden
          * Dasselbe gilt bei Entfernung der Audio-Fähigkeit: Modell aus der Liste entfernen
-         * Aktuell audio-fähige Modelle (Stand 26.07.2026):
-           Google:  gemini-2.5-flash, gemini-2.5-pro
-           OpenAI:  gpt-4o, gpt-4.1
+         * Aktuell audio-fähige Modelle (Stand 12.10.2026, geprüft mit api-test.py):
+           Google:  gemini-2.5-flash, gemini-3.8-flash, gemini-3.5-flash-lite,
+                    gemini-3.1-pro-preview
+           OpenAI:  keine (gpt-4o und gpt-4.1 lehnen input_audio mit HTTP 400 ab;
+                    input_audio gibt es nur bei gpt-audio*-Modellen und dort nur als
+                    WAV/MP3, der Browser nimmt aber WebM auf)
          * Diese Regel gilt für alle zukünftigen LLM-Anbieter ohne Ausnahme
 
        - GUTHABEN/TAGESLIMIT-BANNER BEI NEUEM LLM-ANBIETER (VERBINDLICH UND UNUMSTÖSSLICH):

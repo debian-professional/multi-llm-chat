@@ -2752,5 +2752,13 @@
      web-test.py live mit --url ausfuehren. Der Changelog nennt web-test.py unter "Dateien:".
    - Dateien: var/www/deepseek-chat/manifest
 
+133. 12.10.2026 - manifest: Liste der audio-faehigen Modelle aktualisiert (Abschnitt E, Punkt 1)
+   - Die Liste im Manifest (Stand 26.07.2026) stimmte nicht mehr mit AUDIO_CAPABLE_MODELS in
+     index.html ueberein. Neu (Stand 12.10.2026, geprueft mit api-test.py):
+     Google: gemini-2.5-flash, gemini-3.8-flash, gemini-3.5-flash-lite, gemini-3.1-pro-preview.
+     OpenAI: keine - gpt-4o und gpt-4.1 lehnen input_audio mit HTTP 400 ab; input_audio gibt es
+     nur bei gpt-audio*-Modellen und dort nur als WAV/MP3, der Browser nimmt aber WebM auf.
+   - Dateien: var/www/deepseek-chat/manifest
+
     ============================================================================
 
