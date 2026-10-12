@@ -36,6 +36,9 @@ Tests (Gruppen):
   mikrofon     Aufnahme-Knopf (Fake-Mikrofon): aufnehmen, senden, entfernen, Meldungen
                bei fehlender Berechtigung / fehlender Mikrofon-Schnittstelle
   kompressor   Kontext-Komprimierung bei hoher Auslastung, Fehlerfall, abgeschaltet
+  sonderzeichen  alle spanischen Sonderzeichen (á é í ó ú ü ñ Á É Í Ó Ú Ü Ñ ¿ ¡ « ») in Eingabe,
+               Anfrage an den Anbieter, Anzeige, gespeicherter Sitzung, Datei-Upload, Einfuegen
+               und in allen Exporten (TXT, Markdown, RTF, PDF; einzeln und global, je Sprache)
 
 Einrichtung (einmalig, auf dem Rechner mit Browser, z.B. hpenvy):
   python3 -m venv ~/.venvs/webtest
@@ -300,7 +303,21 @@ class Ctx:
     pass
 
 
+# Alle spanischen Sonderzeichen: Akzentvokale, Ü, Ñ (klein/gross), umgekehrte Satzzeichen, Guillemets
+ES_CHARS = 'áéíóúüñÁÉÍÓÚÜÑ¿¡«»'
+ES_SENTENCE = 'Español: áéíóú ü ñ ÁÉÍÓÚ Ü Ñ ¿Qué? ¡Hola! «cita» pingüino'
+
+
+def es_missing(text, chars=ES_CHARS):
+    return [c for c in chars if c not in text]
+
+
 RESULTS = []
+
+
+def es_check(group, label, text, chars=ES_CHARS):
+    miss = es_missing(text, chars)
+    add(group, label, not miss, ('fehlt: ' + ' '.join(miss)) if miss else f'alle {len(chars)} Zeichen')
 
 
 def add(group, name, ok, detail=''):
@@ -824,11 +841,11 @@ def rtf_to_text(path):
 
 @test('export')
 def t_export(C):
-    msg = 'Frage: ¿Cómo está, María? Äöü € – 日本'
+    msg = 'Frage: ¿Cómo está, María? Äöü € – 日本 ' + ES_SENTENCE
     for lang in ('es', 'en', 'de'):
         T = C.texts[lang]
         p = new_page(C, {'apiService': 'deepseek', 'selectedModel': 'deepseek-flash'}, lang=lang)
-        C.mock.chat_text = 'Claro que sí: corazón, Lucía, ¿Quieres? 😊 Ünïcödé'   # nach new_page (reset)
+        C.mock.chat_text = 'Claro que sí: corazón, Lucía, ¿Quieres? 😊 Ünïcödé ' + ES_SENTENCE   # nach new_page (reset)
         send(p, msg)
         p.wait_for_timeout(300)
         mid = p.evaluate('contextHistory.messages[contextHistory.messages.length - 1].id')
@@ -845,9 +862,11 @@ def t_export(C):
                     add('export', f'{lang}: Einzel-RTF Inhalt (LibreOffice)', None, 'LibreOffice fehlt - Inhalt nicht geprueft')
                 else:
                     add('export', f'{lang}: Einzel-RTF: Akzente und Titel korrekt', T[283] in txt and 'corazón' in txt and '¿Quieres?' in txt and 'Ã' not in txt, T[283] in txt and 'ok' or txt[:80])
+                    es_check('export', f'{lang}: Einzel-RTF: alle spanischen Sonderzeichen', txt)
             else:
                 txt = data.decode('utf-8')
                 add('export', f'{lang}: Einzel-{ext.upper()}: Titel/Rolle/Akzente', T[283] in txt and T[289] in txt and 'corazón' in txt and '😊' in txt, txt[:60].replace('\n', ' '))
+                es_check('export', f'{lang}: Einzel-{ext.upper()}: alle spanischen Sonderzeichen', txt)
                 ts = re.search(r'(\d{1,2}[./]\d{1,2}[./]\d{4}), ', txt)
                 expect_fmt = {'en': r'^\d{1,2}/\d{1,2}/\d{4}$', 'de': r'^\d{1,2}\.\d{1,2}\.\d{4}$', 'es': r'^\d{1,2}/\d{1,2}/\d{4}$'}[lang]
                 good_ts = bool(ts) and re.match(expect_fmt, ts.group(1)) is not None
@@ -866,12 +885,14 @@ def t_export(C):
         ok = T[283].upper() in txt and T[285] in txt and T[286] in txt and T[288].upper() in txt and T[289].upper() in txt and 'corazón' in txt
         add('export', f'{lang}: globaler TXT-Export (Beschriftungen, Akzente)', ok, txt[:70].replace('\n', ' '))
         add('export', f'{lang}: globaler TXT enthaelt kein "DEEPSEEK"', 'DEEPSEEK' not in txt.upper(), '')
+        es_check('export', f'{lang}: globaler TXT: alle spanischen Sonderzeichen', txt)
 
         name, path = download(p, lambda: open_and_click('#exportMarkdownBtn'), C, f'{lang}-global')
         md = open(path, encoding='utf-8').read()
         ok = (md.startswith('# ' + T[283]) and f'## {T[294]}' in md and f'## {T[302]}' in md and f'## {T[303]}' in md
               and '(#msg-1)' in md and 'corazón' in md and ('sie' not in md.split('\n')[4] if lang != 'de' else True))
         add('export', f'{lang}: globaler Markdown (Titel, Statistik, Inhalt, Anker)', ok, md.split('\n')[0])
+        es_check('export', f'{lang}: globaler Markdown: alle spanischen Sonderzeichen', md)
         cfgline = next((l for l in md.split('\n') if l.startswith(f'**{T[292]}:**')), '')
         rest = cfgline.split(':**', 1)[-1].strip()
         if lang == 'de':
@@ -889,6 +910,7 @@ def t_export(C):
             add('export', f'{lang}: globaler RTF Inhalt (LibreOffice)', None, 'LibreOffice fehlt')
         else:
             add('export', f'{lang}: globaler RTF: Titel, Rollen, Akzente', T[283] in txt and T[288].upper() in txt and T[289].upper() in txt and 'corazón' in txt and 'Ã' not in txt, txt[:60].replace('\n', ' '))
+            es_check('export', f'{lang}: globaler RTF: alle spanischen Sonderzeichen', txt)
 
         name, path = download(p, lambda: open_and_click('#exportPdfBtn'), C, f'{lang}-global')
         head = open(path, 'rb').read(5)
@@ -902,6 +924,7 @@ def t_export(C):
                 ok = T[283] in txt and T[294] in txt and T[302] in txt and T[303] in txt and 'corazón' in txt
                 add('export', f'{lang}: globaler PDF (Titel, Statistik, Index, Verlauf, Akzente)', ok, txt.strip().split('\n')[0].strip())
                 add('export', f'{lang}: PDF ohne Emoji-Kasten (Ersatz "?")', '😊' not in txt, '')
+                es_check('export', f'{lang}: globaler PDF: alle spanischen Sonderzeichen', txt)
 
         # PDF-Einzelexport
         name, path = download(p, lambda: p.evaluate(f'exportSingleAsPdf("{mid}")'), C, f'{lang}-single')
@@ -909,6 +932,7 @@ def t_export(C):
             txt = pdf_text(path)
             if txt is not None:
                 add('export', f'{lang}: Einzel-PDF in {lang} (Ueberschriften)', T[303] in txt and f'{T[304]} 1' in txt, txt.strip().split('\n')[0].strip())
+                es_check('export', f'{lang}: Einzel-PDF: alle spanischen Sonderzeichen', txt)
         else:
             add('export', f'{lang}: Einzel-PDF', False, 'keine PDF-Datei')
         close(p)
@@ -1372,6 +1396,55 @@ def t_kompressor(C):
     send(p, BIG_TEXT)
     add('kompressor', 'Abgeschaltet: kein Aufruf trotz hoher Auslastung', len(C.mock.compress_calls) == 0, f'{len(C.mock.compress_calls)} Aufrufe')
     close(p)
+
+
+# ---------------------------------------------------------------------------
+# Spanische Sonderzeichen auf dem Weg durch die Anwendung
+# ---------------------------------------------------------------------------
+
+@test('sonderzeichen')
+def t_sonderzeichen(C):
+    """Eingabe -> Anfrage an den Anbieter -> Anzeige -> gespeicherte Sitzung; Datei- und Einfuege-Weg."""
+    no_u = ES_CHARS.replace('ü', '').replace('Ü', '')
+
+    p = new_page(C, IMG_MODEL, lang='es')
+    C.mock.chat_text = 'Respuesta: ' + ES_SENTENCE
+    send(p, ES_SENTENCE)
+    msgs = last_payload(C).get('messages', [])
+    sent = msgs[-1]['content'] if msgs else ''
+    # Hinweis: replaceGermanUmlauts() ersetzt ue/oe/ae in jeder getippten Nachricht (fuer Deutsch gedacht)
+    es_check('sonderzeichen', 'Nachricht an den Anbieter: Akzente, Ñ, ¿ ¡ « » unveraendert', sent, no_u)
+    es_check('sonderzeichen', 'Nachricht an den Anbieter: ü und Ü (pingüino) unveraendert', sent, 'üÜ')
+    txt = chat_texts(p)
+    es_check('sonderzeichen', 'Antwort im Chat angezeigt: alle Zeichen', txt[-1] if txt else '')
+    p.wait_for_timeout(300)
+    saved = ' '.join(m.get('content', '') for cd in C.mock.sessions.values() for m in cd.get('messages', []))
+    es_check('sonderzeichen', 'Gespeicherte Sitzung enthaelt alle Zeichen', saved)
+    close(p)
+
+    # Textdatei hochladen
+    p = new_page(C, IMG_MODEL, lang='es')
+    f = os.path.join(C.tmpdir, 'espanol.txt')
+    open(f, 'w', encoding='utf-8').write('Contenido: ' + ES_SENTENCE)
+    p.set_input_files('#fileUpload', f)
+    p.wait_for_selector('#fileInfo.visible', timeout=10000)
+    send(p, 'Resume')
+    msgs = last_payload(C).get('messages', [])
+    sent = msgs[-1]['content'] if msgs else ''
+    es_check('sonderzeichen', 'Textdatei: Akzente, Ñ, ¿ ¡ « » unveraendert gesendet', sent, no_u)
+    ue_ok = '[[UE]]' in sent and '[[CUE]]' in sent
+    add('sonderzeichen', 'Textdatei: ü/Ü gehen als Platzhalter [[UE]]/[[CUE]] (gewollt, wird in der Antwort zurueckgesetzt)', ue_ok,
+        'Platzhalter vorhanden' if ue_ok else sent[:60])
+    close(p)
+
+    # Text einfuegen (am Cursor)
+    p = new_page(C, IMG_MODEL, lang='es')
+    p.evaluate(PASTE_TEXT_JS, ES_SENTENCE)
+    p.wait_for_timeout(300)
+    p.click('#pasteAtCursorBtn')
+    es_check('sonderzeichen', 'Text einfuegen (am Cursor): alle Zeichen im Eingabefeld', p.input_value('#input'))
+    close(p)
+    C.mock.chat_text = Mock(None, True, None).chat_text
 
 
 # ---------------------------------------------------------------------------
