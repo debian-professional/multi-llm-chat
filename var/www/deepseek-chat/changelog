@@ -2231,6 +2231,53 @@
       Nutzer live auf dem Android-Smartphone bestaetigt
     - Dateien: index.html
 
+    109. [12.10.2026] Update: Google Gemini - Gemini 3.x ergaenzt, Output-Limit
+         korrigiert, falsche Abschaltwarnung entfernt
+    - Anlass: Berichte ueber umfangreiche Aenderungen bei Gemini. Pruefung
+      gegen die offizielle Google-Doku (Deprecations-Seite, Stand 09.10.2026,
+      Changelog Juli-Oktober 2026, Modell- und Preisseiten)
+    - Befund 1 (falsche Warnung): Der Hinweis "Abschaltung gemini-2.5-flash am
+      16.10.2026" (google-api.py-Header, Readme_EN/DE/ES, overview-LLM.md,
+      Changelog) war falsch. Google nennt fuer gemini-2.5-flash/-pro KEIN
+      Abschaltdatum ("not deprecated, served until further notice"); das Datum
+      stammte aus Drittquellen und betraf Vertex AI. Neu: Hinweis, dass Google
+      den Zugang zu den 2.5-Modellen auf Nutzer beschraenkt, die sie bereits
+      aktiv verwendet haben. Auch der genannte Nachfolger gemini-3.5-flash ist
+      seit 08.10.2026 selbst abgekuendigt (automatisch auf 3.6 umgeleitet)
+    - Befund 2 (echter Fehler): Output-Limit von gemini-2.5-flash war mit 8192
+      Token hinterlegt (Wert von Gemini 2.0 Flash). Laut Google-Modellseite
+      sind es 65536. Das Frontend sendet MODEL_CONFIG.maxOutputTokens als
+      max_tokens - lange Antworten wurden bisher unnoetig abgeschnitten
+        * Korrigiert in MODEL_CONFIG, google-api.py-Header, Readmes, Overview
+    - Neue Modelle (beide multimodal: Text, Bild, Audio, Video, PDF; 1.048.576
+      Token Input / 65536 Output; laut Google-Preisseite mit Free Tier):
+        * gemini-3.8-flash      "Google Gemini 3.8 Flash (02.09.2026)"
+        * gemini-3.5-flash-lite "Google Gemini 3.5 Flash-Lite (21.07.2026)"
+        * aufgenommen in GOOGLE_MODELS_FREE/PAID, MODEL_CAPABILITIES,
+          MODEL_CONFIG, MODEL_DISPLAY_LABELS, AUDIO_CAPABLE_MODELS
+        * gemini-2.5-flash bleibt an erster Stelle und damit Standardmodell,
+          bis die neuen Modelle live getestet sind
+        * Bewusst NICHT aufgenommen: gemini-3.5-flash und gemini-3.7-flash
+          (seit 08.10.2026 abgekuendigt, von Google umgeleitet);
+          gemini-3.6-flash (nicht noetig); 3.1-Pro-Preview (Preview, kein
+          Free Tier)
+    - Hinweis Thinking: Gemini-3.x-Modelle denken standardmaessig
+      (3.8 Flash: Stufe medium, 3.5 Flash-Lite: minimal); Denk-Token zaehlen
+      laut Google zu maxOutputTokens. Im Chat unkritisch (Limit 65536), aber
+      der Kompressor (compress-context.py, maxOutputTokens 2000) wurde
+      deshalb NICHT auf die 3.x-Modelle erweitert - COMPRESSOR_MODELS
+      unveraendert
+    - Geprueft ohne Befund: temperature/top_p/top_k sind seit 21.07.2026
+      deprecated - google-api.py sendet sie nicht. Keine Aenderungen an
+      Streaming, maxOutputTokens-Parameter oder API-Key-Handling
+    - Doku: Readme_EN/DE/ES.md und overview-LLM.md aktualisiert (Modelllisten,
+      Limits, Preise fuer 3.x und 2.5 Pro neu verifiziert; unbelegte
+      Free-Limits "5 RPM / 20 RPD" entfernt)
+    - Verifiziert: Python- und JS-Syntaxcheck OK; Diff gegen den Export zeigt
+      ausschliesslich die beschriebenen Aenderungen
+    - Dateien: google-api.py, index.html, Readme_EN.md, Readme_DE.md,
+      Readme_ES.md, overview-LLM.md
+
     ============================================================================
 
 

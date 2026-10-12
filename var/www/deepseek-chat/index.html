@@ -1672,6 +1672,9 @@
             // Google Gemini: alle aktuell angebotenen Modelle sind multimodal (siehe google-api.py Header)
             'gemini-2.5-flash':  { images: true,  text: true },
             'gemini-2.5-pro':    { images: true,  text: true },
+            // Update (12.10.2026): Gemini 3.x (multimodal: Text, Bild, Audio, Video, PDF)
+            'gemini-3.8-flash':       { images: true,  text: true },
+            'gemini-3.5-flash-lite':  { images: true,  text: true },
             // OpenAI: alle aktuell angebotenen Modelle unterstuetzen Bilder (siehe openai-api.py Header)
             'gpt-4o-mini':          { images: true,  text: true },
             'gpt-4o':               { images: true,  text: true },
@@ -1743,12 +1746,24 @@
                 maxOutputTokens:   384000,
                 maxContextMessages: 50
             },
+            // Korrektur (12.10.2026): Output-Limit 65536 (bisher 8192 = Wert von Gemini 2.0 Flash)
             'gemini-2.5-flash': {
                 maxContextTokens:  1048576,
-                maxOutputTokens:   8192,
+                maxOutputTokens:   65536,
                 maxContextMessages: 100
             },
             'gemini-2.5-pro': {
+                maxContextTokens:  1048576,
+                maxOutputTokens:   65536,
+                maxContextMessages: 100
+            },
+            // Update (12.10.2026): Gemini 3.x - Denk-Token zaehlen zu maxOutputTokens
+            'gemini-3.8-flash': {
+                maxContextTokens:  1048576,
+                maxOutputTokens:   65536,
+                maxContextMessages: 100
+            },
+            'gemini-3.5-flash-lite': {
                 maxContextTokens:  1048576,
                 maxOutputTokens:   65536,
                 maxContextMessages: 100
@@ -1888,6 +1903,9 @@
             // 17.06.2025 gemeinsam die allgemeine Verfuegbarkeit (GA).
             'gemini-2.5-flash': 'Google Gemini 2.5 Flash (17.06.2025)',
             'gemini-2.5-pro':   'Google Gemini 2.5 Pro (17.06.2025)',
+            // Update (12.10.2026): Gemini 3.x (GA-Daten laut Google-Doku)
+            'gemini-3.8-flash':      'Google Gemini 3.8 Flash (02.09.2026)',
+            'gemini-3.5-flash-lite': 'Google Gemini 3.5 Flash-Lite (21.07.2026)',
             // Hugging Face (17.09.2026). Echte historische Release-Daten
             // (nicht das Datei-Erstellungsdatum 08.03.2026 aus dem
             // hugging-api.py-Header, das faelschlich als "Stand" diente).
@@ -1915,15 +1933,16 @@
         }
         const OPENAI_MODELS_FREE   = ['gpt-4o-mini', 'gpt-5.6-luna'];
         const OPENAI_MODELS_PAID   = ['gpt-6-astra', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-5.4', 'gpt-4o', 'gpt-4.1', 'gpt-4o-mini'];
-        const GOOGLE_MODELS_FREE   = ['gemini-2.5-flash'];
-        const GOOGLE_MODELS_PAID   = ['gemini-2.5-flash', 'gemini-2.5-pro'];
+        // gemini-2.5-flash bleibt an erster Stelle (= Standardmodell), bis die neuen Modelle getestet sind
+        const GOOGLE_MODELS_FREE   = ['gemini-2.5-flash', 'gemini-3.8-flash', 'gemini-3.5-flash-lite'];
+        const GOOGLE_MODELS_PAID   = ['gemini-2.5-flash', 'gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-2.5-pro'];
         const HF_MODELS_FREE       = ['Qwen/Qwen2.5-72B-Instruct', 'mistralai/Mistral-7B-Instruct-v0.3', 'microsoft/Phi-3.5-mini-instruct'];
         const HF_MODELS_PAID       = ['meta-llama/Meta-Llama-3.1-70B-Instruct', 'meta-llama/Meta-Llama-3.1-405B-Instruct', 'Qwen/Qwen2.5-72B-Instruct'];
         const GROQ_MODELS_FREE     = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'meta-llama/llama-4-scout-17b-16e-instruct', 'qwen/qwen3-32b'];
         const GROQ_MODELS_PAID     = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'meta-llama/llama-4-scout-17b-16e-instruct', 'qwen/qwen3-32b', 'moonshotai/kimi-k2-instruct-0905'];
         const GOOGLE_MODELS        = GOOGLE_MODELS_FREE; // Fallback
         const AUDIO_CAPABLE_MODELS = [
-            'gemini-2.5-flash', 'gemini-2.5-pro',
+            'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3.8-flash', 'gemini-3.5-flash-lite',
             'gpt-4o', 'gpt-4.1'
         ];
         // Modelle je Kompressor-Anbieter (nur bezahlte Provider)

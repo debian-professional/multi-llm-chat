@@ -6,32 +6,56 @@
 # Importiert / aktualisiert: 19.07.2026 (Bild-Uebertragung ergaenzt: image_data/image_mime_type);
 # 17.09.2026 (Korrektur: gemini-2.5-flash/-pro zeigten faelschlich das
 # Aktualisierungsdatum dieser Datei als "Version"-Datum statt des echten
-# GA-Datums - jetzt korrigiert)
+# GA-Datums - jetzt korrigiert);
+# 12.10.2026 (Gemini 3.x ergaenzt, Output-Limit gemini-2.5-flash korrigiert,
+# falsche Abschaltwarnung 16.10.2026 entfernt - siehe unten)
 # =============================================================================
 #
 # Unterstuetzte Modelle:
 #
 #   gemini-2.5-flash  [Free + Paid]
 #     Version      : Gemini 2.5 Flash (GA seit 17.06.2025)
-#     Kontext      : 1.048.576 Token Input / 8.192 Token Output
+#     Kontext      : 1.048.576 Token Input / 65.536 Token Output
 #     Faehigkeiten : Text, Bilder, Audio, Video
-#     Free-Limit   : 20 Anfragen/Tag, 5 Anfragen/Minute
-#     Achtung      : Abschaltung angekuendigt fuer 16.10.2026 (Nachfolger: gemini-3.5-flash)
+#     Hinweis      : Nicht abgekuendigt, laut Google aber nur noch fuer Nutzer
+#                    verfuegbar, die das Modell bereits aktiv verwendet haben.
 #
 #   gemini-2.5-pro  [Paid]
 #     Version      : Gemini 2.5 Pro (GA seit 17.06.2025)
 #     Kontext      : 1.048.576 Token Input / 65.536 Token Output
 #     Faehigkeiten : Text, Bilder, Audio, Video
+#     Hinweis      : Wie gemini-2.5-flash (Zugang auf Bestandsnutzer beschraenkt).
 #
-# ENTFERNT (nicht mehr erreichbar, Stand 19.07.2026):
+#   gemini-3.8-flash  [Free + Paid]
+#     Version      : Gemini 3.8 Flash (GA seit 02.09.2026)
+#     Kontext      : 1.048.576 Token Input / 65.536 Token Output
+#     Faehigkeiten : Text, Bilder, Audio, Video, PDF (Ausgabe: Text)
+#     Thinking     : standardmaessig aktiv (Stufe "medium"); Denk-Token zaehlen
+#                    zu maxOutputTokens
+#
+#   gemini-3.5-flash-lite  [Free + Paid]
+#     Version      : Gemini 3.5 Flash-Lite (GA seit 21.07.2026)
+#     Kontext      : 1.048.576 Token Input / 65.536 Token Output
+#     Faehigkeiten : Text, Bilder, Audio, Video, PDF (Ausgabe: Text)
+#     Thinking     : standardmaessig aktiv (Stufe "minimal")
+#
+# ENTFERNT (nicht mehr erreichbar):
 #   gemini-2.0-flash  — abgeschaltet 01.06.2026
 #   gemini-1.5-pro    — bereits laenger abgeschaltet (liefert 404)
 #
-# Hinweis: Google hat mit gemini-3.5-flash / gemini-3.1-pro-preview bereits eine
-#          neuere Modell-Generation veroeffentlicht. Perspektivisch pruefen, ob
-#          diese hier ergaenzt werden sollen.
+# Korrekturen 12.10.2026:
+#   - Die bisherige Warnung "Abschaltung gemini-2.5-flash am 16.10.2026" war
+#     falsch: Google nennt fuer die 2.5-Modelle kein Abschaltdatum ("not
+#     deprecated, served until further notice"). Das Datum stammte aus
+#     Drittquellen und betraf Vertex AI, nicht die Gemini Developer API.
+#   - Output-Limit gemini-2.5-flash: 65.536 (bisher faelschlich 8.192, Wert von
+#     Gemini 2.0 Flash).
+#   - Nicht verwendet (bewusst): temperature/top_p/top_k sind seit 21.07.2026
+#     deprecated; dieser Proxy sendet sie nicht.
+#   - gemini-3.5-flash / gemini-3.7-flash sind seit 08.10.2026 abgekuendigt und
+#     werden von Google auf 3.6 bzw. 3.8 umgeleitet - bewusst nicht aufgenommen.
 #
-# Quelle: https://ai.google.dev/gemini-api/docs/deprecations (Stand 19.07.2026)
+# Quelle: https://ai.google.dev/gemini-api/docs/deprecations (Stand 09.10.2026)
 # =============================================================================
 
 import json

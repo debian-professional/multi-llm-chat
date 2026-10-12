@@ -26,7 +26,7 @@
 | Criterion | OpenAI | DeepSeek | Google Gemini | Hugging Face | GroqCloud |
 |-----------|--------|----------|---------------|--------------|-----------|
 | **Origin** | USA | China | USA (Google) | USA (Community) | USA |
-| **Own Models** | Yes (GPT-6 Astra, GPT-5.6, GPT-5.5, GPT-4.x) | Yes (V4.1 Flash, V4 Flash/Pro) | Yes (Gemini 2.5) | No (Router) | No (Router) |
+| **Own Models** | Yes (GPT-6 Astra, GPT-5.6, GPT-5.5, GPT-4.x) | Yes (V4.1 Flash, V4 Flash/Pro) | Yes (Gemini 3.8 / 3.5 / 2.5) | No (Router) | No (Router) |
 | **Context Window** | up to 1.05M | 1.05M | up to 1.05M | 8K–128K | 8K–131K |
 | **Multimodal** | ✅ Text, Image, Audio¹ | ❌ Text only | ✅ Text, Image, Audio, Video | ❌ Text only* | ❌ Text only |
 | **Free Tier** | Limited (gpt-4o-mini, gpt-5.6-luna)² | 5M Tokens (30 days) | Yes (permanent) | Yes (monthly credits) | Yes (permanent) |
@@ -196,25 +196,29 @@ Gemini is currently the only provider in this client that offers true **multimod
 
 | Model | Version | Context Input | Max Output | Capabilities |
 |-------|---------|---------------|------------|--------------|
-| `gemini-2.5-flash` | 2.5 Flash | 1,048,576 Token | 8,192 Token | Text, Image, Audio, Video |
+| `gemini-2.5-flash` | 2.5 Flash | 1,048,576 Token | 65,536 Token | Text, Image, Audio, Video |
 | `gemini-2.5-pro` | 2.5 Pro | 1,048,576 Token | 65,536 Token | Text, Image, Audio, Video |
+| `gemini-3.8-flash` | 3.8 Flash (GA 02.09.2026) | 1,048,576 Token | 65,536 Token | Text, Image, Audio, Video, PDF |
+| `gemini-3.5-flash-lite` | 3.5 Flash-Lite (GA 21.07.2026) | 1,048,576 Token | 65,536 Token | Text, Image, Audio, Video, PDF |
 
 **Retired models:** `gemini-2.0-flash` (shut down 1 June 2026) and `gemini-1.5-pro` (retired earlier) have been removed from the client entirely — both are no longer reachable via the API. The client's default fallback model was updated from `gemini-2.0-flash` to `gemini-2.5-flash` accordingly.
 
-**Upcoming retirement:** `gemini-2.5-flash` itself is scheduled for shutdown on **16 October 2026** (successor: `gemini-3.5-flash`, not yet integrated into this client).
+**Availability of the 2.5 models (12.10.2026):** The earlier notice of a shutdown of `gemini-2.5-flash` on 16 October 2026 was incorrect (third-party source, referred to Vertex AI). Google lists no shutdown date for the 2.5 models ("not deprecated, served until further notice") but limits access to users who have used them before. Gemini 3.x models are thinking models (thinking on by default; thinking tokens count towards the output limit). `gemini-3.5-flash` / `gemini-3.7-flash` are deprecated (08.10.2026) and auto-routed by Google to 3.6 / 3.8, so they are not offered here.
 
-### 4.3 Pricing (as of 19.07.2026, not re-verified in the 14.09.2026 update)
+### 4.3 Pricing (3.x models and 2.5 Pro verified 12.10.2026; 2.5 Flash not re-verified since 19.07.2026)
 
 | Model | Input | Output | Free Tier |
 |-------|-------|--------|-----------|
-| `gemini-2.5-flash` | $0.075/M | $0.30/M | ✅ (permanent, rate-limited: 5 RPM / 20 RPD) |
-| `gemini-2.5-pro` | $1.25/M | $5.00/M | ❌ |
+| `gemini-2.5-flash` | $0.075/M | $0.30/M | ✅ (rate-limited per project, see AI Studio) |
+| `gemini-2.5-pro` | $1.25/M (≤200k) | $10.00/M (≤200k) | ✅ |
+| `gemini-3.8-flash` | $0.75/M until 31.12.2026, then $1.50/M | $3.75/M until 31.12.2026, then $7.50/M | ✅ |
+| `gemini-3.5-flash-lite` | $0.30/M | $2.50/M | ✅ |
 
 ### 4.4 Strengths
 
-- **True Multimodality:** Text, image, audio, and video in one API — both Gemini models in this client support live microphone recordings via the built-in audio recording button, and image upload/paste is fully wired end-to-end as of 19 July 2026
+- **True Multimodality:** Text, image, audio, and video in one API — all Gemini models in this client support live microphone recordings via the built-in audio recording button, and image upload/paste is fully wired end-to-end as of 19 July 2026
 - **Large Context:** Up to 1.05M tokens — entire codebases or lengthy legal documents
-- **Permanent Free Tier:** No expiry date for `gemini-2.5-flash`
+- **Free Tier:** Available for the Flash models and 2.5 Pro (limits per project, shown in AI Studio)
 - **GDPR Compliance:** Possible via Vertex AI EU region
 
 ### 4.5 Weaknesses
@@ -222,7 +226,7 @@ Gemini is currently the only provider in this client that offers true **multimod
 - **Complex Pricing:** Varies by input context size and modality
 - **Proprietary Format:** Does not use OpenAI-compatible endpoint format — `google-api.py` performs bidirectional conversion
 - **Free Tier Rate Limits:** 429 errors under heavy use (handled automatically in this client via retry with countdown)
-- **Shrinking Model Roster:** Two of the four models available a year ago have already been retired; `gemini-2.5-flash` itself has a published shutdown date
+- **Shrinking Model Roster:** Older models are retired regularly (2.0 Flash, 1.5 Pro); access to the 2.5 models is now limited to existing users; the 3.x generation has a fast release cadence
 
 ### 4.6 Ideal For
 

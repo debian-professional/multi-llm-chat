@@ -13,7 +13,7 @@ Aspectos destacados:
 - **Modo Descarga** – Para respuestas de IA muy largas, un interruptor opcional suprime el renderizado en vivo carácter por carácter en el chat y muestra solo un contador de caracteres en curso, ofreciendo luego los botones de exportación existentes una vez completada la respuesta — notablemente más rápido para respuestas de varios cientos de miles de caracteres en hardware modesto.
 - **Pipeline de visión funcional** – La subida de imágenes y el pegado desde el portapapeles están completamente conectados de extremo a extremo para Google Gemini, OpenAI y DeepSeek (`deepseek-flash`): las imágenes se codifican en base64 en el cliente y se entregan como bloques nativos `inline_data` (Gemini) o `image_url` (OpenAI/DeepSeek, formato compatible con OpenAI). La detección de capacidades del modelo (`MODEL_CAPABILITIES`) está poblada por proveedor, en lugar de asumir por defecto "sin soporte de imágenes".
 - **Subida de múltiples archivos** – Seleccionar y enviar varios archivos simultáneamente. Los contenidos se combinan y envían como contexto con cabeceras y separadores por archivo.
-- **Grabación de audio mediante micrófono** – Grabar audio directamente en el navegador y enviarlo a la IA. Soporte nativo de Google Gemini (`gemini-2.5-flash`, `gemini-2.5-pro`) y OpenAI (`gpt-4o`, `gpt-4.1`). El botón de grabación aparece automáticamente solo con modelos compatibles con audio.
+- **Grabación de audio mediante micrófono** – Grabar audio directamente en el navegador y enviarlo a la IA. Soporte nativo de Google Gemini (`gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-3.8-flash`, `gemini-3.5-flash-lite`) y OpenAI (`gpt-4o`, `gpt-4.1`). El botón de grabación aparece automáticamente solo con modelos compatibles con audio.
 - **Gestión de contexto única** – Eliminar mensajes individuales junto con todos los posteriores. El chat permanece consistente y el uso de tokens se recalcula dinámicamente.
 - **Máxima seguridad** – Las claves API nunca son visibles en el cliente, las subidas están protegidas contra archivos ejecutables mediante inspección de bytes mágicos, y las sesiones se almacenan con permisos de archivo restrictivos.
 - **Sin frameworks exóticos** – Todo se basa en Apache, Python 3, Bash y HTML/JavaScript/CSS puro. Sin Node.js, sin React, sin pipeline de compilación.
@@ -214,12 +214,14 @@ Todas las respuestas de IA se reciben y muestran **token por token** usando Serv
 - **Endpoint**: `https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent`
 - **Arquitectura**: `google-api.py` convierte el formato interno compatible con OpenAI al formato `contents` de Gemini, envía la solicitud y convierte la respuesta SSE de Gemini de vuelta al formato SSE de OpenAI esperado por el cliente.
 - **Clave API**: `GOOGLE_API_KEY` mediante variables de entorno de Apache.
-- **Modelos Tier Gratuito**: `gemini-2.5-flash` (5 RPM, 20 RPD)
-- **Modelos Tier de Pago**: `gemini-2.5-flash`, `gemini-2.5-pro`
-- **Entrada de imágenes**: Ambos modelos aceptan entrada de imágenes, enviadas como bloques `inline_data` en el formato nativo de Gemini (el mismo mecanismo usado para audio).
-- **Entrada de audio**: Ambos modelos Gemini soportan audio nativamente. El audio se envía como bloques `inline_data` en formato Gemini. El botón de grabación siempre es visible cuando Google Gemini está activo.
+- **Modelos Tier Gratuito**: `gemini-2.5-flash`, `gemini-3.8-flash`, `gemini-3.5-flash-lite` (límites por proyecto, ver AI Studio)
+- **Modelos Tier de Pago**: `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-3.8-flash`, `gemini-3.5-flash-lite`
+- **Entrada de imágenes**: Todos los modelos Gemini aceptan entrada de imágenes, enviadas como bloques `inline_data` en el formato nativo de Gemini (el mismo mecanismo usado para audio).
+- **Entrada de audio**: Todos los modelos Gemini soportan audio nativamente. El audio se envía como bloques `inline_data` en formato Gemini. El botón de grabación siempre es visible cuando Google Gemini está activo.
 - **Modelos retirados**: `gemini-2.0-flash` (cerrado el 1 de junio de 2026) y `gemini-1.5-pro` (retirado anteriormente) fueron eliminados de todas las listas de modelos, `MODEL_CONFIG` y `AUDIO_CAPABLE_MODELS`. El modelo de respaldo por defecto se actualizó de `gemini-2.0-flash` a `gemini-2.5-flash`.
-- **Retiro próximo**: `gemini-2.5-flash` mismo está programado para cierre el **16 de octubre de 2026** (sucesor: `gemini-3.5-flash`, aún no integrado).
+- **Disponibilidad de los modelos 2.5 (12.10.2026)**: El aviso anterior de cierre el 16 de octubre de 2026 era incorrecto (fuente de terceros, se refería a Vertex AI). Google no indica fecha de cierre para `gemini-2.5-flash` / `gemini-2.5-pro` («no obsoletos, disponibles hasta nuevo aviso»), pero limita el acceso a usuarios que ya los han utilizado.
+- **Gemini 3.x (12.10.2026)**: añadidos `gemini-3.8-flash` (GA 02.09.2026) y `gemini-3.5-flash-lite` (GA 21.07.2026) — multimodales (texto, imagen, audio, vídeo, PDF), 1.048.576 tokens de entrada / 65.536 de salida. El thinking está activo por defecto y los tokens de razonamiento cuentan para `maxOutputTokens`. `gemini-3.5-flash` / `gemini-3.7-flash` (obsoletos desde el 08.10.2026, redirigidos por Google a 3.6 / 3.8) no se añadieron deliberadamente. El modelo por defecto sigue siendo `gemini-2.5-flash`.
+- **Límite de salida corregido (12.10.2026)**: `gemini-2.5-flash` tiene 65.536 tokens de salida (antes erróneamente 8.192, el valor de Gemini 2.0 Flash).
 - El botón DeepThink y el indicador se ocultan cuando Google Gemini es el proveedor activo.
 
 ### Integración con Hugging Face
@@ -297,6 +299,8 @@ Un sofisticado manejador de portapapeles intercepta todos los eventos de pegado 
 | `deepseek-v4-flash` | 1.048.576 | ~3.145.000 caracteres |
 | `deepseek-v4-pro` | 1.048.576 | ~3.145.000 caracteres |
 | `gemini-2.5-flash` | 1.048.576 | ~3.145.000 caracteres |
+| `gemini-3.8-flash` | 1.048.576 | ~3.145.000 caracteres |
+| `gemini-3.5-flash-lite` | 1.048.576 | ~3.145.000 caracteres |
 | `gpt-5.6-sol` / `-terra` / `-luna` | 1.048.576 | ~3.145.000 caracteres |
 | `gpt-4o` / `gpt-4o-mini` | 128.000 | ~384.000 caracteres |
 
@@ -374,6 +378,8 @@ Al inicio, `index.html` consulta `/cgi-bin/deepseek-models.py`, que llama al end
       // Google Gemini: multimodal
       'gemini-2.5-flash':  { images: true,  text: true },
       'gemini-2.5-pro':    { images: true,  text: true },
+      'gemini-3.8-flash':  { images: true,  text: true },
+      'gemini-3.5-flash-lite': { images: true,  text: true },
       // OpenAI: multimodal en todo el lineup actual
       'gpt-4o-mini': { images: true, text: true },
       'gpt-4o':      { images: true, text: true },
@@ -564,7 +570,7 @@ El cliente incluye un **botón de grabación de micrófono** incorporado que per
 
 - **Visibilidad**: Controlada por `updateAudioButtonVisibility()`, llamada en cada cambio de modelo. Visible solo cuando el modelo activo está listado en `AUDIO_CAPABLE_MODELS`.
 - **Modelos compatibles con audio** (constante `AUDIO_CAPABLE_MODELS`):
-  - Google Gemini: `gemini-2.5-flash`, `gemini-2.5-pro`
+  - Google Gemini: `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-3.8-flash`, `gemini-3.5-flash-lite`
   - OpenAI: `gpt-4o`, `gpt-4.1`
 - **Flujo de grabación**: `getUserMedia()` → API `MediaRecorder` → grabación por fragmentos (intervalos de 10ms) → `Blob` ensamblado al detener → codificado en base64.
 - **Auto-detección de tipo MIME**: `audio/webm` (Chrome/Firefox) o `audio/mp4` (Safari) — detectado en tiempo de ejecución mediante `MediaRecorder.isTypeSupported()`.
@@ -618,7 +624,7 @@ El Kompressor hace una llamada LLM separada que puede involucrar grandes cantida
 |-----------|----------------------------------|
 | DeepSeek | `deepseek-v4-flash`, `deepseek-v4-pro`, `deepseek-flash` |
 | OpenAI | `gpt-4o-mini`, `gpt-5.6-luna`, `gpt-4o`, `gpt-4.1`, `gpt-6-astra` |
-| Google | `gemini-2.5-flash`, `gemini-2.5-pro` |
+| Google | `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-3.8-flash`, `gemini-3.5-flash-lite` |
 
 **Predeterminado recomendado**: DeepSeek + `deepseek-v4-flash` — sin límites de tasa, menor costo por token, resultados más fiables.
 
@@ -1082,8 +1088,10 @@ const MODEL_CONFIG = {
     'deepseek-v4-pro':   { maxContextTokens: 1048576, maxOutputTokens: 384000, maxContextMessages: 50 },
     'deepseek-flash':    { maxContextTokens: 1048576, maxOutputTokens: 384000, maxContextMessages: 50 }, // V4.1 Flash, comprensión nativa de imágenes
     // Google Gemini
-    'gemini-2.5-flash':     { maxContextTokens: 1048576, maxOutputTokens: 8192,   maxContextMessages: 100 },
+    'gemini-2.5-flash':     { maxContextTokens: 1048576, maxOutputTokens: 65536,  maxContextMessages: 100 },
     'gemini-2.5-pro':       { maxContextTokens: 1048576, maxOutputTokens: 65536,  maxContextMessages: 100 },
+    'gemini-3.8-flash':     { maxContextTokens: 1048576, maxOutputTokens: 65536,  maxContextMessages: 100 },
+    'gemini-3.5-flash-lite':{ maxContextTokens: 1048576, maxOutputTokens: 65536,  maxContextMessages: 100 },
     // Hugging Face
     'Qwen/Qwen2.5-72B-Instruct':               { maxContextTokens: 128000, maxOutputTokens: 8192, maxContextMessages: 80 },
     'mistralai/Mistral-7B-Instruct-v0.3':      { maxContextTokens: 32768,  maxOutputTokens: 4096, maxContextMessages: 40 },
@@ -1110,13 +1118,13 @@ const MODEL_CONFIG = {
 const DEEPSEEK_MODELS    = ['deepseek-v4-flash', 'deepseek-v4-pro', 'deepseek-flash'];
 const OPENAI_MODELS_FREE = ['gpt-4o-mini', 'gpt-5.6-luna'];
 const OPENAI_MODELS_PAID = ['gpt-6-astra', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-5.4', 'gpt-4o', 'gpt-4.1', 'gpt-4o-mini'];
-const GOOGLE_MODELS_FREE = ['gemini-2.5-flash'];
-const GOOGLE_MODELS_PAID = ['gemini-2.5-flash', 'gemini-2.5-pro'];
+const GOOGLE_MODELS_FREE = ['gemini-2.5-flash', 'gemini-3.8-flash', 'gemini-3.5-flash-lite'];
+const GOOGLE_MODELS_PAID = ['gemini-2.5-flash', 'gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-2.5-pro'];
 const HF_MODELS_FREE     = ['Qwen/Qwen2.5-72B-Instruct', 'mistralai/Mistral-7B-Instruct-v0.3', 'microsoft/Phi-3.5-mini-instruct'];
 const HF_MODELS_PAID     = ['meta-llama/Meta-Llama-3.1-70B-Instruct', 'meta-llama/Meta-Llama-3.1-405B-Instruct', 'Qwen/Qwen2.5-72B-Instruct'];
 const GROQ_MODELS_FREE   = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'meta-llama/llama-4-scout-17b-16e-instruct', 'qwen/qwen3-32b'];
 const GROQ_MODELS_PAID   = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'meta-llama/llama-4-scout-17b-16e-instruct', 'qwen/qwen3-32b', 'moonshotai/kimi-k2-instruct-0905'];
-const AUDIO_CAPABLE_MODELS = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gpt-4o', 'gpt-4.1'];
+const AUDIO_CAPABLE_MODELS = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gpt-4o', 'gpt-4.1'];
 ```
 
 Desde el 17 de septiembre de 2026, la etiqueta visible de cada modelo en los desplegables anteriores se busca por separado vía `MODEL_DISPLAY_LABELS` / `getModelDisplayLabel()` — ver [Etiquetas de Modelo y Limpieza](#17-de-septiembre-de-2026-etiquetas-de-modelo-y-limpieza). Los arrays anteriores siguen definiendo qué IDs crudos son válidos y se envían a la API de cada proveedor; solo difiere el texto en pantalla.
