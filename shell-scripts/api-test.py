@@ -11,7 +11,7 @@ getestet wird, was die App wirklich anbietet.
 Tests:
   0  Verfuegbarkeit  : Modell-ID in der Modellliste des Anbieters
   A  Text            : kurze Frage, max. Output-Tokens = Wert aus MODEL_CONFIG
-  B  Bild            : 16x16-Rot-PNG (nur Modelle mit images:true)
+  B  Bild            : 64x64-Rot-PNG (nur Modelle mit images:true)
   C  Audio           : 0,5 s Sinuston als WAV (nur Modelle aus AUDIO_CAPABLE_MODELS
                        sowie gpt-4.1 als Gegenprobe); mit ffmpeg zusaetzlich WebM,
                        das ist das Format, das der Browser tatsaechlich sendet
@@ -29,6 +29,10 @@ Repo-Verzeichnis oder mit vollem Pfad):
   sudo python3 shell-scripts/api-test.py --dry           # nur anzeigen, was getestet wuerde
   sudo python3 shell-scripts/api-test.py groq hf --list  # verfuegbare Modell-IDs des Anbieters auflisten
   --html=PFAD   andere index.html verwenden (Standard: Produktion, sonst Repo-Kopie)
+
+Einstufung: FAIL = Konfiguration/Anfrage fehlerhaft. WARN bei HTTP 402/429/503 oder
+Timeout = Konto-/Anbieterproblem (Guthaben leer, Kontingent, Ueberlast); die Konfiguration
+ist dann weder bestaetigt noch widerlegt - spaeter wiederholen.
 
 Kosten: wenige Cent. Es werden keine API-Keys ausgegeben.
 """
@@ -104,7 +108,7 @@ def parse_html(path):
 
 
 def make_png():
-    w = h = 16
+    w = h = 64  # Groq verlangt mind. 32x32 Pixel
     raw = b''.join(b'\x00' + b'\xff\x00\x00' * w for _ in range(h))
     def chunk(t, d):
         c = struct.pack('>I', len(d)) + t + d
@@ -148,6 +152,12 @@ def http(url, payload=None, headers=None, method=None):
         return e.code, e.read().decode('utf-8', 'replace'), time.time() - t0
     except Exception as e:
         return 0, str(e), time.time() - t0
+
+
+def bad(st):
+    """FAIL, ausser bei Konto-/Anbieterproblemen (Guthaben, Kontingent, Ueberlast, Timeout):
+    dann WARN - die App-Konfiguration ist damit weder bestaetigt noch widerlegt."""
+    return 'WARN' if st in (0, 402, 429, 503) else 'FAIL'
 
 
 def clean(text, keys, n=150):
@@ -350,7 +360,7 @@ def main():
             elif st == 200:
                 add(p, m, 'A-text', 'WARN', f'{dt:4.1f}s HTTP 200 aber leere Antwort {info}')
             else:
-                add(p, m, 'A-text', 'FAIL', f'HTTP {st} max={limit}: {clean(txt or info, keys)}')
+                add(p, m, 'A-text', bad(st), f'HTTP {st} max={limit}: {clean(txt or info, keys)}')
             if no_media:
                 continue
             # B: Bild
@@ -362,7 +372,7 @@ def main():
                     good = bool(re.search(r'rot|red|rojo', txt, re.I))
                     add(p, m, 'B-bild', 'PASS' if good else 'WARN', f'{dt:4.1f}s "{clean(txt, keys, 40)}" {info}')
                 else:
-                    add(p, m, 'B-bild', 'FAIL', f'HTTP {st}: {clean(txt or info, keys)}')
+                    add(p, m, 'B-bild', bad(st), f'HTTP {st}: {clean(txt or info, keys)}')
             # C: Audio
             if m in audio_models and p in ('openai', 'google'):
                 variants = [('wav', wav, 'audio/wav', 'wav')]
@@ -375,9 +385,11 @@ def main():
                     ok, txt, info = parse_reply(p, st, body)
                     if st == 200 and ok:
                         add(p, m, f'C-audio-{label}', 'PASS', f'{dt:4.1f}s "{clean(txt, keys, 50)}"')
+                    elif m not in set(lists.get('AUDIO_CAPABLE_MODELS', [])) and st == 400:
+                        add(p, m, f'C-audio-{label}', 'PASS', 'Gegenprobe: Audio wie erwartet abgelehnt (HTTP 400)')
                     else:
-                        add(p, m, f'C-audio-{label}', 'FAIL', f'HTTP {st}: {clean(txt or info, keys)}')
-                if not webm:
+                        add(p, m, f'C-audio-{label}', bad(st), f'HTTP {st}: {clean(txt or info, keys)}')
+                if not webm and m in set(lists.get('AUDIO_CAPABLE_MODELS', [])):
                     add(p, m, 'C-audio-webm', 'SKIP', 'ffmpeg fehlt - echtes Browser-Format (WebM) nicht getestet')
 
         # D / E nur DeepSeek
@@ -389,7 +401,7 @@ def main():
                 if st == 200 and ok:
                     add(p, m, 'D-deepthink', 'PASS' if '391' in txt else 'WARN', f'{dt:4.1f}s "{clean(txt, keys, 30)}" {info}')
                 else:
-                    add(p, m, 'D-deepthink', 'FAIL', f'HTTP {st}: {clean(txt or info, keys)}')
+                    add(p, m, 'D-deepthink', bad(st), f'HTTP {st}: {clean(txt or info, keys)}')
             url, h, pl = build(p, 'deepseek-v4-flash', key, 'Antworte nur mit dem Wort OK.', 384000)
             st, body, dt = http(url, pl, h)
             ok, txt, info = parse_reply(p, st, body)

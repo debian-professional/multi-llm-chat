@@ -2405,5 +2405,24 @@
     - Dateien: index.html, groq-api.py, hugging-api.py, google-api.py,
       openai-api.py, shell-scripts/api-test.py
 
+    113. [12.10.2026] api-test.py: Testbild 64x64, Einstufung Konto-/Anbieterfehler, Gegenprobe
+    - Anlass: zweiter Testlauf nach Deployment von 112 (53 PASS, 1 WARN, 13 FAIL)
+    - Testbild: 16x16 -> 64x64 Pixel. Groq (qwen/qwen3.8-27b) lehnt Bilder unter
+      32x32 Pixel mit HTTP 400 ab; das winzige Bild erklaert auch die
+      schwankenden Farbantworten von gpt-6-astra ("Rosa", "Pfirsichfarben")
+    - Einstufung: HTTP 402 (Guthaben leer), 429 (Kontingent), 503 (Ueberlast)
+      und Timeout werden als WARN statt FAIL gemeldet - die App-Konfiguration
+      ist damit weder bestaetigt noch widerlegt (betrifft derzeit alle HF-
+      Modelle, gemini-3.1-pro-preview und gemini-3.8-flash)
+    - Gegenprobe: die Ablehnung von Audio durch gpt-4.1 (HTTP 400) gilt jetzt
+      als PASS; der WebM-SKIP erscheint nur noch fuer audiofaehige Modelle
+    - Befunde des Laufs (keine Code-Aenderung): Groq gpt-oss-120b/-20b und
+      qwen3.8-27b antworten mit den konfigurierten Limits (gpt-oss verbraucht
+      ca. 75 Denk-Token fuer "OK"); gemini-3.8-flash zeitweise Timeout/503
+      (Ueberlast beim Anbieter); gemini-3.1-pro-preview HTTP 429 "quota"
+      (Pro-Modelle brauchen bei Google ein Konto mit Abrechnung, wie zuvor
+      schon gemini-2.5-pro); HF HTTP 402 (kein Guthaben)
+    - Dateien: shell-scripts/api-test.py
+
     ============================================================================
 
