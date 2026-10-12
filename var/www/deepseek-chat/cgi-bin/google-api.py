@@ -7,7 +7,7 @@
 # 17.09.2026 (Korrektur: gemini-2.5-flash/-pro zeigten faelschlich das
 # Aktualisierungsdatum dieser Datei als "Version"-Datum statt des echten
 # GA-Datums - jetzt korrigiert);
-# 12.10.2026 (Gemini 3.x ergaenzt, Output-Limit gemini-2.5-flash korrigiert,
+# 12.10.2026 (Gemini 3.x ergaenzt, gemini-2.5-pro durch gemini-3.1-pro-preview ersetzt, Output-Limit gemini-2.5-flash korrigiert,
 # falsche Abschaltwarnung 16.10.2026 entfernt - siehe unten)
 # =============================================================================
 #
@@ -20,11 +20,12 @@
 #     Hinweis      : Nicht abgekuendigt, laut Google aber nur noch fuer Nutzer
 #                    verfuegbar, die das Modell bereits aktiv verwendet haben.
 #
-#   gemini-2.5-pro  [Paid]
-#     Version      : Gemini 2.5 Pro (GA seit 17.06.2025)
+#   gemini-3.1-pro-preview  [Paid]
+#     Version      : Gemini 3.1 Pro Preview (Stand 02.2026)
 #     Kontext      : 1.048.576 Token Input / 65.536 Token Output
-#     Faehigkeiten : Text, Bilder, Audio, Video
-#     Hinweis      : Wie gemini-2.5-flash (Zugang auf Bestandsnutzer beschraenkt).
+#     Faehigkeiten : Text, Bilder, Audio, Video, PDF (Ausgabe: Text)
+#     Thinking     : aktiv; Denk-Token zaehlen zu maxOutputTokens
+#     Hinweis      : Ersetzt gemini-2.5-pro (siehe unten).
 #
 #   gemini-3.8-flash  [Free + Paid]
 #     Version      : Gemini 3.8 Flash (GA seit 02.09.2026)
@@ -40,6 +41,9 @@
 #     Thinking     : standardmaessig aktiv (Stufe "minimal")
 #
 # ENTFERNT (nicht mehr erreichbar):
+#   gemini-2.5-pro    — fuer neue Konten gesperrt (live getestet 12.10.2026:
+#                       HTTP 404 "no longer available to new users"; Google nennt
+#                       gemini-3.1-pro-preview als Ersatz)
 #   gemini-2.0-flash  — abgeschaltet 01.06.2026
 #   gemini-1.5-pro    — bereits laenger abgeschaltet (liefert 404)
 #

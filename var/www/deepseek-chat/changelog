@@ -2367,5 +2367,43 @@
     - Dateien: shell-scripts/api-test.py, Readme_EN.md, Readme_DE.md,
       Readme_ES.md
 
+    112. [12.10.2026] Anpassung an Testergebnis api-test.py: Groq/HF/Gemini-Pro/OpenAI-Audio
+    - Anlass: Erster Lauf von api-test.py (111) gegen die echten APIs; 51 PASS,
+      17 FAIL. Die Modelllisten stammen aus der neuen Option --list (zeigt die
+      vom Anbieter gemeldeten Modell-IDs, ohne Keys)
+    - Groq: alle fuenf bisherigen Modelle sind bei Groq nicht mehr vorhanden
+      (HTTP 404, nicht in der Modellliste). Neu: openai/gpt-oss-120b,
+      openai/gpt-oss-20b (je 32.768 Output, kein Bild) und qwen/qwen3.8-27b
+      (16.384 Output, Bild); Standardmodell openai/gpt-oss-120b. Entfernt:
+      llama-3.3-70b-versatile, llama-3.1-8b-instant, llama-4-scout,
+      qwen3-32b, kimi-k2-instruct-0905
+    - Hugging Face: vier der fuenf Eintraege existieren dort nicht mehr (HTTP
+      400). Neu: meta-llama/Llama-3.3-70B-Instruct, openai/gpt-oss-120b,
+      Qwen/Qwen3.8-27B, deepseek-ai/DeepSeek-V4.1-Flash; Qwen2.5-72B bleibt.
+      Entfernt: Mistral-7B, Phi-3.5-mini, Llama-3.1-70B/-405B. Hinweis: das
+      HF-Konto hat kein Guthaben (HTTP 402) - betrifft alle HF-Modelle
+    - Google: gemini-2.5-pro ist fuer neue Konten gesperrt (HTTP 404, Google
+      nennt gemini-3.1-pro-preview als Ersatz) und wurde in GOOGLE_MODELS_PAID,
+      MODEL_CAPABILITIES, MODEL_CONFIG, Label und AUDIO_CAPABLE_MODELS durch
+      gemini-3.1-pro-preview ersetzt (1.048.576 / 65.536). Kompressor-Liste
+      Google: gemini-2.5-flash und gemini-3.5-flash-lite (Pro-Denkmodelle
+      ungeeignet: Denk-Token zaehlen zu den 2000 Output-Tokens)
+    - OpenAI Audio: gpt-4o und gpt-4.1 lehnen input_audio ab (HTTP 400).
+      Beide aus AUDIO_CAPABLE_MODELS entfernt; OpenAI hat damit keinen
+      Mikrofon-Button mehr. Echte Audio-Modelle (gpt-audio*) nehmen nur
+      WAV/MP3, der Browser liefert WebM - braeuchte serverseitige Umwandlung
+    - Migration: gespeicherte Auswahlen abgeloester Modelle werden in
+      migrateSettings() automatisch auf den Nachfolger umgestellt (z.B.
+      gemini-2.5-pro -> gemini-3.1-pro-preview, llama-3.3-70b-versatile ->
+      openai/gpt-oss-120b, Meta-Llama-3.1-70B -> Llama-3.3-70B-Instruct)
+    - Nicht geaendert: gemini-3.8-flash lieferte beim Test HTTP 503 "high
+      demand" (voruebergehend, Konfiguration in Ordnung); Bilddarstellung
+      gpt-6-astra/gpt-6.1-sol ("Rosa"/"Orange" statt "Rot") ist nur WARN
+    - Unsicher/zu pruefen: Release-Datum Qwen3.8-27B (14.08.2026) stammt aus
+      einer Drittquelle; Datum Gemini 3.1 Pro Preview nur als "02.2026"
+    - Doku (Readme_EN/DE/ES, overview-LLM) folgt nach dem Testlauf
+    - Dateien: index.html, groq-api.py, hugging-api.py, google-api.py,
+      openai-api.py, shell-scripts/api-test.py
+
     ============================================================================
 

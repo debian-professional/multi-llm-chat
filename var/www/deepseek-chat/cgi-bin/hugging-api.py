@@ -3,7 +3,7 @@
 
 # =============================================================================
 # HUGGING FACE INFERENCE API PROXY
-# Importiert / aktualisiert: 08.03.2026; 17.09.2026 (Korrektur: alle fuenf
+# Importiert / aktualisiert: 08.03.2026; 12.10.2026 (Modellliste ersetzt); 17.09.2026 (Korrektur: alle fuenf
 # Modelle zeigten faelschlich das Erstellungsdatum dieser Datei als
 # "Version"-Datum statt des echten historischen Veroeffentlichungsdatums -
 # jetzt korrigiert)
@@ -11,45 +11,44 @@
 #
 # Unterstuetzte Modelle:
 #
-#   --- FREE PLAN ---
+#   Stand 12.10.2026: Modellliste ersetzt (api-test.py --list gegen
+#   router.huggingface.co). Die frueheren Eintraege existierten dort nicht mehr.
+#   HINWEIS: Inference Providers benoetigen Guthaben. Mit leerem Konto antwortet
+#   HF mit HTTP 402 "You have no remaining credits" - das betrifft ALLE Modelle.
 #
-#   Qwen/Qwen2.5-72B-Instruct  [Free]
+#   Qwen/Qwen2.5-72B-Instruct  [Free + Paid]
 #     Version      : Qwen 2.5 72B Instruct (Veroeffentlicht 19.09.2024)
 #     Kontext      : 128.000 Token Input / 8.192 Token Output
-#     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
+#     Faehigkeiten : Nur Text
 #
-#   mistralai/Mistral-7B-Instruct-v0.3  [Free]
-#     Version      : Mistral 7B Instruct v0.3 (Veroeffentlicht 22.05.2024)
-#     Kontext      : 32.768 Token Input / 4.096 Token Output
-#     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
-#
-#   microsoft/Phi-3.5-mini-instruct  [Free]
-#     Version      : Phi-3.5 Mini Instruct (Veroeffentlicht 21.08.2024)
-#     Kontext      : 128.000 Token Input / 4.096 Token Output
-#     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
-#
-#   --- PAID PLAN ---
-#
-#   meta-llama/Meta-Llama-3.1-70B-Instruct  [Paid]
-#     Version      : Llama 3.1 70B Instruct (Veroeffentlicht 23.07.2024)
+#   meta-llama/Llama-3.3-70B-Instruct  [Free + Paid]
+#     Version      : Llama 3.3 70B Instruct (Veroeffentlicht 06.12.2024)
 #     Kontext      : 128.000 Token Input / 8.192 Token Output
-#     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
+#     Faehigkeiten : Nur Text
 #
-#   meta-llama/Meta-Llama-3.1-405B-Instruct  [Paid]
-#     Version      : Llama 3.1 405B Instruct (Veroeffentlicht 23.07.2024)
-#     Kontext      : 128.000 Token Input / 8.192 Token Output
-#     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
+#   openai/gpt-oss-120b  [Free + Paid]
+#     Version      : OpenAI gpt-oss 120B (Veroeffentlicht 05.08.2025)
+#     Kontext      : 131.072 Token Input / 32.768 Token Output (Frontend-Wert)
+#     Faehigkeiten : Nur Text; Reasoning
 #
-#   Qwen/Qwen2.5-72B-Instruct  [Paid]
-#     Version      : Qwen 2.5 72B Instruct (Veroeffentlicht 19.09.2024)
-#     Kontext      : 128.000 Token Input / 8.192 Token Output
-#     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
+#   Qwen/Qwen3.8-27B  [Paid]
+#     Version      : Qwen3.8 27B (Open-Weights 14.08.2026, Drittquelle - pruefen)
+#     Kontext      : 131.072 Token Input / 16.384 Token Output (Frontend-Wert)
+#     Faehigkeiten : Text (Bildfaehigkeit des Modells ueber HF nicht geprueft)
 #
-# ENTFERNT (nicht mehr erreichbar, Stand 19.07.2026):
-#   mistralai/Mixtral-8x7B-Instruct-v0.1 — wird von keinem Inference Provider
-#   mehr gehostet (Anfragen ueber router.huggingface.co schlagen fehl)
+#   deepseek-ai/DeepSeek-V4.1-Flash  [Paid]
+#     Version      : DeepSeek V4.1 Flash (Veroeffentlicht 10.09.2026)
+#     Kontext      : 131.072 Token Input / 16.384 Token Output (Frontend-Wert)
+#     Faehigkeiten : Nur Text
 #
-# Quelle: https://huggingface.co/docs/inference-providers (Stand 19.07.2026)
+# ENTFERNT (bei HF nicht mehr vorhanden, live getestet 12.10.2026: HTTP 400):
+#   mistralai/Mistral-7B-Instruct-v0.3 (kein Chat-Modell),
+#   microsoft/Phi-3.5-mini-instruct (von keinem aktivierten Provider unterstuetzt),
+#   meta-llama/Meta-Llama-3.1-70B-Instruct, meta-llama/Meta-Llama-3.1-405B-Instruct
+#   (existieren nicht mehr; Nachfolger Llama-3.3-70B-Instruct)
+# Frueher entfernt: mistralai/Mixtral-8x7B-Instruct-v0.1
+#
+# Quelle: https://huggingface.co/docs/inference-providers (Stand 12.10.2026)
 # =============================================================================
 
 import json

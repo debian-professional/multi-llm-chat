@@ -3,52 +3,47 @@
 
 # =============================================================================
 # GROQCLOUD API PROXY
-# Importiert / aktualisiert: 19.07.2026; 17.09.2026 (Korrektur: alle fuenf
+# Importiert / aktualisiert: 19.07.2026; 12.10.2026 (Modellliste ersetzt); 17.09.2026 (Korrektur: alle fuenf
 # Modelle zeigten faelschlich das Datei-Aktualisierungsdatum als "Version"-
 # Datum statt des echten historischen Veroeffentlichungsdatums - jetzt
 # korrigiert)
 # =============================================================================
 #
 # Unterstuetzte Modelle (siehe MODEL_CONFIG / GROQ_MODELS_FREE / GROQ_MODELS_PAID
-# in index.html fuer die tatsaechlich im Frontend angebotenen Modelle):
+# in index.html fuer die tatsaechlich im Frontend angebotenen Modelle).
+# Stand 12.10.2026: Groq hat sein Angebot umgestellt; die Liste stammt aus der
+# Modellliste des Anbieters (api-test.py --list), Limits aus der Groq-Doku.
 #
-#   --- FREE PLAN ---
+#   openai/gpt-oss-120b  [Free + Paid]
+#     Version      : OpenAI gpt-oss 120B (Veroeffentlicht 05.08.2025)
+#     Kontext      : 131.072 Token Input / 65.536 Token Output (Frontend nutzt 32.768)
+#     Faehigkeiten : Nur Text; Reasoning (Denk-Token zaehlen zu max_tokens)
 #
-#   llama-3.3-70b-versatile  [Free + Paid]
-#     Version      : Llama 3.3 70B Versatile (Veroeffentlicht 06.12.2024)
-#     Kontext      : 128.000 Token Input / 8.192 Token Output
-#     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
+#   openai/gpt-oss-20b  [Free + Paid]
+#     Version      : OpenAI gpt-oss 20B (Veroeffentlicht 05.08.2025)
+#     Kontext      : 131.072 Token Input / 65.536 Token Output (Frontend nutzt 32.768)
+#     Faehigkeiten : Nur Text; Reasoning
 #
-#   llama-3.1-8b-instant  [Free + Paid]
-#     Version      : Llama 3.1 8B Instant (Veroeffentlicht 23.07.2024)
-#     Kontext      : 131.072 Token Input / 8.192 Token Output
-#     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
+#   qwen/qwen3.8-27b  [Free + Paid]
+#     Version      : Qwen3.8 27B (Open-Weights 14.08.2026, Drittquelle - pruefen)
+#     Kontext      : 131.072 Token Input / 16.384 Token Output
+#     Faehigkeiten : Text und Bilder (max. 3 Bilder je Anfrage); Thinking-Modus
+#                    standardmaessig aktiv (reasoning_effort steuerbar)
 #
-#   meta-llama/llama-4-scout-17b-16e-instruct  [Free + Paid]
-#     Version      : Llama 4 Scout 17B (Veroeffentlicht 05.04.2025)
-#     Kontext      : 131.072 Token Input / 8.192 Token Output
-#     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
-#
-#   qwen/qwen3-32b  [Free + Paid]
-#     Version      : Qwen 3 32B (Veroeffentlicht 28.04.2025)
-#     Kontext      : 131.072 Token Input / 40.960 Token Output
-#     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
-#
-#   --- PAID PLAN (zusaetzlich) ---
-#
-#   moonshotai/kimi-k2-instruct-0905  [Paid]
-#     Version      : Kimi K2 Instruct 0905 (Veroeffentlicht 09.09.2025)
-#     Kontext      : 131.072 Token Input / 8.192 Token Output (siehe MODEL_CONFIG)
-#     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
-#
-# ENTFERNT (nicht mehr erreichbar, Stand 19.07.2026):
-#   mixtral-8x7b-32768 — deprecated seit 20.03.2025
-#   gemma2-9b-it       — deprecated seit 08.10.2025
+# ENTFERNT (bei Groq nicht mehr erreichbar, live getestet 12.10.2026: HTTP 404):
+#   llama-3.3-70b-versatile, llama-3.1-8b-instant,
+#   meta-llama/llama-4-scout-17b-16e-instruct, qwen/qwen3-32b,
+#   moonshotai/kimi-k2-instruct-0905
+# Frueher entfernt: mixtral-8x7b-32768 (deprecated 20.03.2025),
+#   gemma2-9b-it (deprecated 08.10.2025)
+# Nicht fuer den Chat geeignet (in der Groq-Modellliste, aber keine Chat-Modelle):
+#   whisper-large-v3*, canopylabs/orpheus-*, *-prompt-guard-*, allam-2-7b,
+#   openai/gpt-oss-safeguard-20b
 #
 # Hinweis: Alle Groq-Modelle profitieren von Hardware-beschleunigter Inferenz
 #          (LPU - Language Processing Unit) fuer sehr geringe Latenz.
 #
-# Quelle: https://console.groq.com/docs/models (Stand 19.07.2026)
+# Quelle: https://console.groq.com/docs/models (Stand 12.10.2026)
 # =============================================================================
 
 import json
@@ -154,7 +149,7 @@ def main():
         request_data = json.loads(post_data)
 
         # Validierung
-        model = request_data.get('model', 'llama-3.3-70b-versatile')
+        model = request_data.get('model', 'openai/gpt-oss-120b')
         messages = request_data.get('messages', [])
         max_tokens = request_data.get('max_tokens', 2000)
 

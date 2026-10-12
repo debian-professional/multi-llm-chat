@@ -1675,7 +1675,8 @@
             'deepseek-flash': { images: true, text: true },
             // Google Gemini: alle aktuell angebotenen Modelle sind multimodal (siehe google-api.py Header)
             'gemini-2.5-flash':  { images: true,  text: true },
-            'gemini-2.5-pro':    { images: true,  text: true },
+            // Update (12.10.2026): gemini-2.5-pro ist fuer neue Google-Konten gesperrt (HTTP 404) -> ersetzt
+            'gemini-3.1-pro-preview': { images: true,  text: true },
             // Update (12.10.2026): Gemini 3.x (multimodal: Text, Bild, Audio, Video, PDF)
             'gemini-3.8-flash':       { images: true,  text: true },
             'gemini-3.5-flash-lite':  { images: true,  text: true },
@@ -1697,17 +1698,16 @@
             'gpt-6.1-sol':          { images: true,  text: true },
             'gpt-6-luna':           { images: true,  text: true },
             // GroqCloud: aktuell nur Text (siehe groq-api.py Header)
-            'llama-3.3-70b-versatile':                    { images: false, text: true },
-            'llama-3.1-8b-instant':                       { images: false, text: true },
-            'meta-llama/llama-4-scout-17b-16e-instruct':  { images: false, text: true },
-            'qwen/qwen3-32b':                             { images: false, text: true },
-            'moonshotai/kimi-k2-instruct-0905':           { images: false, text: true },
+            // Update (12.10.2026): Groq hat sein Angebot umgestellt (api-test.py --list)
+            'openai/gpt-oss-120b':                        { images: false, text: true },
+            'openai/gpt-oss-20b':                         { images: false, text: true },
+            'qwen/qwen3.8-27b':                           { images: true,  text: true },
             // Hugging Face: aktuell nur Text (siehe hugging-api.py Header)
             'Qwen/Qwen2.5-72B-Instruct':                   { images: false, text: true },
-            'mistralai/Mistral-7B-Instruct-v0.3':          { images: false, text: true },
-            'microsoft/Phi-3.5-mini-instruct':             { images: false, text: true },
-            'meta-llama/Meta-Llama-3.1-70B-Instruct':      { images: false, text: true },
-            'meta-llama/Meta-Llama-3.1-405B-Instruct':     { images: false, text: true },
+            // Update (12.10.2026): neue HF-Modelle (Router-Modellliste, api-test.py --list)
+            'meta-llama/Llama-3.3-70B-Instruct':           { images: false, text: true },
+            'Qwen/Qwen3.8-27B':                            { images: false, text: true },
+            'deepseek-ai/DeepSeek-V4.1-Flash':             { images: false, text: true },
             'default':           { images: false, text: true },
         };
         let detectedModels = [];   // filled on first API call
@@ -1759,7 +1759,7 @@
                 maxOutputTokens:   65536,
                 maxContextMessages: 100
             },
-            'gemini-2.5-pro': {
+            'gemini-3.1-pro-preview': {
                 maxContextTokens:  1048576,
                 maxOutputTokens:   65536,
                 maxContextMessages: 100
@@ -1780,49 +1780,37 @@
                 maxOutputTokens:    8192,
                 maxContextMessages: 80
             },
-            'mistralai/Mistral-7B-Instruct-v0.3': {
-                maxContextTokens:   32768,
-                maxOutputTokens:    4096,
-                maxContextMessages: 40
-            },
-            'microsoft/Phi-3.5-mini-instruct': {
-                maxContextTokens:   128000,
-                maxOutputTokens:    4096,
-                maxContextMessages: 60
-            },
-            'meta-llama/Meta-Llama-3.1-70B-Instruct': {
+            // Update (12.10.2026): HF-Modelle ersetzt (alte IDs existieren dort nicht mehr)
+            'meta-llama/Llama-3.3-70B-Instruct': {
                 maxContextTokens:   128000,
                 maxOutputTokens:    8192,
                 maxContextMessages: 80
             },
-            'meta-llama/Meta-Llama-3.1-405B-Instruct': {
-                maxContextTokens:   128000,
-                maxOutputTokens:    8192,
+            'Qwen/Qwen3.8-27B': {
+                maxContextTokens:   131072,
+                maxOutputTokens:    16384,
                 maxContextMessages: 80
             },
-            'llama-3.3-70b-versatile': {
-                maxContextTokens:  128000,
-                maxOutputTokens:   8192,
+            'deepseek-ai/DeepSeek-V4.1-Flash': {
+                maxContextTokens:   131072,
+                maxOutputTokens:    16384,
                 maxContextMessages: 80
             },
-            'llama-3.1-8b-instant': {
+            // Update (12.10.2026): Groq-Modelle ersetzt (Groq-Doku: gpt-oss 131072/65536, Qwen3.8-27B 131072/16384);
+            // gpt-oss-120b wird auch von Hugging Face angeboten (gleiche ID, gemeinsames Limit)
+            'openai/gpt-oss-120b': {
                 maxContextTokens:  131072,
-                maxOutputTokens:   8192,
+                maxOutputTokens:   32768,
                 maxContextMessages: 80
             },
-            'meta-llama/llama-4-scout-17b-16e-instruct': {
+            'openai/gpt-oss-20b': {
                 maxContextTokens:  131072,
-                maxOutputTokens:    8192,
+                maxOutputTokens:   32768,
                 maxContextMessages: 80
             },
-            'qwen/qwen3-32b': {
+            'qwen/qwen3.8-27b': {
                 maxContextTokens:  131072,
-                maxOutputTokens:   40960,
-                maxContextMessages: 80
-            },
-            'moonshotai/kimi-k2-instruct-0905': {
-                maxContextTokens:  131072,
-                maxOutputTokens:   8192,
+                maxOutputTokens:   16384,
                 maxContextMessages: 80
             },
             // OpenAI (bisher komplett gefehlt — Requests fielen auf DeepSeek-Limits zurueck)
@@ -1926,7 +1914,7 @@
             // Google Gemini (17.09.2026). Beide Modelle erreichten am
             // 17.06.2025 gemeinsam die allgemeine Verfuegbarkeit (GA).
             'gemini-2.5-flash': 'Google Gemini 2.5 Flash (17.06.2025)',
-            'gemini-2.5-pro':   'Google Gemini 2.5 Pro (17.06.2025)',
+            'gemini-3.1-pro-preview': 'Google Gemini 3.1 Pro Preview (02.2026)',
             // Update (12.10.2026): Gemini 3.x (GA-Daten laut Google-Doku)
             'gemini-3.8-flash':      'Google Gemini 3.8 Flash (02.09.2026)',
             'gemini-3.5-flash-lite': 'Google Gemini 3.5 Flash-Lite (21.07.2026)',
@@ -1934,18 +1922,17 @@
             // (nicht das Datei-Erstellungsdatum 08.03.2026 aus dem
             // hugging-api.py-Header, das faelschlich als "Stand" diente).
             'Qwen/Qwen2.5-72B-Instruct':               'Qwen2.5 72B Instruct (19.09.2024)',
-            'mistralai/Mistral-7B-Instruct-v0.3':      'Mistral 7B Instruct v0.3 (22.05.2024)',
-            'microsoft/Phi-3.5-mini-instruct':         'Phi-3.5 Mini Instruct (21.08.2024)',
-            'meta-llama/Meta-Llama-3.1-70B-Instruct':  'Llama 3.1 70B Instruct (23.07.2024)',
-            'meta-llama/Meta-Llama-3.1-405B-Instruct': 'Llama 3.1 405B Instruct (23.07.2024)',
+            // Update (12.10.2026): neue HF-Modelle
+            'meta-llama/Llama-3.3-70B-Instruct':       'Llama 3.3 70B Instruct (06.12.2024)',
+            'Qwen/Qwen3.8-27B':                        'Qwen3.8 27B (14.08.2026)',
+            'deepseek-ai/DeepSeek-V4.1-Flash':         'DeepSeek V4.1 Flash (10.09.2026)',
             // GroqCloud (17.09.2026). Echte historische Release-Daten
             // (nicht das Datei-Erstellungsdatum, das faelschlich als
             // "Stand 19.07.2026" im groq-api.py-Header stand).
-            'llama-3.3-70b-versatile':                   'Llama 3.3 70B Versatile (06.12.2024)',
-            'llama-3.1-8b-instant':                      'Llama 3.1 8B Instant (23.07.2024)',
-            'meta-llama/llama-4-scout-17b-16e-instruct': 'Llama 4 Scout 17B (05.04.2025)',
-            'qwen/qwen3-32b':                            'Qwen 3 32B (28.04.2025)',
-            'moonshotai/kimi-k2-instruct-0905':          'Kimi K2 Instruct 0905 (09.09.2025)',
+            // Update (12.10.2026): Groq hat sein Angebot umgestellt
+            'openai/gpt-oss-120b':                       'OpenAI gpt-oss 120B (05.08.2025)',
+            'openai/gpt-oss-20b':                        'OpenAI gpt-oss 20B (05.08.2025)',
+            'qwen/qwen3.8-27b':                          'Qwen3.8 27B (14.08.2026)',
         };
 
         /**
@@ -1959,22 +1946,24 @@
         const OPENAI_MODELS_PAID   = ['gpt-6-astra', 'gpt-6.1-sol', 'gpt-6-luna', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-5.4', 'gpt-4o', 'gpt-4.1', 'gpt-4o-mini'];
         // gemini-2.5-flash bleibt an erster Stelle (= Standardmodell), bis die neuen Modelle getestet sind
         const GOOGLE_MODELS_FREE   = ['gemini-2.5-flash', 'gemini-3.8-flash', 'gemini-3.5-flash-lite'];
-        const GOOGLE_MODELS_PAID   = ['gemini-2.5-flash', 'gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-2.5-pro'];
-        const HF_MODELS_FREE       = ['Qwen/Qwen2.5-72B-Instruct', 'mistralai/Mistral-7B-Instruct-v0.3', 'microsoft/Phi-3.5-mini-instruct'];
-        const HF_MODELS_PAID       = ['meta-llama/Meta-Llama-3.1-70B-Instruct', 'meta-llama/Meta-Llama-3.1-405B-Instruct', 'Qwen/Qwen2.5-72B-Instruct'];
-        const GROQ_MODELS_FREE     = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'meta-llama/llama-4-scout-17b-16e-instruct', 'qwen/qwen3-32b'];
-        const GROQ_MODELS_PAID     = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'meta-llama/llama-4-scout-17b-16e-instruct', 'qwen/qwen3-32b', 'moonshotai/kimi-k2-instruct-0905'];
+        const GOOGLE_MODELS_PAID   = ['gemini-2.5-flash', 'gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-pro-preview'];
+        const HF_MODELS_FREE       = ['Qwen/Qwen2.5-72B-Instruct', 'meta-llama/Llama-3.3-70B-Instruct', 'openai/gpt-oss-120b'];
+        const HF_MODELS_PAID       = ['Qwen/Qwen2.5-72B-Instruct', 'meta-llama/Llama-3.3-70B-Instruct', 'openai/gpt-oss-120b', 'Qwen/Qwen3.8-27B', 'deepseek-ai/DeepSeek-V4.1-Flash'];
+        const GROQ_MODELS_FREE     = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.8-27b'];
+        const GROQ_MODELS_PAID     = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.8-27b'];
         const GOOGLE_MODELS        = GOOGLE_MODELS_FREE; // Fallback
         const AUDIO_CAPABLE_MODELS = [
-            'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3.8-flash', 'gemini-3.5-flash-lite',
-            // gpt-4.1 entfernt (12.10.2026): laut OpenAI-Modellseite kein Audio-Input
-            'gpt-4o'
+            'gemini-2.5-flash', 'gemini-3.1-pro-preview', 'gemini-3.8-flash', 'gemini-3.5-flash-lite'
+            // OpenAI entfernt (12.10.2026, api-test.py): gpt-4o und gpt-4.1 lehnen input_audio ab
+            // (HTTP 400); input_audio gibt es nur bei gpt-audio*-Modellen und dort nur als WAV/MP3,
+            // der Browser nimmt aber WebM auf.
         ];
         // Modelle je Kompressor-Anbieter (nur bezahlte Provider)
         const COMPRESSOR_MODELS = {
             deepseek: ['deepseek-flash', 'deepseek-v4-pro'],
             openai:   ['gpt-4o-mini', 'gpt-5.6-luna', 'gpt-4o', 'gpt-4.1', 'gpt-6-astra'],
-            google:   ['gemini-2.5-flash', 'gemini-2.5-pro']
+            // gemini-2.5-pro entfernt (gesperrt); 3.x-Denkmodelle ungeeignet (Denk-Token zaehlen zu den 2000 Output-Tokens)
+            google:   ['gemini-2.5-flash', 'gemini-3.5-flash-lite']
         };
         // =====================================================================
 
@@ -3200,7 +3189,7 @@
                     messages.push({ role: msg.role, content });
                 });
                 const modelName = (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq' || settings.apiService === 'openai')
-                    ? (settings.selectedModel || (settings.apiService === 'google' ? 'gemini-2.5-flash' : (settings.apiService === 'groq' ? 'llama-3.3-70b-versatile' : (settings.apiService === 'openai' ? 'gpt-4o-mini' : 'Qwen/Qwen2.5-72B-Instruct'))))
+                    ? (settings.selectedModel || (settings.apiService === 'google' ? 'gemini-2.5-flash' : (settings.apiService === 'groq' ? 'openai/gpt-oss-120b' : (settings.apiService === 'openai' ? 'gpt-4o-mini' : 'Qwen/Qwen2.5-72B-Instruct'))))
                     : (settings.selectedModel || 'deepseek-flash');
                 let activeApiUrl;
                 if (settings.apiService === 'google') activeApiUrl = GOOGLE_API_URL;
@@ -3390,7 +3379,20 @@
             if (defaultMode === 'search') defaultMode = 'chat';
             // Migration (12.10.2026): abgeloester Alias deepseek-v4-flash -> deepseek-flash
             // (DeepSeek routet den alten Namen nur temporaer auf V4.1 Flash um)
-            const legacyModelMap = { 'deepseek-v4-flash': 'deepseek-flash' };
+            const legacyModelMap = {
+                'deepseek-v4-flash': 'deepseek-flash',
+                // Update (12.10.2026): abgeloeste Modelle -> Nachfolger
+                'gemini-2.5-pro': 'gemini-3.1-pro-preview',
+                'llama-3.3-70b-versatile': 'openai/gpt-oss-120b',
+                'meta-llama/llama-4-scout-17b-16e-instruct': 'openai/gpt-oss-120b',
+                'moonshotai/kimi-k2-instruct-0905': 'openai/gpt-oss-120b',
+                'llama-3.1-8b-instant': 'openai/gpt-oss-20b',
+                'qwen/qwen3-32b': 'qwen/qwen3.8-27b',
+                'meta-llama/Meta-Llama-3.1-70B-Instruct': 'meta-llama/Llama-3.3-70B-Instruct',
+                'meta-llama/Meta-Llama-3.1-405B-Instruct': 'deepseek-ai/DeepSeek-V4.1-Flash',
+                'mistralai/Mistral-7B-Instruct-v0.3': 'Qwen/Qwen2.5-72B-Instruct',
+                'microsoft/Phi-3.5-mini-instruct': 'Qwen/Qwen2.5-72B-Instruct'
+            };
             if (legacyModelMap[oldSettings.selectedModel]) oldSettings.selectedModel = legacyModelMap[oldSettings.selectedModel];
             if (legacyModelMap[oldSettings.compressorModel]) oldSettings.compressorModel = legacyModelMap[oldSettings.compressorModel];
             return {
@@ -3595,7 +3597,7 @@
             // wie sendMessage()/handleRegenerate() fuer die Modell-Ermittlung,
             // unabhaengig vom jeweils oben verwendeten Anzeige-Modellnamen.
             const contextModelName = (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq' || settings.apiService === 'openai')
-                ? (settings.selectedModel || (settings.apiService === 'google' ? 'gemini-2.5-flash' : (settings.apiService === 'groq' ? 'llama-3.3-70b-versatile' : (settings.apiService === 'openai' ? 'gpt-4o-mini' : 'Qwen/Qwen2.5-72B-Instruct'))))
+                ? (settings.selectedModel || (settings.apiService === 'google' ? 'gemini-2.5-flash' : (settings.apiService === 'groq' ? 'openai/gpt-oss-120b' : (settings.apiService === 'openai' ? 'gpt-4o-mini' : 'Qwen/Qwen2.5-72B-Instruct'))))
                 : (settings.selectedModel || 'deepseek-flash');
             const contextCfg = MODEL_CONFIG[contextModelName];
             if (contextCfg && contextCfg.maxContextTokens) {
@@ -4061,7 +4063,7 @@
                     messages.push({ role: msg.role, content });
                 });
                 const modelName = (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq' || settings.apiService === 'openai')
-                    ? (settings.selectedModel || (settings.apiService === 'google' ? 'gemini-2.5-flash' : (settings.apiService === 'groq' ? 'llama-3.3-70b-versatile' : (settings.apiService === 'openai' ? 'gpt-4o-mini' : 'Qwen/Qwen2.5-72B-Instruct'))))
+                    ? (settings.selectedModel || (settings.apiService === 'google' ? 'gemini-2.5-flash' : (settings.apiService === 'groq' ? 'openai/gpt-oss-120b' : (settings.apiService === 'openai' ? 'gpt-4o-mini' : 'Qwen/Qwen2.5-72B-Instruct'))))
                     : (settings.selectedModel || 'deepseek-flash');
                 let activeApiUrl;
                 if (settings.apiService === 'google') activeApiUrl = GOOGLE_API_URL;

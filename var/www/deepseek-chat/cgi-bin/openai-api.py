@@ -6,7 +6,7 @@
 # Erstellt: 10.03.2026
 # Aktualisiert: 14.09.2026 (GPT-6 Astra ergaenzt); 12.10.2026 (GPT-6.1 Sol und
 # GPT-6 Luna ergaenzt, Korrekturen gpt-5.4 / Abschaltwarnung / Audio, siehe
-# unten); 17.09.2026 (Korrektur:
+# unten; 12.10.2026 (spaeter am Tag): Audio gpt-4o live getestet); 17.09.2026 (Korrektur:
 # gpt-4o-mini/gpt-4o/gpt-4.1 zeigten faelschlich das Erstellungsdatum
 # dieser Datei als "Version"-Datum statt des echten historischen
 # Veroeffentlichungsdatums - jetzt korrigiert)
@@ -91,7 +91,8 @@
 #   gpt-4o  [Paid]
 #     Version      : GPT-4o (Veroeffentlicht 13.05.2024)
 #     Kontext      : 128.000 Token Input / 16.384 Token Output
-#     Faehigkeiten : Text, Bilder, Audio, Function Calling
+#     Faehigkeiten : Text, Bilder, Function Calling (KEIN Audio-Input ueber
+#                    Chat Completions, live getestet 12.10.2026)
 #     Hinweis      : Nur der Snapshot gpt-4o-2024-05-13 wird am 23.10.2026
 #                    abgeschaltet; der Alias gpt-4o steht nicht auf der Liste
 #                    (Korrektur 12.10.2026, siehe unten)
@@ -115,11 +116,13 @@
 #     Die Aliase gpt-4o, gpt-4o-mini und gpt-4.1 stehen nicht auf der Liste.
 #     Nach dem 23.10.2026 kurz testen, ob gpt-4o weiter antwortet.
 #   - gpt-5.4: Output-Limit 128.000 (statt 16.384).
-#   - Audio-Input (input_audio): gpt-4.1 unterstuetzt laut OpenAI kein Audio
-#     und wurde aus AUDIO_CAPABLE_MODELS entfernt. Ob der normale gpt-4o
-#     input_audio ueber Chat Completions akzeptiert, ist nicht belegt (OpenAI
-#     fuehrt dafuer die Familie gpt-4o-audio, Abschaltung 20.01.2027) - live
-#     testen.
+#   - Audio-Input (input_audio): gpt-4o und gpt-4.1 lehnen ihn ab (live getestet
+#     mit api-test.py, HTTP 400 "Content blocks are expected to be either text
+#     or image_url type"). Beide sind aus AUDIO_CAPABLE_MODELS entfernt; OpenAI
+#     hat damit aktuell keinen Mikrofon-Button. input_audio gibt es nur bei den
+#     gpt-audio*-Modellen und dort nur als WAV/MP3 - der Browser nimmt aber WebM
+#     auf, der Proxy muesste serverseitig umwandeln (z.B. ffmpeg). Der Code
+#     unten (audio_data, Format mp4/webm) bleibt unveraendert.
 #   - GPT-6 Astra akzeptiert kein eigenes temperature/top_p; dieser Proxy
 #     sendet beides nicht.
 #   - Neue Fehlercodes seit 02.09.2026 (429 "slow_down", 503
