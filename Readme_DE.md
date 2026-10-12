@@ -209,6 +209,7 @@ Alle KI-Antworten werden via Server-Sent Events (SSE) **Token für Token** empfa
 - **Keine Abschaltung der Aliase (12.10.2026)**: Der frühere Hinweis auf eine API-weite Abschaltung von `gpt-4o` und `gpt-4o-mini` am 23. Oktober 2026 war falsch. An diesem Tag stellt OpenAI nur bestimmte Snapshots ein (`gpt-4o-2024-05-13`, `gpt-4.1-nano`, `gpt-4-turbo`, `o1`, `o3-mini`, `o4-mini` u.a.); die Aliase `gpt-4o`, `gpt-4o-mini` und `gpt-4.1` stehen nicht auf der Deprecations-Liste. Bitte `gpt-4o` nach dem 23. Oktober 2026 erneut testen.
 - **GPT-6.1 Sol / GPT-6 Luna (12.10.2026)**: `gpt-6.1-sol` (29.09.2026, 2 $/10 $ pro 1 Mio. Token) und `gpt-6-luna` (22.09.2026, 0,10 $/0,50 $) ergänzt — Text + Bild, 1.050.000 Kontext / 128.000 Output. `gpt-6-sol` (durch 6.1 abgelöst) wurde bewusst nicht aufgenommen.
 - **Output-Limit korrigiert (12.10.2026)**: `gpt-5.4` hat 128.000 Output-Token (bisher fälschlich 16.384).
+- **Fehlerbehandlung (12.10.2026)**: `openai-api.py` klassifiziert jetzt die Fehlercodes von OpenAI (siehe „Error codes“ in der OpenAI-Doku): HTTP 503 `server_is_overloaded` und HTTP 429 `slow_down` / Rate Limit sind vorübergehend (`error_type` `overloaded` / `rate_limited`) — der Client wiederholt bis zu 3-mal mit 15-Sekunden-Countdown und zeigt danach eine verständliche Meldung; HTTP 429 `insufficient_quota` / `credit_balance_exhausted` (Guthaben aufgebraucht) zeigt das rote Guthaben-Banner; `organization_spend_limit_exceeded`, `project_spend_limit_exceeded` und `organization_usage_limit_exceeded` (Ausgaben-/Nutzungslimit) zeigen dasselbe Banner mit einer Limit-Meldung und werden nie wiederholt, weil nur das OpenAI-Konto Abhilfe schafft. Die Wiederholungslogik des Clients deckt jetzt auch Google HTTP 503 ab (bisher nur 429).
 - DeepThink-Button und -Indikator werden ausgeblendet wenn OpenAI der aktive Anbieter ist.
 - Der System-Prompt identifiziert das aktive Modell: *„You are [model], an AI assistant made by OpenAI."*
 
@@ -645,7 +646,7 @@ Jede Komprimierungsrunde wird zur Überprüfung auf Disk gespeichert:
 **Roter Banner — „Guthaben muss erneuert werden!"** (bezahlte Anbieter):
 - Ausgelöst durch erschöpftes Guthaben bei einer bezahlten API.
 - **DeepSeek**: HTTP-402-Antwort.
-- **OpenAI**: HTTP 429 + `insufficient_quota` im JSON-Response-Body.
+- **OpenAI**: HTTP 429 + `insufficient_quota` oder `credit_balance_exhausted` im JSON-Response-Body. Ausgaben-/Nutzungslimits (`organization_spend_limit_exceeded`, `project_spend_limit_exceeded`, `organization_usage_limit_exceeded`) nutzen dasselbe Banner mit dem Text „Ausgaben- oder Nutzungslimit erreicht“.
 - Als fest positioniertes Element oben im Viewport angezeigt bis manuell geschlossen (×-Button).
 
 **Blauer Banner — „Tageslimit erreicht!"** (Free-Tier-Anbieter):

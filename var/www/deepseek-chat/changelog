@@ -2461,5 +2461,34 @@
       verwendeten IDs sind definiert; sonst keine Aenderung (Diff: +14 Zeilen)
     - Dateien: language.xml
 
-    ============================================================================
+    116. [12.10.2026] OpenAI-Fehlercodes behandelt (429 slow_down, 
+      503 server_is_overloaded, Guthaben/Limits) und Retry fuer 503
+    - Anlass: Nachfrage zu den neuen OpenAI-Fehlercodes; bisher kamen alle
+      Fehler beim Nutzer als gleichfoermiger "API-Fehler (429/503)" an, und
+      der Hinweis im Header von openai-api.py "werden nicht gesondert
+      behandelt" war offen
+    - openai-api.py: Fehlerklassifizierung. 503 -> overloaded; 429 slow_down /
+      Rate Limit -> rate_limited (beide voruebergehend); 429 insufficient_quota
+      und credit_balance_exhausted -> insufficient_quota (Guthaben);
+      organization_spend_limit_exceeded, project_spend_limit_exceeded,
+      organization_usage_limit_exceeded -> spend_limit. Der Proxy wiederholt
+      selbst nichts (kein langes Blockieren des CGI)
+    - index.html: Retry-Logik (3 Versuche, 15 s Countdown wie bisher) gilt
+      jetzt fuer Google 429 und 503 (vorher nur 429) sowie fuer OpenAI 503 und
+      429 mit rate_limited. Guthaben-/Limitfehler werden nie wiederholt. Neue
+      Meldungen: Ausgaben-/Nutzungslimit (rotes Banner, ID 277) und
+      Anbieter ueberlastet (ID 278, nach den Versuchen bzw. beim Regenerieren).
+      showGuthabenBanner() akzeptiert eine Text-ID
+    - language.xml: IDs 277 und 278 in en, de, es und custom (je 169 Texte)
+    - Doku: Readme_EN/DE/ES.md (OpenAI-Abschnitt, Banner-Abschnitt)
+    - Hinweis: Das Regenerieren einer Antwort hat weiterhin keine Wiederholung;
+      dort erscheint bei Ueberlast direkt die neue Meldung
+    - Verifiziert: Python- und JS-Syntaxcheck OK; XML wohlgeformt, alle vier
+      Sprachbloecke mit denselben IDs; Diff gegen den Stand 90fe8d09 zeigt
+      ausschliesslich die beschriebenen Aenderungen. Nicht live getestet (die
+      Fehlerzustaende lassen sich mit dem eigenen Konto nicht ausloesen)
+    - Dateien: index.html, openai-api.py, language.xml, Readme_EN.md,
+      Readme_DE.md, Readme_ES.md
+
+    ===========================================================================
 

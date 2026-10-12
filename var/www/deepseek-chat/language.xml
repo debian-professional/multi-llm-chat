@@ -156,6 +156,8 @@ Adding a new language:
     <text id="274">Error loading bookmarks: {0}</text>
     <text id="275">Error deleting bookmark: {0}</text>
     <text id="276">Delete this bookmark?</text>
+    <text id="277">Spending or usage limit reached. Please check your limits and credit with the provider.</text>
+    <text id="278">The provider is currently overloaded or limiting requests. Please try again in a moment.</text>
 
     <text id="241">Hugging Face</text>
     <text id="242">HF Plan</text>
@@ -352,6 +354,8 @@ Adding a new language:
     <text id="274">Fehler beim Laden der Lesezeichen: {0}</text>
     <text id="275">Fehler beim Löschen des Lesezeichens: {0}</text>
     <text id="276">Dieses Lesezeichen löschen?</text>
+    <text id="277">Ausgaben- oder Nutzungslimit erreicht. Limits und Guthaben beim Anbieter prüfen.</text>
+    <text id="278">Der Anbieter ist derzeit überlastet oder begrenzt Anfragen. Bitte später erneut versuchen.</text>
 
     <text id="241">Hugging Face</text>
     <text id="242">HF-Plan</text>
@@ -546,6 +550,8 @@ Adding a new language:
     <text id="274">Error al cargar marcadores: {0}</text>
     <text id="275">Error al eliminar marcador: {0}</text>
     <text id="276">¿Eliminar este marcador?</text>
+    <text id="277">Límite de gasto o de uso alcanzado. Revise los límites y el crédito en el proveedor.</text>
+    <text id="278">El proveedor está sobrecargado o limita las solicitudes en este momento. Inténtalo de nuevo en un momento.</text>
 
     <text id="241">Hugging Face</text>
     <text id="242">Plan HF</text>
@@ -733,6 +739,8 @@ Adding a new language:
     <text id="274">Error loading bookmarks: {0}</text>
     <text id="275">Error deleting bookmark: {0}</text>
     <text id="276">Delete this bookmark?</text>
+    <text id="277">Spending or usage limit reached. Please check your limits and credit with the provider.</text>
+    <text id="278">The provider is currently overloaded or limiting requests. Please try again in a moment.</text>
 
     <text id="241">Hugging Face</text>
     <text id="242">HF Plan</text>

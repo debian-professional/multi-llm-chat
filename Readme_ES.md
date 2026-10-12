@@ -209,6 +209,7 @@ Todas las respuestas de IA se reciben y muestran **token por token** usando Serv
 - **Sin retiro de los alias (12.10.2026)**: El aviso anterior de un cierre en toda la API de `gpt-4o` y `gpt-4o-mini` el 23 de octubre de 2026 era incorrecto. Ese día OpenAI solo retira instantáneas concretas (`gpt-4o-2024-05-13`, `gpt-4.1-nano`, `gpt-4-turbo`, `o1`, `o3-mini`, `o4-mini` y otras); los alias `gpt-4o`, `gpt-4o-mini` y `gpt-4.1` no figuran en la lista de obsolescencia. Por favor, vuelve a probar `gpt-4o` después del 23 de octubre de 2026.
 - **GPT-6.1 Sol / GPT-6 Luna (12.10.2026)**: añadidos `gpt-6.1-sol` (29.09.2026, 2 $/10 $ por 1 M de tokens) y `gpt-6-luna` (22.09.2026, 0,10 $/0,50 $) — texto + imagen, 1.050.000 de contexto / 128.000 de salida. `gpt-6-sol` (reemplazado por 6.1) no se añadió deliberadamente.
 - **Límite de salida corregido (12.10.2026)**: `gpt-5.4` tiene 128.000 tokens de salida (antes erróneamente 16.384).
+- **Gestión de errores (12.10.2026)**: `openai-api.py` ahora clasifica los códigos de error de OpenAI (véase «Error codes» en la documentación de OpenAI): HTTP 503 `server_is_overloaded` y HTTP 429 `slow_down` / límite de tasa son temporales (`error_type` `overloaded` / `rate_limited`) — el cliente reintenta hasta 3 veces con una cuenta atrás de 15 segundos y luego muestra un mensaje claro; HTTP 429 `insufficient_quota` / `credit_balance_exhausted` (crédito agotado) muestra el banner rojo de crédito; `organization_spend_limit_exceeded`, `project_spend_limit_exceeded` y `organization_usage_limit_exceeded` (límite de gasto/uso) muestran el mismo banner con un mensaje de límite y nunca se reintentan, porque solo la cuenta de OpenAI puede solucionarlos. La lógica de reintento del cliente ahora cubre también Google HTTP 503 (antes solo 429).
 - El botón DeepThink y el indicador se ocultan cuando OpenAI es el proveedor activo.
 - El prompt del sistema identifica el modelo activo: *"You are [model], an AI assistant made by OpenAI."*
 
@@ -645,7 +646,7 @@ Cada ronda de compresión se guarda en disco para revisión:
 **Banner Rojo — "¡El crédito debe renovarse!"** (proveedores de pago):
 - Activado por crédito agotado en una API de pago.
 - **DeepSeek**: Respuesta HTTP 402.
-- **OpenAI**: HTTP 429 + `insufficient_quota` en el cuerpo de respuesta JSON.
+- **OpenAI**: HTTP 429 + `insufficient_quota` o `credit_balance_exhausted` en el cuerpo de respuesta JSON. Los límites de gasto/uso (`organization_spend_limit_exceeded`, `project_spend_limit_exceeded`, `organization_usage_limit_exceeded`) usan el mismo banner con el texto «Límite de gasto o de uso alcanzado».
 - Se muestra como un elemento de posición fija en la parte superior del viewport hasta que se cierra manualmente (botón ×).
 
 **Banner Azul — "¡Límite diario alcanzado!"** (proveedores de tier gratuito):

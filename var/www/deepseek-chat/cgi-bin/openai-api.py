@@ -125,8 +125,17 @@
 #     unten (audio_data, Format mp4/webm) bleibt unveraendert.
 #   - GPT-6 Astra akzeptiert kein eigenes temperature/top_p; dieser Proxy
 #     sendet beides nicht.
-#   - Neue Fehlercodes seit 02.09.2026 (429 "slow_down", 503
-#     "server_is_overloaded") werden hier nicht gesondert behandelt.
+#   - Fehlercodes (OpenAI-Doku "Error codes", Behandlung ergaenzt 12.10.2026):
+#       429 slow_down / Rate Limit      voruebergehend -> error_type rate_limited
+#       503 server_is_overloaded        voruebergehend -> error_type overloaded
+#       429 insufficient_quota,
+#           credit_balance_exhausted    Guthaben leer  -> error_type insufficient_quota
+#       429 organization_spend_limit_exceeded, project_spend_limit_exceeded,
+#           organization_usage_limit_exceeded
+#                                       Limit erreicht -> error_type spend_limit
+#     Bei rate_limited/overloaded wiederholt das Frontend die Anfrage bis zu
+#     3x mit 15 s Wartezeit; Guthaben-/Limit-Fehler werden nicht wiederholt
+#     (Abhilfe nur im OpenAI-Konto). Der Proxy selbst wiederholt nichts.
 #
 # Hinweis: GPT-5.4/5.5/5.6 Pro-Varianten sind ausschliesslich ueber die
 #          Responses API verfuegbar und werden hier nicht unterstuetzt
@@ -307,21 +316,35 @@ def main():
             response = urllib.request.urlopen(req, timeout=60)
         except urllib.error.HTTPError as e:
             error_body = e.read().decode('utf-8')
-            # HTTP 429: prüfen ob Guthaben aufgebraucht (insufficient_quota)
-            # oder nur ein temporäres Rate-Limit
+            # Fehlerklassifizierung (12.10.2026, siehe Kopfkommentar):
+            # 429 insufficient_quota / credit_balance_exhausted -> insufficient_quota (Guthaben)
+            # 429 *_spend_limit_exceeded / organization_usage_limit_exceeded -> spend_limit
+            # 429 sonst (z.B. slow_down, Rate Limit)               -> rate_limited (voruebergehend)
+            # 503 server_is_overloaded / service_unavailable_error -> overloaded (voruebergehend)
+            # Die Wiederholversuche (3x, je 15 s Wartezeit mit Countdown) macht das Frontend.
             error_type = None
-            if e.code == 429:
+            if e.code in (429, 503):
+                error_code = ''
                 try:
-                    error_json = json.loads(error_body)
-                    error_code = error_json.get('error', {}).get('code', '')
-                    if error_code == 'insufficient_quota':
-                        error_type = 'insufficient_quota'
-                    elif error_code == 'daily_request_limit_exceeded':
-                        error_type = 'daily_limit_exceeded'
+                    err_obj = json.loads(error_body).get('error', {})
+                    if isinstance(err_obj, dict):
+                        error_code = err_obj.get('code') or err_obj.get('type') or ''
                 except Exception:
                     pass
+                if e.code == 503:
+                    error_type = 'overloaded'
+                elif (error_code in ('insufficient_quota', 'credit_balance_exhausted')
+                        or 'insufficient_quota' in error_body or 'credit_balance_exhausted' in error_body):
+                    error_type = 'insufficient_quota'
+                elif error_code in ('organization_spend_limit_exceeded', 'project_spend_limit_exceeded',
+                                    'organization_usage_limit_exceeded'):
+                    error_type = 'spend_limit'
+                elif error_code == 'daily_request_limit_exceeded':
+                    error_type = 'daily_limit_exceeded'
+                else:
+                    error_type = 'rate_limited'
             # HTTP 400: prüfen ob Kontextfenster überschritten
-            elif e.code == 400:
+            if e.code == 400:
                 try:
                     error_json = json.loads(error_body)
                     error_code = error_json.get('error', {}).get('code', '')

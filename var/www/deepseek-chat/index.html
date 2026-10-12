@@ -3217,12 +3217,19 @@
                                 showGuthabenBanner();
                                 throw new Error(t(256));
                             }
+                            if (errData && errData.error_type === 'spend_limit') {
+                                showGuthabenBanner(277);
+                                throw new Error(t(277));
+                            }
+                            if (errData && (errData.error_type === 'rate_limited' || errData.error_type === 'overloaded')) {
+                                throw new Error(t(278));
+                            }
                             if (errData && errData.error_type === 'context_exceeded') {
                                 showContextExceededBox();
                                 throw new Error(t(259));
                             }
                         } catch (parseErr) {
-                            if (parseErr.message === t(256) || parseErr.message === t(259)) throw parseErr;
+                            if (parseErr.message === t(256) || parseErr.message === t(259) || parseErr.message === t(277) || parseErr.message === t(278)) throw parseErr;
                         }
                     } else if (settings.apiService === 'google' || settings.apiService === 'groq' || settings.apiService === 'huggingface') {
                         try {
@@ -4086,7 +4093,8 @@
                 if (imageData) { requestPayload.image_data = imageData; requestPayload.image_mime_type = imageMimeType; }
                 const requestBody = JSON.stringify(requestPayload);
 
-                // Retry-Logik für Google 429
+                // Retry-Logik: Google 429/503, OpenAI 503 sowie 429 "rate_limited"
+                // (z.B. slow_down; siehe openai-api.py). Guthaben-/Limitfehler nie wiederholen.
                 const MAX_RETRIES = 3;
                 const RETRY_WAIT = 15; // Sekunden
                 let response = null;
@@ -4096,7 +4104,20 @@
                         body: requestBody
                     });
                     if (response.ok) break;
-                    if (response.status === 429 && settings.apiService === 'google') {
+                    let retryable = false;
+                    if (settings.apiService === 'google') {
+                        retryable = (response.status === 429 || response.status === 503);
+                    } else if (settings.apiService === 'openai') {
+                        if (response.status === 503) {
+                            retryable = true;
+                        } else if (response.status === 429) {
+                            try {
+                                const peek = await response.clone().json();
+                                retryable = !!(peek && peek.error_type === 'rate_limited');
+                            } catch (peekErr) { /* kein JSON: nicht wiederholen */ }
+                        }
+                    }
+                    if (retryable) {
                         if (attempt < MAX_RETRIES) {
                             // Countdown anzeigen
                             for (let s = RETRY_WAIT; s > 0; s--) {
@@ -4119,7 +4140,7 @@
                             } catch (parseErr) {
                                 if (parseErr.message === t(257) || parseErr.message === t(259)) throw parseErr;
                             }
-                            throw new Error(t(143));
+                            throw new Error(response.status === 503 ? t(278) : t(143));
                         }
                     } else if (settings.apiService === 'deepseek' || settings.apiService === 'openai') {
                         // Guthaben-Prüfung für bezahlte Anbieter
@@ -4130,12 +4151,19 @@
                                 showGuthabenBanner();
                                 throw new Error(t(256));
                             }
+                            if (errData && errData.error_type === 'spend_limit') {
+                                showGuthabenBanner(277);
+                                throw new Error(t(277));
+                            }
+                            if (errData && (errData.error_type === 'rate_limited' || errData.error_type === 'overloaded')) {
+                                throw new Error(t(278));
+                            }
                             if (errData && errData.error_type === 'context_exceeded') {
                                 showContextExceededBox();
                                 throw new Error(t(259));
                             }
                         } catch (parseErr) {
-                            if (parseErr.message === t(256) || parseErr.message === t(259)) throw parseErr;
+                            if (parseErr.message === t(256) || parseErr.message === t(259) || parseErr.message === t(277) || parseErr.message === t(278)) throw parseErr;
                         }
                         const errDetail = (errData && (errData.details || errData.error || errData.message)) || '';
                         throw new Error(tf(24, response.status, errDetail));
@@ -4256,11 +4284,11 @@
             }
         }
         
-        function showGuthabenBanner() {
+        function showGuthabenBanner(textId) {
             const banner = document.getElementById('guthabenBanner');
             const bannerText = document.getElementById('guthabenBannerText');
             if (banner) {
-                bannerText.textContent = t(256);
+                bannerText.textContent = t(textId || 256);
                 banner.style.display = 'block';
             }
         }

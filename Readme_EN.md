@@ -209,6 +209,7 @@ All AI responses are received and displayed **token by token** using Server-Sent
 - **No retirement of the aliases (12.10.2026)**: The earlier notice of an API-wide shutdown of `gpt-4o` and `gpt-4o-mini` on 23 October 2026 was incorrect. On that date OpenAI retires only specific snapshots (`gpt-4o-2024-05-13`, `gpt-4.1-nano`, `gpt-4-turbo`, `o1`, `o3-mini`, `o4-mini` and others); the aliases `gpt-4o`, `gpt-4o-mini` and `gpt-4.1` are not on the deprecation list. Please re-test `gpt-4o` after 23 October 2026.
 - **GPT-6.1 Sol / GPT-6 Luna (12.10.2026)**: `gpt-6.1-sol` (29.09.2026, $2/$10 per 1M tokens) and `gpt-6-luna` (22.09.2026, $0.10/$0.50) added — text + image, 1,050,000 context / 128,000 output. `gpt-6-sol` (superseded by 6.1) was deliberately not added.
 - **Output limit corrected (12.10.2026)**: `gpt-5.4` has 128,000 output tokens (was wrongly 16,384).
+- **Error handling (12.10.2026)**: `openai-api.py` now classifies OpenAI's error codes (see "Error codes" in the OpenAI docs): HTTP 503 `server_is_overloaded` and HTTP 429 `slow_down` / rate limit are temporary (`error_type` `overloaded` / `rate_limited`) — the client retries up to 3 times with a 15-second countdown and then shows a plain message; HTTP 429 `insufficient_quota` / `credit_balance_exhausted` (credit used up) shows the red credit banner; `organization_spend_limit_exceeded`, `project_spend_limit_exceeded` and `organization_usage_limit_exceeded` (spend/usage limit) show the same banner with a limit message and are never retried, because only the OpenAI account can fix them. The client's retry logic now also covers Google HTTP 503 (before: only 429).
 - The DeepThink button and indicator are hidden when OpenAI is the active provider.
 - System prompt identifies the active model: *"You are [model], an AI assistant made by OpenAI."*
 
@@ -646,7 +647,7 @@ Each compression round is saved to disk for review:
 **Red Banner — "Credit must be renewed!"** (paid providers):
 - Triggered by exhausted credit on a paid API.
 - **DeepSeek**: HTTP 402 response.
-- **OpenAI**: HTTP 429 + `insufficient_quota` in JSON response body.
+- **OpenAI**: HTTP 429 + `insufficient_quota` or `credit_balance_exhausted` in JSON response body. Spend/usage limits (`organization_spend_limit_exceeded`, `project_spend_limit_exceeded`, `organization_usage_limit_exceeded`) use the same banner with the text "Spending or usage limit reached".
 - Displayed as a fixed-position element at the top of the viewport until manually closed (× button).
 
 **Blue Banner — "Daily limit reached!"** (free-tier providers):
