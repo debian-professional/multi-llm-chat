@@ -2444,5 +2444,22 @@
       Label-Datum Gemini 3.1 Pro Preview nur "02.2026"; HF-Modelle ohne Live-Test
     - Dateien: Readme_EN.md, Readme_DE.md, Readme_ES.md, overview-LLM.md
 
+    115. [12.10.2026] language.xml: Custom-Sprachblock vervollstaendigt (IDs 263-276)
+    - Anlass: Pruefung der Sprachdatei auf Vollstaendigkeit; en, de und es
+      enthalten je 167 Texte (IDs 1-48, 101-143, 201-276), der Block "custom"
+      hatte nur 153 - es fehlten die IDs 263-276
+    - Ergaenzt (englischer Text als Fallback, wie im Block vorgesehen): 263
+      Download-Modus, 264/265 Download-Modus-Anzeige, 266/267 Neuer Chat
+      (auch anonym), 268 Lesezeichen, 269 "Chat wird nicht gespeichert", 270
+      Gespeicherte Prompts, 271-276 Lesezeichen speichern/laden/loeschen mit
+      Fehlermeldungen; Einfuegestelle direkt hinter ID 262, wie im englischen
+      Block
+    - Wirkung: Wer den Custom-Block aktiviert (visible="true"), sah bei diesen
+      Funktionen bisher leere Texte bzw. Platzhalter statt Text
+    - Verifiziert: XML wohlgeformt; alle vier Sprachbloecke enthalten jetzt
+      dieselben 167 IDs, keine Doppelten; alle in index.html per t(...)
+      verwendeten IDs sind definiert; sonst keine Aenderung (Diff: +14 Zeilen)
+    - Dateien: language.xml
+
     ============================================================================
 
