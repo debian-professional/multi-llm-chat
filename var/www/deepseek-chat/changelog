@@ -2646,7 +2646,7 @@
    - Bisher: "v0.97a" fuehrte zu "syntax error" und dem Vorschlag "v0.".
    - Neu: Nur Tags der Form v0.NN oder v0.NNx werden beruecksichtigt (sort -V).
    - v0.97 -> v0.98, v0.97a -> v0.97b, v0.97z -> v0.98.
-   Dateien: shell-scripts/tag-release.sh
+   - Dateien: shell-scripts/tag-release.sh
 
 123. 12.10.2026 - web-test.py: Pruefung der Zusatzsoftware
      mit Installationsanleitung
@@ -2656,7 +2656,17 @@
      (Pflicht: Playwright/Chromium; optional: pdftotext, LibreOffice).
    - Vor jedem Testlauf laeuft eine Kurzpruefung; "--no-check" ueberspringt sie.
    - Ohne Playwright im aufrufenden Python erscheint die vollstaendige Einrichtungsanleitung.
-   Dateien: shell-scripts/web-test.py
+   - Dateien: shell-scripts/web-test.py
+
+124. 12.10.2026 - web-test.py: VPN-Test (Ping auf die interne Server-IP)
+   - Neue Testgruppe "vpn": bei --url wird 172.29.255.1 per ICMP angepingt (3 Pakete).
+     Antwort = Tunnel laeuft (PASS mit Laufzeit), keine Antwort = FAIL "VPN-Tunnel pruefen".
+   - Im lokalen Modus (ohne --url) wird der Test uebersprungen (SKIP).
+   - --check und die Kurzpruefung vor dem Lauf pruefen den Tunnel zuerst; bei Ausfall
+     bricht der Lauf mit Hinweis ab, statt viele Folgefehler zu melden.
+   - Neue Optionen: --vpn-ip=IP (andere Adresse), --no-ping (Ping weglassen).
+   - Fehlt das Programm ping, erscheint die Installationsanleitung (iputils-ping).
+   - Dateien: shell-scripts/web-test.py
 
     ============================================================================
 
