@@ -1,4 +1,4 @@
-file-directorys enthält alle Dateien 
+files-directorys enthält alle Dateien 
 und Verzeichnisse des Projektes.
 
 Verzeichnisse:
@@ -15,6 +15,7 @@ Dateien welche über das RAW Interface von github
 eingelesen werden können.
                          
 https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/etc/apache2/sites-available/deepseek-chat.conf
+https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/etc/apache2/sites-available/deepseek-chat-ssl.conf
 
 https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/.gitignore
 https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/overview-LLM.md
@@ -27,9 +28,13 @@ https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/
 https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/shell-scripts/sync-back.sh
 https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/shell-scripts/deploy.sh
 https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/shell-scripts/repo2text.sh 
+https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/shell-scripts/api-test.py
+https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/shell-scripts/web-test.py
 
+https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/var/www/deepseek-chat/cgi-bin/compress-context.py
 https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/var/www/deepseek-chat/cgi-bin/deepseek-api.py
 https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/var/www/deepseek-chat/cgi-bin/deepseek-models.py
+https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/var/www/deepseek-chat/cgi-bin/delete-bookmark.py
 https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/var/www/deepseek-chat/cgi-bin/delete-session.py
 https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/var/www/deepseek-chat/cgi-bin/export-markdown.py
 https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/var/www/deepseek-chat/cgi-bin/export-pdf.py  
@@ -40,8 +45,10 @@ https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/
 https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/var/www/deepseek-chat/cgi-bin/google-api.py
 https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/var/www/deepseek-chat/cgi-bin/groq-api.py
 https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/var/www/deepseek-chat/cgi-bin/hugging-api.py
+https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/var/www/deepseek-chat/cgi-bin/load-bookmark.py
 https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/var/www/deepseek-chat/cgi-bin/load-session.py
 https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/var/www/deepseek-chat/cgi-bin/openai-api.py
+https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/var/www/deepseek-chat/cgi-bin/save-bookmark.py
 https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/var/www/deepseek-chat/cgi-bin/save-session.py
 
 https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/var/www/deepseek-chat/index.html
@@ -49,5 +56,3 @@ https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/
 https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/var/www/deepseek-chat/files-directorys
 https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/var/www/deepseek-chat/manifest
 https://raw.githubusercontent.com/debian-professional/multi-llm-chat/refs/heads/main/var/www/deepseek-chat/changelog
-
-

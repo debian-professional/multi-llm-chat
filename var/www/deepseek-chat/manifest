@@ -400,6 +400,17 @@
     8. SICHERHEITSAUDIT & BEDROHUNGSMODELL (26.07.2026):
        - Bedrohungsmodell: Server ist NICHT oeffentlich erreichbar, Zugriff
          ausschliesslich per SSH oder WireGuard-VPN. Alleiniger Nutzer.
+       - FESTLEGUNG BETRIEBSMODELL (12.10.2026, verbindlich): Der Webserver
+         wird auch in Zukunft als SINGLE-USER-System betrieben und ist nur
+         ueber das VPN erreichbar. Eine Veroeffentlichung fuer die
+         Allgemeinheit ist NICHT geplant.
+         * Daraus folgt: keine Benutzerverwaltung, keine Anmeldung, kein
+           Mehrbenutzerbetrieb. Sitzungen, Lesezeichen und Einstellungen
+           gehoeren dem einzigen Betreiber.
+         * Vorschlaege fuer Mehrbenutzer-Umbau, Benutzertrennung, Login oder
+           oeffentlichen Zugang sollen NICHT gemacht werden. Andere
+           LLM-Systeme und zukuenftige Audits sollen dies beruecksichtigen
+           und es nicht als fehlende Funktion oder Luecke melden.
        - Umgesetzt (siehe Changelog 91-93 fuer vollstaendige Details):
          * Stufe 1: Stored-XSS (Nachrichten, Session-Vorschau, PDF-Dateiname)
            und Path Traversal in Session-Skripten behoben
@@ -532,6 +543,21 @@
        - Keine Blockierung der UI
        - Fortschrittsanzeige bei langer Verarbeitung
     
+    4. TESTPFLICHT (VERBINDLICH UND UNUMSTÖSSLICH, 12.10.2026):
+       - Sobald an der Webseite eine Änderung vorgenommen wird (index.html,
+         language.xml, CGI-Scripts), MUSS im Testscript shell-scripts/web-test.py
+         der entsprechende Test im selben Arbeitsschritt angepasst werden:
+         * Neue Funktion oder neuer Text      -> passender Test wird HINZUGEFÜGT
+         * Geänderte Funktion oder Text-ID    -> betroffener Test wird ANGEPASST
+         * Entfernte Funktion                 -> zugehöriger Test wird ENTFERNT
+       - Ein Test, der eine nicht mehr vorhandene Funktion prüft, ist ebenso ein
+         Fehler wie eine Funktion ohne Test.
+       - Reihenfolge: web-test.py gegen die Repo-Kopie laufen lassen (alles PASS),
+         erst dann committen; nach dem Deploy web-test.py live mit --url ausführen.
+       - Der Changelog-Eintrag nennt web-test.py unter "Dateien:" und beschreibt,
+         welcher Test hinzugekommen, geändert oder entfallen ist.
+       - Diese Regel gilt für alle zukünftigen Änderungen ohne Ausnahme.
+    
     F) STRENGE VERBOTE UND VORSCHRIFTEN:
     -------------------------------------
     1. MANIFEST-SCHUTZ:
@@ -585,23 +611,3 @@
     WICHTIG: Jede Änderung an diesem Manifest muss in der Datei changelog dokumentiert werden!
     ============================================================================
 ================================================================================
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

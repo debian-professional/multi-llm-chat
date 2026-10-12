@@ -2718,6 +2718,39 @@
      dass Deutsch weiter ersetzt und Englisch nichts ersetzt.
    - Dateien: var/www/deepseek-chat/index.html, shell-scripts/web-test.py
 
+129. 12.10.2026 - files-directorys: Titel korrigiert, fehlende Dateien ergaenzt
+   - Titelzeile hiess "file-directorys", die Datei heisst aber "files-directorys".
+   - Bisher fehlten in der Liste der RAW-Links: etc/apache2/sites-available/deepseek-chat-ssl.conf,
+     shell-scripts/api-test.py, shell-scripts/web-test.py sowie die CGI-Skripte
+     compress-context.py, delete-bookmark.py, load-bookmark.py und save-bookmark.py.
+   - Die Liste enthaelt jetzt alle 38 Dateien, die im Repository liegen und per RAW lesbar sind.
+   - Dateien: var/www/deepseek-chat/files-directorys
+
+130. 12.10.2026 - deploy.sh: MD5-Summen auch fuer nicht kopierte Projektdateien
+   - Bisher zeigte deploy.sh nur die MD5 der 22 kopierten Dateien (index.html, manifest,
+     files-directorys, cgi-bin/*.py, language.xml).
+   - Neu: Abschnitt "MD5-Summen weiterer Projektdateien" mit changelog (nur source-Repo),
+     deploy.sh und sync-back.sh (Produktion gegen source-Repo), deepseek-chat.conf und
+     deepseek-chat-ssl.conf (/etc/apache2/sites-available gegen source-Repo).
+   - Jede Zeile zeigt "identisch mit source-Repo" oder "ABWEICHUNG" mit der Soll-MD5, so faellt
+     eine veraltete Kopie (z. B. altes deploy.sh in der Produktion) sofort auf.
+   - Dateien: shell-scripts/deploy.sh
+
+131. 12.10.2026 - manifest: Betriebsmodell Single-User, nur ueber VPN (Abschnitt D, Punkt 8)
+   - Neu im Abschnitt "Sicherheitsaudit & Bedrohungsmodell": Der Webserver wird auch in Zukunft
+     als Single-User-System betrieben und ist nur ueber das VPN erreichbar. Eine
+     Veroeffentlichung fuer die Allgemeinheit ist nicht geplant.
+   - Folgerung: keine Benutzerverwaltung, kein Login, kein Mehrbenutzerbetrieb; entsprechende
+     Vorschlaege (auch von anderen LLM-Systemen oder Audits) sind nicht erwuenscht.
+   - Dateien: var/www/deepseek-chat/manifest
+
+132. 12.10.2026 - manifest: Testpflicht fuer web-test.py (Abschnitt E, Punkt 4)
+   - Neu: Bei jeder Aenderung an der Webseite (index.html, language.xml, CGI-Scripts) wird im
+     selben Arbeitsschritt der passende Test in shell-scripts/web-test.py hinzugefuegt,
+     angepasst oder entfernt.
+   - Reihenfolge: web-test.py gegen die Repo-Kopie (alles PASS), dann committen; nach dem Deploy
+     web-test.py live mit --url ausfuehren. Der Changelog nennt web-test.py unter "Dateien:".
+   - Dateien: var/www/deepseek-chat/manifest
 
     ============================================================================
 

@@ -52,6 +52,37 @@ md5sum \
     "$PROD_DIR/language.xml"
 echo ""
 
+# Dateien, die deploy.sh nicht kopiert: MD5 anzeigen und gegen das source-Repo vergleichen
+# (deploy.sh/sync-back.sh kommen ueber install.sh, die Apache-Konfiguration manuell,
+#  der changelog wird nicht deployt und steht nur im source-Repo)
+echo "=== MD5-Summen weiterer Projektdateien ==="
+pruefe_datei() {
+    # $1 = Anzeigename, $2 = Quelle im source-Repo, $3 = Zieldatei in der Produktion (leer = nicht deployt)
+    if [ ! -f "$2" ]; then
+        echo "FEHLT im source-Repo:  $1"
+        return
+    fi
+    SRC_SUM=$(md5sum "$2" | cut -d' ' -f1)
+    if [ -z "$3" ]; then
+        echo "$SRC_SUM  $1  (nur source-Repo, wird nicht deployt)"
+    elif [ ! -f "$3" ]; then
+        echo "$SRC_SUM  $1  (in der Produktion nicht vorhanden: $3)"
+    else
+        PROD_SUM=$(md5sum "$3" | cut -d' ' -f1)
+        if [ "$SRC_SUM" = "$PROD_SUM" ]; then
+            echo "$PROD_SUM  $3  (identisch mit source-Repo)"
+        else
+            echo "$PROD_SUM  $3  ABWEICHUNG: source-Repo hat $SRC_SUM -> install.sh bzw. manuell kopieren!"
+        fi
+    fi
+}
+pruefe_datei "changelog"            "$SOURCE_DIR/var/www/deepseek-chat/changelog"  ""
+pruefe_datei "deploy.sh"            "$SOURCE_DIR/shell-scripts/deploy.sh"          "$PROD_DIR/deploy.sh"
+pruefe_datei "sync-back.sh"         "$SOURCE_DIR/shell-scripts/sync-back.sh"       "$PROD_DIR/sync-back.sh"
+pruefe_datei "deepseek-chat.conf"     "$SOURCE_DIR/etc/apache2/sites-available/deepseek-chat.conf"     "/etc/apache2/sites-available/deepseek-chat.conf"
+pruefe_datei "deepseek-chat-ssl.conf" "$SOURCE_DIR/etc/apache2/sites-available/deepseek-chat-ssl.conf" "/etc/apache2/sites-available/deepseek-chat-ssl.conf"
+echo ""
+
 systemctl reload apache2 > /dev/null 2>&1
 if [ $? -ne 0 ]; then
     echo "FEHLER: Apache reload fehlgeschlagen! (RC: $?)"
