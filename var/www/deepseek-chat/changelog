@@ -2424,5 +2424,25 @@
       schon gemini-2.5-pro); HF HTTP 402 (kein Guthaben)
     - Dateien: shell-scripts/api-test.py
 
+    114. [12.10.2026] Doku: Readme_EN/DE/ES.md und overview-LLM.md an 112/113 angepasst
+    - Anlass: Testlaeufe von api-test.py (Eintraege 111-113) mit neuer Modellauswahl
+      bei Groq und Hugging Face, gemini-3.1-pro-preview statt gemini-2.5-pro und
+      Wegfall der OpenAI-Audio-Freigabe
+    - Readmes: Modellanzahl 27 -> 25; Audio-Abschnitt (Gemini: 2.5-flash,
+      3.1-pro-preview, 3.8-flash, 3.5-flash-lite; OpenAI keines); Abschnitte
+      OpenAI/Google/Hugging Face/Groq mit den Befunden der Live-Tests; Codebloecke
+      (MODEL_CAPABILITIES, MODEL_CONFIG, Modelllisten, AUDIO_CAPABLE_MODELS);
+      Kompressor-Tabelle Google; Tabelle "Entfernte Modelle" um vier Zeilen
+    - overview-LLM.md: Vergleichstabelle (Multimodal, Groq-Preis), OpenAI ohne
+      Audio, Gemini 3.1 Pro (Preise 2/12 bzw. 4/18 USD, kein Free-Tier), neue
+      HF-Liste mit Hinweis auf fehlendes Guthaben (HTTP 402), neue Groq-Modelle
+      und -Preise (gpt-oss-120b 0,15/0,60; gpt-oss-20b 0,075/0,30; qwen3.8-27b
+      0,80/4,00 USD je 1 Mio. Token), Entscheidungsmatrix und Fazit
+    - Entscheidung: gemini-3.1-pro-preview bleibt in der Paid-Liste (Google bietet
+      dafuer keinen Free-Tier; mit Free-Key HTTP 429)
+    - Offen/unsicher: Release-Datum Qwen3.8-27B (14.08.2026, Drittquelle);
+      Label-Datum Gemini 3.1 Pro Preview nur "02.2026"; HF-Modelle ohne Live-Test
+    - Dateien: Readme_EN.md, Readme_DE.md, Readme_ES.md, overview-LLM.md
+
     ============================================================================
 

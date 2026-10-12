@@ -26,11 +26,11 @@
 | Criterion | OpenAI | DeepSeek | Google Gemini | Hugging Face | GroqCloud |
 |-----------|--------|----------|---------------|--------------|-----------|
 | **Origin** | USA | China | USA (Google) | USA (Community) | USA |
-| **Own Models** | Yes (GPT-6 Astra, GPT-5.6, GPT-5.5, GPT-4.x) | Yes (V4.1 Flash, V4 Flash/Pro) | Yes (Gemini 3.8 / 3.5 / 2.5) | No (Router) | No (Router) |
+| **Own Models** | Yes (GPT-6 Astra, GPT-5.6, GPT-5.5, GPT-4.x) | Yes (V4.1 Flash, V4 Flash/Pro) | Yes (Gemini 3.8 / 3.5 / 3.1 Pro / 2.5) | No (Router) | No (Router) |
 | **Context Window** | up to 1.05M | 1.05M | up to 1.05M | 8K–128K | 8K–131K |
-| **Multimodal** | ✅ Text, Image, Audio¹ | ❌ Text only | ✅ Text, Image, Audio, Video | ❌ Text only* | ❌ Text only |
+| **Multimodal** | ✅ Text, Image¹ | ✅ Text, Image (`deepseek-flash` only) | ✅ Text, Image, Audio, Video | ❌ Text only* | ✅ Text, Image (`qwen3.8-27b` only) |
 | **Free Tier** | Limited (gpt-4o-mini, gpt-5.6-luna)² | 5M Tokens (30 days) | Yes (permanent) | Yes (monthly credits) | Yes (permanent) |
-| **Cost (cheapest model)** | $0.15/M Token (gpt-4o-mini) | $0.0028/M Token (Cache Hit, V4 Flash) | $0.075/M Token | Pass-through | $0.05/M Token |
+| **Cost (cheapest model)** | $0.15/M Token (gpt-4o-mini) | $0.0028/M Token (Cache Hit, V4 Flash) | $0.075/M Token | Pass-through | $0.075/M Token (gpt-oss-20b) |
 | **Strength** | Quality & ecosystem | Lowest price | Multimodal & Context | Model variety | Speed |
 | **Weakness** | Price | Privacy (CN) | Complex pricing | Dependent on third parties | Inference only |
 | **Native Reasoning** | ✅ (o-series, GPT-5.x via API) | ✅ (V4 Thinking Mode) | ✅ (Flash Thinking) | ❌ | ❌ |
@@ -39,7 +39,7 @@
 
 *\* Individual HF models support images, but not through the chat router used in this client.*
 
-*¹ Audio input supported for `gpt-4o` (not `gpt-4.1`; live test pending) via the built-in microphone recording feature of this client.*
+*¹ Audio input is not offered for OpenAI in this client (since 12.10.2026): live tests showed that `gpt-4o` and `gpt-4.1` reject `input_audio` over Chat Completions (HTTP 400), and OpenAI's `gpt-audio*` models accept only WAV/MP3 while the browser records WebM.*
 
 *² OpenAI does not offer a genuinely free API tier for the GPT-5.x family — "Free" here denotes the cheapest available models, not a $0 quota.*
 
@@ -70,7 +70,7 @@ OpenAI's GPT series uses a transformer-based decoder architecture. GPT-6 Astra a
 | `gpt-5.6-luna` | 1,050,000 Token | 128,000 Token | Free & Paid | Cheapest/fastest GPT-5.6 tier (successor to the old "nano" class) |
 | `gpt-5.5` | 1,050,000 Token | 128,000 Token | Paid | Previous-generation flagship (April 2026) |
 | `gpt-5.4` | 1,050,000 Token | 128,000 Token | Paid | Cheaper mainstream option, still supported (output limit corrected 12.10.2026) |
-| `gpt-4o` | 128,000 Token | 16,384 Token | Paid | Omni — text + image + audio input (only the snapshot `gpt-4o-2024-05-13` retires 23 Oct 2026, not the alias) |
+| `gpt-4o` | 128,000 Token | 16,384 Token | Paid | Omni — text + image input (no audio over Chat Completions; only the snapshot `gpt-4o-2024-05-13` retires 23 Oct 2026, not the alias) |
 | `gpt-4.1` | 1,048,576 Token | 32,768 Token | Paid | Coding-optimized, 1M context |
 | `gpt-4o-mini` | 128,000 Token | 16,384 Token | Free & Paid | Cost-efficient, high quality (not on OpenAI's deprecation list) |
 
@@ -103,7 +103,7 @@ All prices in USD per 1 million tokens:
 - **Ecosystem:** The original OpenAI API format — the most widely documented and supported API in the industry
 - **Reliability:** Enterprise-grade uptime, well-established SLA, global infrastructure
 - **Multimodal (all current models):** Image input support alongside text across the entire GPT-4o/4.1/5.x lineup
-- **Audio Input (gpt-4o):** Microphone recordings can be sent directly to the model via the built-in audio recording feature of this client. Audio is transmitted as base64-encoded WebM/MP4 and processed natively by the model — no transcription step required.
+- **Audio Input:** Not available in this client (live-tested 12.10.2026: `gpt-4o` and `gpt-4.1` reject `input_audio` over Chat Completions; the dedicated `gpt-audio*` models accept only WAV/MP3, while the browser records WebM). Microphone recordings can be used with Google Gemini instead.
 - **Streaming:** Native SSE support, very low latency to first token
 - **Context:** The entire GPT-5.x family and GPT-4.1 offer 1M+ token context windows
 
@@ -201,7 +201,7 @@ Gemini is currently the only provider in this client that offers true **multimod
 | Model | Version | Context Input | Max Output | Capabilities |
 |-------|---------|---------------|------------|--------------|
 | `gemini-2.5-flash` | 2.5 Flash | 1,048,576 Token | 65,536 Token | Text, Image, Audio, Video |
-| `gemini-2.5-pro` | 2.5 Pro | 1,048,576 Token | 65,536 Token | Text, Image, Audio, Video |
+| `gemini-3.1-pro-preview` | 3.1 Pro Preview (02.2026) | 1,048,576 Token | 65,536 Token | Text, Image, Audio, Video, PDF |
 | `gemini-3.8-flash` | 3.8 Flash (GA 02.09.2026) | 1,048,576 Token | 65,536 Token | Text, Image, Audio, Video, PDF |
 | `gemini-3.5-flash-lite` | 3.5 Flash-Lite (GA 21.07.2026) | 1,048,576 Token | 65,536 Token | Text, Image, Audio, Video, PDF |
 
@@ -209,12 +209,14 @@ Gemini is currently the only provider in this client that offers true **multimod
 
 **Availability of the 2.5 models (12.10.2026):** The earlier notice of a shutdown of `gemini-2.5-flash` on 16 October 2026 was incorrect (third-party source, referred to Vertex AI). Google lists no shutdown date for the 2.5 models ("not deprecated, served until further notice") but limits access to users who have used them before. Gemini 3.x models are thinking models (thinking on by default; thinking tokens count towards the output limit). `gemini-3.5-flash` / `gemini-3.7-flash` are deprecated (08.10.2026) and auto-routed by Google to 3.6 / 3.8, so they are not offered here.
 
-### 4.3 Pricing (3.x models and 2.5 Pro verified 12.10.2026; 2.5 Flash not re-verified since 19.07.2026)
+**`gemini-2.5-pro` replaced (12.10.2026):** Tested live, `gemini-2.5-pro` answers HTTP 404 "no longer available to new users" with the current key; Google names `gemini-3.1-pro-preview` as the replacement. Google offers **no free tier** for it, so a free-tier key gets HTTP 429 "quota exceeded". `gemini-3.8-flash` was configured correctly but returned HTTP 503 "high demand" / timeouts at times (provider overload).
+
+### 4.3 Pricing (3.x models verified 12.10.2026; 2.5 Flash not re-verified since 19.07.2026)
 
 | Model | Input | Output | Free Tier |
 |-------|-------|--------|-----------|
 | `gemini-2.5-flash` | $0.075/M | $0.30/M | ✅ (rate-limited per project, see AI Studio) |
-| `gemini-2.5-pro` | $1.25/M (≤200k) | $10.00/M (≤200k) | ✅ |
+| `gemini-3.1-pro-preview` | $2.00/M (≤200k), $4.00/M (>200k) | $12.00/M (≤200k), $18.00/M (>200k) | ❌ (no free tier) |
 | `gemini-3.8-flash` | $0.75/M until 31.12.2026, then $1.50/M | $3.75/M until 31.12.2026, then $7.50/M | ✅ |
 | `gemini-3.5-flash-lite` | $0.30/M | $2.50/M | ✅ |
 
@@ -222,7 +224,7 @@ Gemini is currently the only provider in this client that offers true **multimod
 
 - **True Multimodality:** Text, image, audio, and video in one API — all Gemini models in this client support live microphone recordings via the built-in audio recording button, and image upload/paste is fully wired end-to-end as of 19 July 2026
 - **Large Context:** Up to 1.05M tokens — entire codebases or lengthy legal documents
-- **Free Tier:** Available for the Flash models and 2.5 Pro (limits per project, shown in AI Studio)
+- **Free Tier:** Available for the Flash models, not for the Pro model `gemini-3.1-pro-preview` (limits per project, shown in AI Studio)
 - **GDPR Compliance:** Possible via Vertex AI EU region
 
 ### 4.5 Weaknesses
@@ -249,12 +251,14 @@ Hugging Face is an American AI company founded in 2016, functioning as a platfor
 | Model | Context | Max Output | Tier |
 |-------|---------|------------|------|
 | `Qwen/Qwen2.5-72B-Instruct` | 128,000 | 8,192 | Free & Paid |
-| `mistralai/Mistral-7B-Instruct-v0.3` | 32,768 | 4,096 | Free |
-| `microsoft/Phi-3.5-mini-instruct` | 128,000 | 4,096 | Free |
-| `meta-llama/Meta-Llama-3.1-70B-Instruct` | 128,000 | 8,192 | Paid |
-| `meta-llama/Meta-Llama-3.1-405B-Instruct` | 128,000 | 8,192 | Paid |
+| `meta-llama/Llama-3.3-70B-Instruct` | 128,000 | 8,192 | Free & Paid |
+| `openai/gpt-oss-120b` | 131,072 | 32,768 | Free & Paid |
+| `Qwen/Qwen3.8-27B` | 131,072 | 16,384 | Paid |
+| `deepseek-ai/DeepSeek-V4.1-Flash` | 131,072 | 16,384 | Paid |
 
 **Removed:** `mistralai/Mixtral-8x7B-Instruct-v0.1` was removed from the client on 19 July 2026 — it is no longer deployed by any Inference Provider on the Hugging Face router and requests would fail.
+
+**List replaced (12.10.2026):** `mistralai/Mistral-7B-Instruct-v0.3` (not a chat model), `microsoft/Phi-3.5-mini-instruct` (supported by no enabled provider) and `meta-llama/Meta-Llama-3.1-70B/405B-Instruct` (no longer exist) were removed after a check against the router's model list. **Inference Providers need account credit** — with an empty balance every request fails with HTTP 402, so the new list could not be tested live.
 
 ### 5.3 Strengths
 
@@ -265,7 +269,7 @@ Hugging Face is an American AI company founded in 2016, functioning as a platfor
 ### 5.4 Weaknesses
 
 - **Dependent on Third Parties:** Actual inference handled by various backends — latency and quality vary, and models can be silently withdrawn from the router (as happened with Mixtral-8x7B)
-- **No Proprietary Frontier Models:** Quality ceiling below GPT-5.6 or Gemini 2.5 Pro
+- **No Proprietary Frontier Models:** Quality ceiling below GPT-5.6 or Gemini 3.1 Pro
 
 ### 5.5 Ideal For
 
@@ -283,23 +287,21 @@ Groq is an American semiconductor company that developed its own custom **Langua
 
 | Model | Context | Max Output |
 |-------|---------|------------|
-| `llama-3.1-8b-instant` | 131,072 | 8,192 |
-| `llama-3.3-70b-versatile` | 128,000 | 8,192 |
-| `meta-llama/llama-4-scout-17b-16e-instruct` | 131,072 | 8,192 |
-| `qwen/qwen3-32b` | 131,072 | 40,960 |
-| `moonshotai/kimi-k2-instruct-0905` | 131,072 | 8,192 |
+| `openai/gpt-oss-120b` | 131,072 | 32,768 (Groq offers 65,536) |
+| `openai/gpt-oss-20b` | 131,072 | 32,768 (Groq offers 65,536) |
+| `qwen/qwen3.8-27b` | 131,072 | 16,384 |
+
+**Lineup replaced (12.10.2026):** Groq no longer offers any of the earlier five models (`llama-3.3-70b-versatile`, `llama-3.1-8b-instant`, `meta-llama/llama-4-scout-17b-16e-instruct`, `qwen/qwen3-32b`, `moonshotai/kimi-k2-instruct-0905`) — HTTP 404 in the live test. The gpt-oss models are reasoning models (text only); `qwen/qwen3.8-27b` also accepts images (max. 3 per request, at least 32×32 pixels). All three passed the live test.
 
 **Documentation note:** Earlier versions of this document (and of `groq-api.py`'s own header comment) listed `mixtral-8x7b-32768` and `gemma2-9b-it` as the client's GroqCloud models — both were deprecated by Groq in 2025 (20 March and 8 October respectively) and were **never actually the models used by this client's code**. The table above reflects the models genuinely present in `index.html`'s `GROQ_MODELS_FREE`/`GROQ_MODELS_PAID` arrays, corrected on 19 July 2026.
 
-### 6.3 Pricing (as of 19.07.2026)
+### 6.3 Pricing (as of 12.10.2026, from Groq's model pages)
 
 | Model | Input | Output |
 |-------|-------|--------|
-| `llama-3.1-8b-instant` | $0.05/M | $0.08/M |
-| `llama-3.3-70b-versatile` | $0.59/M | $0.79/M |
-| `meta-llama/llama-4-scout-17b-16e-instruct` | $0.11/M | $0.34/M |
-| `qwen/qwen3-32b` | $0.29/M | $0.59/M |
-| `moonshotai/kimi-k2-instruct-0905` | $1.00/M | $3.00/M (cached input: $0.50/M) |
+| `openai/gpt-oss-120b` | $0.15/M (cached: $0.075/M) | $0.60/M |
+| `openai/gpt-oss-20b` | $0.075/M (cached: $0.037/M) | $0.30/M |
+| `qwen/qwen3.8-27b` | $0.80/M | $4.00/M |
 
 Free Tier: permanently free with rate limits (30 RPM) — no expiry date, all models included.
 
@@ -315,7 +317,7 @@ Free Tier: permanently free with rate limits (30 RPM) — no expiry date, all mo
 - **Open-Source Models Only:** No frontier proprietary models
 - **Inference Only:** No fine-tuning, embeddings, or image generation
 - **Limited Context:** Maximum 131K tokens — far below DeepSeek/Gemini/GPT-5.x's 1M+
-- **Kimi K2 Pricing Outlier:** At $1.00/$3.00 per million tokens, `moonshotai/kimi-k2-instruct-0905` is priced closer to a mid-tier proprietary model than to Groq's other offerings
+- **Qwen3.8 Pricing Outlier:** At $0.80/$4.00 per million tokens, `qwen/qwen3.8-27b` is priced far above Groq's gpt-oss models
 
 ### 6.6 Ideal For
 
@@ -329,14 +331,14 @@ Users who prioritize **maximum speed** — for interactive applications, live ch
 
 | Use Case | Recommendation | Reason |
 |----------|----------------|--------|
-| **Analyze images / audio / video** | Google Gemini | Broadest multimodality; OpenAI (gpt-4o/4.1/5.x/gpt-6-astra) and DeepSeek (`deepseek-flash` only) also support images |
-| **Send microphone recordings** | Google Gemini or OpenAI (gpt-4o) | Built-in audio recording button — visible only for audio-capable models |
+| **Analyze images / audio / video** | Google Gemini | Broadest multimodality; OpenAI (gpt-4o/4.1/5.x/gpt-6-astra), DeepSeek (`deepseek-flash` only) and Groq (`qwen3.8-27b` only) also support images |
+| **Send microphone recordings** | Google Gemini | Built-in audio recording button — visible only for audio-capable models (none at OpenAI in this client) |
 | **Highest quality responses** | OpenAI GPT-6 Astra | Current frontier model (GPT-5.6 Sol as cheaper alternative) |
 | **Complex math / logic** | DeepSeek V4 Pro (Thinking mode) | Best price-performance ratio for reasoning |
 | **Very long documents** | DeepSeek V4, Google Gemini, or GPT-5.x | All now offer ~1M token context |
 | **Maximum speed** | GroqCloud | LPU-accelerated inference — unmatched latency |
 | **Minimum cost** | DeepSeek V4 Flash | Cheapest price per token on the market |
-| **Open-source models** | Hugging Face or GroqCloud | Llama, Mistral, Qwen, Kimi K2 — broad selection |
+| **Open-source models** | Hugging Face or GroqCloud | gpt-oss, Qwen, Llama, DeepSeek — broad selection |
 | **Permanently free** | Google (Free) or GroqCloud | Both offer unlimited-duration free tiers |
 | **Privacy (EU/GDPR)** | Google Gemini (EU region) | Clear GDPR compliance possible |
 | **OpenAI ecosystem** | OpenAI | Native endpoint, best compatibility |
@@ -346,7 +348,7 @@ Users who prioritize **maximum speed** — for interactive applications, live ch
 ### By Priority
 
 **I just want fast answers:**
-→ **GroqCloud** (`llama-3.1-8b-instant`) — fastest inference, free, ready immediately.
+→ **GroqCloud** (`openai/gpt-oss-20b`) — fastest inference, free, ready immediately.
 
 **I want the absolute best answers:**
 → **OpenAI** (`gpt-6-astra`) — current quality frontier (`gpt-5.6-sol` as a cheaper alternative). Cost-conscious alternative outside OpenAI: **DeepSeek** (`deepseek-v4-pro`, Thinking mode).
@@ -398,15 +400,15 @@ Users who prioritize **maximum speed** — for interactive applications, live ch
 
 All five providers are fully-featured, professional LLM services. There is no clear "winner" — each has its specific sweet spot:
 
-**OpenAI** is the choice for maximum quality and reliability. GPT-6 Astra represents the new frontier since September 2026, and GPT-5.6 Sol remains a strong, less expensive alternative; `gpt-5.6-luna` offers an excellent cost-quality ratio for everyday tasks at a fraction of the flagship price. The mature ecosystem and native API format make it the industry reference. `gpt-4o`, `gpt-4.1`, `gpt-6-astra`, and the entire GPT-5.x family support image input, and `gpt-4o`/`gpt-4.1` additionally support direct audio input — this client exposes these capabilities via image upload/paste and a dedicated microphone recording button respectively.
+**OpenAI** is the choice for maximum quality and reliability. GPT-6 Astra represents the new frontier since September 2026, and GPT-5.6 Sol remains a strong, less expensive alternative; `gpt-5.6-luna` offers an excellent cost-quality ratio for everyday tasks at a fraction of the flagship price. The mature ecosystem and native API format make it the industry reference. `gpt-4o`, `gpt-4.1`, `gpt-6-astra`, and the entire GPT-5.x family support image input, which this client exposes via image upload/paste. Audio input is not offered for OpenAI here: `gpt-4o`/`gpt-4.1` reject `input_audio` over Chat Completions (live-tested 12.10.2026).
 
 **DeepSeek** is the choice for maximum cost efficiency and strong reasoning capabilities. Since 10 September 2026, `deepseek-flash` (V4.1 Flash) adds native image understanding at DeepSeek's usual price advantage — the first DeepSeek model in this client able to process images. Those who produce a lot pay the least here. The privacy topic (China) is real and must be evaluated individually. The legacy `deepseek-chat`/`deepseek-reasoner` names stopped working entirely on 24 July 2026, as scheduled.
 
-**Google Gemini** is the choice for multimodal tasks (image, audio, video), long contexts, and the best permanent free tier. Both Gemini models in this client support direct microphone recordings and, as of 19 July 2026, genuine image analysis — spoken input and uploaded images are processed natively by the model. Google's infrastructure is reliable and configurable for GDPR compliance, though the roster has shrunk — two previously available models have been retired in the past two months.
+**Google Gemini** is the choice for multimodal tasks (image, audio, video), long contexts, and the best permanent free tier. All Gemini models in this client support direct microphone recordings and, as of 19 July 2026, genuine image analysis — spoken input and uploaded images are processed natively by the model. Google's infrastructure is reliable and configurable for GDPR compliance, though the roster has shrunk — two previously available models have been retired in the past two months.
 
 **Hugging Face** is the choice for everyone who wants to explore open-source models without risking vendor lock-in. The broad model selection and transparent pass-through pricing are unique, though individual models can and do disappear from the router without much notice (as Mixtral-8x7B did).
 
-**GroqCloud** is the choice for maximum speed. Those who build interactive applications or simply dislike waiting will be impressed by the LPU-accelerated inference. SOC 2 and HIPAA compliance also make it interesting for enterprise applications — just note that `moonshotai/kimi-k2-instruct-0905` breaks from Groq's usual bargain pricing.
+**GroqCloud** is the choice for maximum speed. Those who build interactive applications or simply dislike waiting will be impressed by the LPU-accelerated inference. SOC 2 and HIPAA compliance also make it interesting for enterprise applications — just note that `qwen/qwen3.8-27b` ($0.80/$4.00 per million tokens) is priced well above Groq's gpt-oss models.
 
 **Practical Recommendation for New Users:**
 Start with **GroqCloud Free** (free, fast, ready immediately) or **Google Gemini Free Tier** (permanent, multimodal). If you need maximum quality, add **OpenAI** (`gpt-5.6-luna` for cost-efficiency or `gpt-6-astra` for the frontier). Once you hit the limits or have specific requirements, decide purposefully using this overview.

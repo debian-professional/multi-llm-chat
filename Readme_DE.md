@@ -4,7 +4,7 @@
 
 Wichtigste Highlights:
 - **Multi-LLM-Unterstützung** – Wechsel zwischen OpenAI, DeepSeek, Google Gemini, Hugging Face und GroqCloud über einen Anbieter-Toggle im LLM-Einstellungs-Panel. Jeder Anbieter hat eine eigene Modellliste, Tier-Auswahl und Konfigurationsoptionen.
-- **Klare Modell-Beschriftungen mit Veröffentlichungsdatum** – Modell-Dropdowns zeigen lesbare Beschriftungen mit dem tatsächlichen Veröffentlichungsdatum statt rohen API-IDs (z.B. „OpenAI GPT-6 Astra (04.09.2026)" statt `gpt-6-astra`). Deckt alle 27 Modelle über alle fünf Anbieter ab. Der tatsächlich an die API gesendete Wert bleibt unverändert, nur die sichtbare Beschriftung ist verständlicher.
+- **Klare Modell-Beschriftungen mit Veröffentlichungsdatum** – Modell-Dropdowns zeigen lesbare Beschriftungen mit dem tatsächlichen Veröffentlichungsdatum statt rohen API-IDs (z.B. „OpenAI GPT-6 Astra (04.09.2026)" statt `gpt-6-astra`). Deckt alle 25 Modelle über alle fünf Anbieter ab. Der tatsächlich an die API gesendete Wert bleibt unverändert, nur die sichtbare Beschriftung ist verständlicher.
 - **DeepSeek V4.1 Flash** – Seit dem 10. September 2026 bietet `deepseek-flash` DeepSeeks erstes natives (nicht nachtraeglich ergaenztes) Bildverstehen, zusaetzlich zum bestehenden `deepseek-v4-pro` (der alte Alias `deepseek-v4-flash` ist bei DeepSeek abgeloest, wird nur temporaer auf V4.1 Flash umgeleitet und ist seit 12.10.2026 nicht mehr waehlbar) (1M-Token-Kontextfenster; die veralteten Modellnamen `deepseek-chat`/`deepseek-reasoner` wurden am 24. Juli 2026 planmaessig abgeschaltet; das experimentelle Zwischenmodell `deepseek-v4-flash-vision-exp` wurde am 17. September 2026 entfernt, vollstaendig abgeloest durch `deepseek-flash`).
 - **GPT-6 Astra bereit** – OpenAIs neues Flaggschiff (`gpt-6-astra`, veroeffentlicht 3./4. September 2026) ergaenzt die bestehende GPT-5.6-Familie (Sol, Terra, Luna), GPT-5.5, GPT-4o und GPT-4.1. Anfragen nutzen durchgehend `max_completion_tokens`, den Parameter, den alle aktuellen OpenAI-Modelle verlangen.
 - **Echtes HTTPS via Let's Encrypt** – Seit dem 15. September 2026 ist der Client über ein öffentlich vertrauenswürdiges TLS-Zertifikat erreichbar (`swtor10-chat.ddnsfree.com`, ausgestellt via `acme.sh` und einer DNS-01-Challenge gegen Dynu) – ersetzt das frühere selbstsignierte `mkcert`-Zertifikat, das manuelles Vertrauens-Setup auf jedem Gerät erforderte. Keine öffentliche Portweiterleitung nötig — der Domainname löst auf die private VPN-Adresse des Servers auf, die weiterhin vom öffentlichen Internet aus unerreichbar bleibt.
@@ -13,7 +13,7 @@ Wichtigste Highlights:
 - **Download-Modus** – Bei sehr langen KI-Antworten unterdrückt ein optionaler Umschalter das live Zeichen-für-Zeichen-Rendering im Chat und zeigt stattdessen nur eine laufende Zeichenzahl, bietet dann nach Abschluss der Antwort die bestehenden Export-Buttons an — spürbar schneller bei mehrere hunderttausend Zeichen langen Antworten auf bescheidener Hardware.
 - **Funktionierende Bild-Pipeline** – Bild-Upload und Zwischenablage-Einfügen sind für Google Gemini, OpenAI und DeepSeek (`deepseek-flash`) durchgängig verdrahtet: Bilder werden clientseitig base64-kodiert und als native `inline_data`-Blöcke (Gemini) bzw. `image_url`-Blöcke (OpenAI/DeepSeek, OpenAI-kompatibles Format) übermittelt. Die Modell-Fähigkeits-Erkennung (`MODEL_CAPABILITIES`) ist pro Anbieter befüllt, statt standardmäßig „kein Bild-Support" anzunehmen.
 - **Multi-Datei-Upload** – Mehrere Dateien gleichzeitig auswählen und senden. Inhalte werden kombiniert und mit Datei-Headern und Trennzeichen als Kontext gesendet.
-- **Audio-Aufnahme via Mikrofon** – Audio direkt im Browser aufnehmen und an die KI senden. Native Unterstützung durch Google Gemini (`gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-3.8-flash`, `gemini-3.5-flash-lite`) und OpenAI (`gpt-4o`). Der Aufnahme-Button erscheint automatisch nur bei audio-fähigen Modellen.
+- **Audio-Aufnahme via Mikrofon** – Audio direkt im Browser aufnehmen und an die KI senden. Native Unterstützung durch Google Gemini (`gemini-2.5-flash`, `gemini-3.1-pro-preview`, `gemini-3.8-flash`, `gemini-3.5-flash-lite`); OpenAI hat derzeit kein audio-fähiges Modell in diesem Client. Der Aufnahme-Button erscheint automatisch nur bei audio-fähigen Modellen.
 - **Einzigartiges Kontextmanagement** – Einzelne Nachrichten zusammen mit allen nachfolgenden löschen. Der Chat bleibt konsistent und die Token-Nutzung wird dynamisch neu berechnet.
 - **Maximale Sicherheit** – API-Keys sind clientseitig nie sichtbar, Uploads werden via Magic-Byte-Prüfung gegen ausführbare Dateien geschützt, und Sessions werden mit restriktiven Dateiberechtigungen gespeichert.
 - **Keine exotischen Frameworks** – Alles basiert auf Apache, Python 3, Bash und reinem HTML/JavaScript/CSS. Kein Node.js, kein React, keine Build-Pipeline.
@@ -204,7 +204,7 @@ Alle KI-Antworten werden via Server-Sent Events (SSE) **Token für Token** empfa
 - **Paid-Tier-Modelle**: `gpt-6-astra`, `gpt-6.1-sol`, `gpt-6-luna`, `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`, `gpt-5.5`, `gpt-5.4`, `gpt-4o`, `gpt-4.1`, `gpt-4o-mini`
 - **Output-Token-Parameter**: `max_completion_tokens` — von allen aktuellen OpenAI-Modellen verlangt (GPT-4o/4.1 akzeptieren ihn ebenfalls, sodass ein einziger Parameter über das gesamte Lineup hinweg funktioniert). Der ältere Parameter `max_tokens` wird von GPT-5.x-Modellen mit HTTP 400 abgelehnt (`Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.`).
 - **Bild-Eingabe**: `gpt-4o-mini`, `gpt-4o`, `gpt-4.1`, `gpt-5.4`, `gpt-5.5`, `gpt-6-astra`, `gpt-6.1-sol`, `gpt-6-luna` und die gesamte GPT-5.6-Familie akzeptieren Bild-Input. Bilder werden als `image_url`-Content-Blöcke mit einer base64-Daten-URL (`data:{mime};base64,{data}`) gesendet.
-- **Audio-Eingabe**: `gpt-4o` unterstützt Mikrofon-Aufnahmen (`gpt-4.1` seit 12.10.2026 entfernt: OpenAI führt dafür keinen Audio-Input; Live-Test von `gpt-4o` steht aus). Audio wird als `input_audio`-Blöcke im nativen OpenAI-Format gesendet. Der Aufnahme-Button wird automatisch angezeigt/ausgeblendet basierend auf dem aktiven Modell.
+- **Audio-Eingabe**: In diesem Client nicht verfügbar (geändert 12.10.2026). Live-Tests mit `api-test.py` zeigten, dass `gpt-4o` und `gpt-4.1` `input_audio` über Chat Completions ablehnen (HTTP 400: „Content blocks are expected to be either text or image_url type“); beide wurden aus `AUDIO_CAPABLE_MODELS` entfernt, der Aufnahme-Button bleibt bei OpenAI ausgeblendet. OpenAIs eigene `gpt-audio*`-Modelle nehmen `input_audio` nur als WAV/MP3 an, der Browser nimmt aber WebM auf — nötig wäre eine serverseitige Umwandlung (z.B. ffmpeg). Der `input_audio`-Codepfad in `openai-api.py` bleibt unverändert.
 - **Kein kostenloser API-Tier für GPT-5.x**: OpenAI bietet für GPT-5.4/5.5/5.6 in der API keinen wirklich kostenlosen Tier an — die „Free"-Gruppierung in diesem Client bezeichnet die günstigsten verfügbaren Modelle (`gpt-4o-mini`, `gpt-5.6-luna`), nicht ein $0-Kontingent.
 - **Keine Abschaltung der Aliase (12.10.2026)**: Der frühere Hinweis auf eine API-weite Abschaltung von `gpt-4o` und `gpt-4o-mini` am 23. Oktober 2026 war falsch. An diesem Tag stellt OpenAI nur bestimmte Snapshots ein (`gpt-4o-2024-05-13`, `gpt-4.1-nano`, `gpt-4-turbo`, `o1`, `o3-mini`, `o4-mini` u.a.); die Aliase `gpt-4o`, `gpt-4o-mini` und `gpt-4.1` stehen nicht auf der Deprecations-Liste. Bitte `gpt-4o` nach dem 23. Oktober 2026 erneut testen.
 - **GPT-6.1 Sol / GPT-6 Luna (12.10.2026)**: `gpt-6.1-sol` (29.09.2026, 2 $/10 $ pro 1 Mio. Token) und `gpt-6-luna` (22.09.2026, 0,10 $/0,50 $) ergänzt — Text + Bild, 1.050.000 Kontext / 128.000 Output. `gpt-6-sol` (durch 6.1 abgelöst) wurde bewusst nicht aufgenommen.
@@ -218,13 +218,14 @@ Alle KI-Antworten werden via Server-Sent Events (SSE) **Token für Token** empfa
 - **Architektur**: `google-api.py` konvertiert das intern verwendete OpenAI-kompatible Nachrichtenformat in Geminis `contents`-Format, sendet die Anfrage und konvertiert die Gemini-SSE-Antwort zurück in das vom Client erwartete OpenAI-SSE-Format.
 - **API-Key**: `GOOGLE_API_KEY` via Apache-Umgebungsvariablen.
 - **Free-Tier-Modelle**: `gemini-2.5-flash`, `gemini-3.8-flash`, `gemini-3.5-flash-lite` (Rate-Limits pro Projekt, siehe AI Studio)
-- **Paid-Tier-Modelle**: `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-3.8-flash`, `gemini-3.5-flash-lite`
+- **Paid-Tier-Modelle**: `gemini-2.5-flash`, `gemini-3.8-flash`, `gemini-3.5-flash-lite`, `gemini-3.1-pro-preview`
 - **Bild-Eingabe**: Alle Gemini-Modelle akzeptieren Bild-Input, gesendet als `inline_data`-Blöcke im nativen Gemini-Format (derselbe Mechanismus, der auch für Audio genutzt wird).
 - **Audio-Eingabe**: Alle Gemini-Modelle unterstützen Audio nativ. Audio wird als `inline_data`-Blöcke im Gemini-Format gesendet. Der Aufnahme-Button ist immer sichtbar wenn Google Gemini aktiv ist.
 - **Abgeschaltete Modelle**: `gemini-2.0-flash` (abgeschaltet am 1. Juni 2026) und `gemini-1.5-pro` (bereits früher abgeschaltet) wurden aus allen Modelllisten, `MODEL_CONFIG` und `AUDIO_CAPABLE_MODELS` entfernt. Das Standard-Fallback-Modell wurde von `gemini-2.0-flash` auf `gemini-2.5-flash` geändert.
 - **Verfügbarkeit der 2.5-Modelle (12.10.2026)**: Der frühere Hinweis auf eine Abschaltung am 16. Oktober 2026 war falsch (Drittquelle, bezog sich auf Vertex AI). Google nennt für `gemini-2.5-flash` / `gemini-2.5-pro` kein Abschaltdatum („nicht abgekündigt, weiter verfügbar bis auf Weiteres“), beschränkt den Zugang aber auf Nutzer, die sie bereits verwendet haben.
 - **Gemini 3.x (12.10.2026)**: `gemini-3.8-flash` (GA 02.09.2026) und `gemini-3.5-flash-lite` (GA 21.07.2026) ergänzt — multimodal (Text, Bild, Audio, Video, PDF), 1.048.576 Token Input / 65.536 Output. Thinking ist standardmäßig aktiv, Denk-Token zählen zu `maxOutputTokens`. `gemini-3.5-flash` / `gemini-3.7-flash` (seit 08.10.2026 abgekündigt, von Google auf 3.6 / 3.8 umgeleitet) wurden bewusst nicht aufgenommen. Standardmodell bleibt `gemini-2.5-flash`.
 - **Output-Limit korrigiert (12.10.2026)**: `gemini-2.5-flash` hat 65.536 Output-Token (bisher fälschlich 8.192, der Wert von Gemini 2.0 Flash).
+- **`gemini-2.5-pro` ersetzt (12.10.2026)**: Mit dem aktuellen Key lieferte `api-test.py` für `gemini-2.5-pro` HTTP 404 „no longer available to new users“; Google nennt `gemini-3.1-pro-preview` als Ersatz. Es steht jetzt in `GOOGLE_MODELS_PAID` (1.048.576 Input / 65.536 Output; Text, Bild, Audio, Video, PDF; Thinking aktiv; Label-Datum nur „02.2026“, da kein exaktes Veröffentlichungsdatum gefunden wurde). Gespeicherte Auswahlen von `gemini-2.5-pro` werden automatisch migriert. Google bietet für dieses Modell **keinen Free-Tier** ($2 / $12 pro 1 Mio. Token bis 200k Prompt-Token); mit einem Free-Tier-Key antwortet es daher mit HTTP 429 „quota exceeded“. Die Kompressor-Liste für Google lautet jetzt `gemini-2.5-flash` und `gemini-3.5-flash-lite` (Pro-Denkmodelle sind ungeeignet: Denk-Token zählen zu den 2.000 Output-Token). Live-Test: `gemini-2.5-flash` und `gemini-3.5-flash-lite` bestehen (Text, Bild, Audio); `gemini-3.8-flash` war korrekt konfiguriert, lieferte aber zeitweise HTTP 503 „high demand“ bzw. Timeouts (Überlast beim Anbieter).
 - DeepThink-Button und -Indikator werden ausgeblendet wenn Google Gemini der aktive Anbieter ist.
 
 ### Hugging-Face-Integration
@@ -232,9 +233,10 @@ Alle KI-Antworten werden via Server-Sent Events (SSE) **Token für Token** empfa
 - **Endpoint**: `https://router.huggingface.co/v1/chat/completions` — der Hugging Face Inference Router wählt automatisch den schnellsten verfügbaren Provider.
 - **Architektur**: OpenAI-kompatibles Format — keine Konvertierung nötig. SSE wird direkt von `hugging-api.py` weitergeleitet.
 - **API-Key**: `HF_API_KEY` — ein Write-Token von `huggingface.co/settings/tokens` mit der Berechtigung „Make calls to Inference Providers".
-- **Free-Tier-Modelle**: `Qwen/Qwen2.5-72B-Instruct`, `mistralai/Mistral-7B-Instruct-v0.3`, `microsoft/Phi-3.5-mini-instruct`
-- **Paid-Tier-Modelle**: `meta-llama/Meta-Llama-3.1-70B-Instruct`, `meta-llama/Meta-Llama-3.1-405B-Instruct`, `Qwen/Qwen2.5-72B-Instruct`
+- **Free-Tier-Modelle**: `Qwen/Qwen2.5-72B-Instruct`, `meta-llama/Llama-3.3-70B-Instruct`, `openai/gpt-oss-120b`
+- **Paid-Tier-Modelle**: `Qwen/Qwen2.5-72B-Instruct`, `meta-llama/Llama-3.3-70B-Instruct`, `openai/gpt-oss-120b`, `Qwen/Qwen3.8-27B`, `deepseek-ai/DeepSeek-V4.1-Flash`
 - **Entfernt**: `mistralai/Mixtral-8x7B-Instruct-v0.1` — wird seit 19. Juli 2026 von keinem Inference Provider mehr auf dem Hugging-Face-Router gehostet.
+- **Modellliste ersetzt (12.10.2026)**: Abgleich mit der Modellliste des Routers (`api-test.py --list`): `mistralai/Mistral-7B-Instruct-v0.3` (kein Chat-Modell), `microsoft/Phi-3.5-mini-instruct` (von keinem aktivierten Provider unterstützt) und `meta-llama/Meta-Llama-3.1-70B-Instruct` / `-405B-Instruct` (existieren nicht mehr) wurden entfernt; `meta-llama/Llama-3.3-70B-Instruct`, `openai/gpt-oss-120b`, `Qwen/Qwen3.8-27B` und `deepseek-ai/DeepSeek-V4.1-Flash` wurden ergänzt (Frontend-Output-Limits 8.192 / 32.768 / 16.384 / 16.384). Gespeicherte Auswahlen werden automatisch migriert. **Inference Providers benötigen Kontoguthaben**: Bei leerem Guthaben antwortet Hugging Face auf jede Anfrage mit HTTP 402 „You have no remaining credits“ — die neue Liste konnte deshalb nicht live getestet werden.
 - DeepThink-Button und -Indikator werden ausgeblendet wenn Hugging Face aktiv ist.
 
 ### GroqCloud-Integration
@@ -243,9 +245,10 @@ Alle KI-Antworten werden via Server-Sent Events (SSE) **Token für Token** empfa
 - **Architektur**: OpenAI-kompatibles Format — keine Konvertierung nötig. SSE wird direkt von `groq-api.py` weitergeleitet.
 - **API-Key**: `GRQ_API_KEY` via Apache-Umgebungsvariablen.
 - **Wichtig**: Ein `User-Agent`-Header ist in allen Anfragen erforderlich — ohne ihn gibt Cloudflare den Fehlercode 1010 zurück und blockiert die Anfrage.
-- **Free- und Paid-Tier-Modelle**: `llama-3.3-70b-versatile`, `llama-3.1-8b-instant`, `meta-llama/llama-4-scout-17b-16e-instruct`, `qwen/qwen3-32b`. Nur Paid: `moonshotai/kimi-k2-instruct-0905`.
+- **Free- und Paid-Tier-Modelle**: `openai/gpt-oss-120b` (Standard), `openai/gpt-oss-20b`, `qwen/qwen3.8-27b` (Modellauswahl am 12.10.2026 ersetzt, siehe unten).
 - Alle Modelle laufen auf GroqClouds LPU (Language Processing Unit)-Hardware mit sehr niedriger Inferenz-Latenz.
 - **Dokumentationsbereinigung**: Der Header von `groq-api.py` dokumentierte bisher `mixtral-8x7b-32768` (von Groq seit 20. März 2025 deprecated) und `gemma2-9b-it` (seit 8. Oktober 2025 deprecated) als unterstützte Modelle — beide waren bereits unerreichbar und wurden aus dem Header entfernt. Die tatsächlichen Modell-Arrays in `index.html` waren bereits korrekt; nur die Dokumentation war veraltet.
+- **Modellauswahl ersetzt (12.10.2026)**: Die Modellliste von Groq (`api-test.py --list`) enthält keines der bisherigen fünf Modelle mehr (`llama-3.3-70b-versatile`, `llama-3.1-8b-instant`, `meta-llama/llama-4-scout-17b-16e-instruct`, `qwen/qwen3-32b`, `moonshotai/kimi-k2-instruct-0905`; HTTP 404). Neu: `openai/gpt-oss-120b` und `openai/gpt-oss-20b` (131.072 Kontext; Frontend-Output-Limit 32.768 von angebotenen 65.536; nur Text; Reasoning-Modell) sowie `qwen/qwen3.8-27b` (131.072 / 16.384; Text und Bilder, höchstens 3 Bilder mit mindestens 32×32 Pixeln je Anfrage; Thinking standardmäßig aktiv). Standardmodell ist `openai/gpt-oss-120b`. Alle drei bestanden den Live-Test (Text; Qwen auch Bild). Gespeicherte Auswahlen werden automatisch migriert. Whisper, Orpheus, Prompt-Guard, Allam und `gpt-oss-safeguard` sind keine Chat-Modelle und werden nicht angeboten.
 - DeepThink-Button und -Indikator werden ausgeblendet wenn GroqCloud der aktive Anbieter ist.
 
 ### LLM-Einstellungs-Panel
@@ -379,7 +382,7 @@ Beim Start fragt `index.html` `/cgi-bin/deepseek-models.py` ab, das den DeepSeek
       'deepseek-flash':    { images: true,  text: true },
       // Google Gemini: multimodal
       'gemini-2.5-flash':  { images: true,  text: true },
-      'gemini-2.5-pro':    { images: true,  text: true },
+      'gemini-3.1-pro-preview': { images: true,  text: true },
       'gemini-3.8-flash':  { images: true,  text: true },
       'gemini-3.5-flash-lite': { images: true,  text: true },
       // OpenAI: multimodal über das gesamte aktuelle Lineup
@@ -572,15 +575,15 @@ Der Client enthält einen eingebauten **Mikrofon-Aufnahme-Button** der direkte S
 
 - **Sichtbarkeit**: Gesteuert von `updateAudioButtonVisibility()`, aufgerufen bei jedem Modellwechsel. Sichtbar nur wenn das aktive Modell in `AUDIO_CAPABLE_MODELS` aufgeführt ist.
 - **Audio-fähige Modelle** (Konstante `AUDIO_CAPABLE_MODELS`):
-  - Google Gemini: `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-3.8-flash`, `gemini-3.5-flash-lite`
-  - OpenAI: `gpt-4o`
+  - Google Gemini: `gemini-2.5-flash`, `gemini-3.1-pro-preview`, `gemini-3.8-flash`, `gemini-3.5-flash-lite`
+  - OpenAI: keines (seit 12.10.2026 — `gpt-4o` und `gpt-4.1` lehnen `input_audio` ab, HTTP 400)
 - **Aufnahme-Ablauf**: `getUserMedia()` → `MediaRecorder`-API → Chunk-Aufnahme (10ms-Intervalle) → `Blob` bei Stop zusammengesetzt → base64-kodiert.
 - **MIME-Typ-Auto-Erkennung**: `audio/webm` (Chrome/Firefox) oder `audio/mp4` (Safari) — zur Laufzeit via `MediaRecorder.isTypeSupported()` ermittelt.
 - **Nach der Aufnahme**: Audio-Daten werden in der `fileInfo`-Box als AUDIO-Badge-Card angezeigt.
 - **Request-Payload**: `audio_data` (base64-String) und `audio_mime_type` werden neben der Textnachricht zum JSON-Body hinzugefügt. Das `hasFile`-Flag wird **nicht** gesetzt — für Audio wird kein Dateiverarbeitungs-System-Prompt injiziert.
 - **Gegenseitige Exklusivität**: Datei-Upload und Audio-Aufnahme schliessen sich gegenseitig aus. Eine Aufnahme starten löscht anhängende Datei-Attachments und umgekehrt.
 - **Backend — Google (`google-api.py`)**: Audio wird als `inline_data`-Block im nativen Gemini-Format an die letzte Benutzernachricht angehängt.
-- **Backend — OpenAI (`openai-api.py`)**: Audio wird als `input_audio`-Block mit `format: webm` oder `mp4` angehängt.
+- **Backend — OpenAI (`openai-api.py`)**: Audio wird als `input_audio`-Block mit `format: webm` oder `mp4` angehängt (derzeit ungenutzt: kein OpenAI-Modell ist audio-fähig).
 - **Wartungsregel** (Manifest-Regel E.1): Wenn ein integrierter Anbieter Audio-Unterstützung für ein Modell hinzufügt oder entfernt, muss `AUDIO_CAPABLE_MODELS` in `index.html` **sofort** aktualisiert werden.
 
 ### Kompressor — Intelligente Kontext-Komprimierung
@@ -626,7 +629,7 @@ Der Kompressor macht einen separaten LLM-Call der grosse Token-Mengen umfassen k
 |----------|----------------------------------|
 | DeepSeek | `deepseek-flash`, `deepseek-v4-pro` |
 | OpenAI | `gpt-4o-mini`, `gpt-5.6-luna`, `gpt-4o`, `gpt-4.1`, `gpt-6-astra` |
-| Google | `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-3.8-flash`, `gemini-3.5-flash-lite` |
+| Google | `gemini-2.5-flash`, `gemini-3.5-flash-lite` |
 
 **Empfohlener Standard**: DeepSeek + `deepseek-flash` — keine Rate Limits, niedrigste Kosten pro Token, zuverlässigste Ergebnisse.
 
@@ -784,6 +787,10 @@ Mehrere in Code-Kommentaren und Auswahllisten referenzierte Modelle waren nicht 
 | GroqCloud (nur Doku) | `mixtral-8x7b-32768` | Von Groq seit 20. März 2025 deprecated (Dokumentation war veraltet; die Live-Modell-Arrays waren bereits korrekt) |
 | GroqCloud (nur Doku) | `gemma2-9b-it` | Von Groq seit 8. Oktober 2025 deprecated (nur Dokumentation) |
 | OpenAI | `gpt-5-mini`, `gpt-5.2-chat-latest` | Nicht mehr auf OpenAIs aktueller Modell-/Preisliste (abgelöst durch die GPT-5.4/5.5/5.6-Familie) |
+| Google | `gemini-2.5-pro` | Für neue Konten gesperrt (HTTP 404, 12.10.2026); ersetzt durch `gemini-3.1-pro-preview` |
+| Hugging Face | `mistralai/Mistral-7B-Instruct-v0.3`, `microsoft/Phi-3.5-mini-instruct`, `meta-llama/Meta-Llama-3.1-70B-Instruct`, `meta-llama/Meta-Llama-3.1-405B-Instruct` | Kein Chat-Modell / von keinem aktivierten Provider unterstützt / nicht mehr vorhanden (HTTP 400, 12.10.2026) |
+| GroqCloud | `llama-3.3-70b-versatile`, `llama-3.1-8b-instant`, `meta-llama/llama-4-scout-17b-16e-instruct`, `qwen/qwen3-32b`, `moonshotai/kimi-k2-instruct-0905` | Von Groq nicht mehr angeboten (HTTP 404, 12.10.2026) |
+| OpenAI (nur Audio) | `gpt-4o`, `gpt-4.1` | Lehnen `input_audio` ab (HTTP 400, 12.10.2026); nur aus `AUDIO_CAPABLE_MODELS` entfernt |
 
 Entfernt aus `GOOGLE_MODELS_PAID`, `HF_MODELS_PAID`, `OPENAI_MODELS_FREE`/`PAID`, `MODEL_CONFIG`, `MODEL_CAPABILITIES`, `AUDIO_CAPABLE_MODELS` und `COMPRESSOR_MODELS`, soweit zutreffend. Das Standard-Fallback-Modell von `google-api.py` wurde von `gemini-2.0-flash` auf `gemini-2.5-flash` geändert. Ein verwaister `MODEL_CONFIG`-Eintrag für das entfernte Mixtral-Modell (vorhanden, obwohl es bereits aus allen Auswahllisten entfernt war) wurde ebenfalls bereinigt.
 
@@ -1091,21 +1098,18 @@ const MODEL_CONFIG = {
     'deepseek-flash':    { maxContextTokens: 1048576, maxOutputTokens: 384000, maxContextMessages: 50 }, // V4.1 Flash, natives Bildverstehen
     // Google Gemini
     'gemini-2.5-flash':     { maxContextTokens: 1048576, maxOutputTokens: 65536,  maxContextMessages: 100 },
-    'gemini-2.5-pro':       { maxContextTokens: 1048576, maxOutputTokens: 65536,  maxContextMessages: 100 },
+    'gemini-3.1-pro-preview': { maxContextTokens: 1048576, maxOutputTokens: 65536,  maxContextMessages: 100 },
     'gemini-3.8-flash':     { maxContextTokens: 1048576, maxOutputTokens: 65536,  maxContextMessages: 100 },
     'gemini-3.5-flash-lite':{ maxContextTokens: 1048576, maxOutputTokens: 65536,  maxContextMessages: 100 },
     // Hugging Face
     'Qwen/Qwen2.5-72B-Instruct':               { maxContextTokens: 128000, maxOutputTokens: 8192, maxContextMessages: 80 },
-    'mistralai/Mistral-7B-Instruct-v0.3':      { maxContextTokens: 32768,  maxOutputTokens: 4096, maxContextMessages: 40 },
-    'microsoft/Phi-3.5-mini-instruct':         { maxContextTokens: 128000, maxOutputTokens: 4096, maxContextMessages: 60 },
-    'meta-llama/Meta-Llama-3.1-70B-Instruct':  { maxContextTokens: 128000, maxOutputTokens: 8192, maxContextMessages: 80 },
-    'meta-llama/Meta-Llama-3.1-405B-Instruct': { maxContextTokens: 128000, maxOutputTokens: 8192, maxContextMessages: 80 },
+    'meta-llama/Llama-3.3-70B-Instruct':        { maxContextTokens: 128000, maxOutputTokens: 8192,  maxContextMessages: 80 },
+    'Qwen/Qwen3.8-27B':                         { maxContextTokens: 131072, maxOutputTokens: 16384, maxContextMessages: 80 },
+    'deepseek-ai/DeepSeek-V4.1-Flash':          { maxContextTokens: 131072, maxOutputTokens: 16384, maxContextMessages: 80 },
     // GroqCloud
-    'llama-3.3-70b-versatile':                   { maxContextTokens: 128000, maxOutputTokens: 8192,  maxContextMessages: 80 },
-    'llama-3.1-8b-instant':                      { maxContextTokens: 131072, maxOutputTokens: 8192,  maxContextMessages: 80 },
-    'meta-llama/llama-4-scout-17b-16e-instruct': { maxContextTokens: 131072, maxOutputTokens: 8192,  maxContextMessages: 80 },
-    'qwen/qwen3-32b':                            { maxContextTokens: 131072, maxOutputTokens: 40960, maxContextMessages: 80 },
-    'moonshotai/kimi-k2-instruct-0905':          { maxContextTokens: 131072, maxOutputTokens: 8192,  maxContextMessages: 80 },
+    'openai/gpt-oss-120b':                       { maxContextTokens: 131072, maxOutputTokens: 32768, maxContextMessages: 80 }, // also offered by Hugging Face
+    'openai/gpt-oss-20b':                        { maxContextTokens: 131072, maxOutputTokens: 32768, maxContextMessages: 80 },
+    'qwen/qwen3.8-27b':                          { maxContextTokens: 131072, maxOutputTokens: 16384, maxContextMessages: 80 },
     // OpenAI (ergänzt am 19.07.2026 — fehlte zuvor komplett, fiel stillschweigend auf DeepSeek-Flash-Limits zurück)
     'gpt-4o-mini':    { maxContextTokens: 128000,  maxOutputTokens: 16384,  maxContextMessages: 80  },
     'gpt-4o':         { maxContextTokens: 128000,  maxOutputTokens: 16384,  maxContextMessages: 80  },
@@ -1123,12 +1127,12 @@ const DEEPSEEK_MODELS    = ['deepseek-flash', 'deepseek-v4-pro'];
 const OPENAI_MODELS_FREE = ['gpt-4o-mini', 'gpt-5.6-luna', 'gpt-6-luna'];
 const OPENAI_MODELS_PAID = ['gpt-6-astra', 'gpt-6.1-sol', 'gpt-6-luna', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-5.4', 'gpt-4o', 'gpt-4.1', 'gpt-4o-mini'];
 const GOOGLE_MODELS_FREE = ['gemini-2.5-flash', 'gemini-3.8-flash', 'gemini-3.5-flash-lite'];
-const GOOGLE_MODELS_PAID = ['gemini-2.5-flash', 'gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-2.5-pro'];
-const HF_MODELS_FREE     = ['Qwen/Qwen2.5-72B-Instruct', 'mistralai/Mistral-7B-Instruct-v0.3', 'microsoft/Phi-3.5-mini-instruct'];
-const HF_MODELS_PAID     = ['meta-llama/Meta-Llama-3.1-70B-Instruct', 'meta-llama/Meta-Llama-3.1-405B-Instruct', 'Qwen/Qwen2.5-72B-Instruct'];
-const GROQ_MODELS_FREE   = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'meta-llama/llama-4-scout-17b-16e-instruct', 'qwen/qwen3-32b'];
-const GROQ_MODELS_PAID   = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'meta-llama/llama-4-scout-17b-16e-instruct', 'qwen/qwen3-32b', 'moonshotai/kimi-k2-instruct-0905'];
-const AUDIO_CAPABLE_MODELS = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gpt-4o'];
+const GOOGLE_MODELS_PAID = ['gemini-2.5-flash', 'gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-pro-preview'];
+const HF_MODELS_FREE     = ['Qwen/Qwen2.5-72B-Instruct', 'meta-llama/Llama-3.3-70B-Instruct', 'openai/gpt-oss-120b'];
+const HF_MODELS_PAID     = ['Qwen/Qwen2.5-72B-Instruct', 'meta-llama/Llama-3.3-70B-Instruct', 'openai/gpt-oss-120b', 'Qwen/Qwen3.8-27B', 'deepseek-ai/DeepSeek-V4.1-Flash'];
+const GROQ_MODELS_FREE   = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.8-27b'];
+const GROQ_MODELS_PAID   = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.8-27b'];
+const AUDIO_CAPABLE_MODELS = ['gemini-2.5-flash', 'gemini-3.1-pro-preview', 'gemini-3.8-flash', 'gemini-3.5-flash-lite'];
 ```
 
 Seit dem 17. September 2026 wird die sichtbare Beschriftung jedes Modells in den obigen Dropdowns separat via `MODEL_DISPLAY_LABELS` / `getModelDisplayLabel()` nachgeschlagen — siehe [Modell-Anzeige-Beschriftungen & Bereinigung](#17-september-2026-modell-anzeige-beschriftungen--bereinigung). Die Arrays oben definieren weiterhin, welche rohen IDs gueltig sind und an die jeweilige Anbieter-API gesendet werden; nur der Anzeigetext unterscheidet sich.
@@ -1303,7 +1307,7 @@ Dieses Projekt demonstriert professionelles Web-Development in einem minimalisti
 - Streaming-Antworten mit Sub-Sekunden-First-Token-Latenz.
 - Einzigartiges flexibles Kontext-Management — beliebige Nachricht und alle folgenden löschen.
 - Intelligentes Zwischenablage-Handling für Text, Bilder und Dateipfad-Schutz.
-- Audio-Aufnahme direkt im Browser für Gemini (alle Modelle) und OpenAI (`gpt-4o`).
+- Audio-Aufnahme direkt im Browser für Gemini (alle Modelle).
 - Kompressor — automatische Kontext-Komprimierung ermöglicht unbegrenzt lange Gespräche.
 - Kontext-Überschreitung — interaktive In-Chat-Box mit smartem Kontext-Carry-Over (Option C).
 - Kontingent-Banner — klare, dauerhafte visuelle Rückmeldung für erschöpftes Guthaben oder Tageslimits.
@@ -1326,7 +1330,7 @@ Dieses Projekt demonstriert professionelles Web-Development in einem minimalisti
 
 **Sicherheitsgeprueft und oeffentlich vertrauenswuerdig** — ein mehrstufiger Sicherheitsaudit (26. Juli – 15. September 2026) schloss Stored-XSS-, Path-Traversal-, CORS- und Anfragegroessen-Luecken im Backend; die Seite liefert jetzt ein echtes Let's-Encrypt-Zertifikat statt eines selbstsignierten, ganz ohne oeffentliche Portfreigabe.
 
-**Lesbare Modell-Beschriftungen** — alle 27 Modelle ueber alle fuenf Anbieter zeigen einen klarsprachigen Namen und das echte Veroeffentlichungsdatum statt einer rohen API-ID, ergaenzt am 17. September 2026.
+**Lesbare Modell-Beschriftungen** — alle 25 Modelle ueber alle fuenf Anbieter zeigen einen klarsprachigen Namen und das echte Veroeffentlichungsdatum statt einer rohen API-ID, ergaenzt am 17. September 2026.
 
 **Für einen professionellen Entwickler** demonstriert dieses Projekt:
 - **Sicherheitsbewusstsein** — API-Key-Schutz, Executable-Erkennung, sichere Session-Speicherung, kein Path-Traversal.
