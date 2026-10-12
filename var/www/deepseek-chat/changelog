@@ -2557,5 +2557,34 @@
       Browsersprache statt der Oberflaechensprache
     - Dateien: index.html, export-pdf.py
 
+    119. [12.10.2026] Zeitstempel folgen der Oberflaechensprache, 
+      Konfigurationszeile im Export bereinigt, Servername neutral
+    - Anlass: Browser-Test der Exporte (117/118) mit spanischer Oberflaeche.
+      Das globale PDF zeigte alle Beschriftungen korrekt, aber drei Details
+      stimmten nicht
+    - index.html: Alle toLocaleString()-Aufrufe fuer Datum/Uhrzeit und Zahlen
+      nutzen jetzt numberLocale() (en-US, de-CH, es-ES; custom = Browser).
+      Betrifft Zeitstempel neuer Nachrichten, Datum in der Liste der
+      gespeicherten Chats und der Lesezeichen, die Zeitstempel in den
+      Einzelexporten TXT/MD/RTF sowie die Zahlen in der Datei-Token-Warnung.
+      Vorher richtete sich das Format nach der Browsersprache (hier
+      Englisch/USA: "10/12/2026, 3:59:21 PM" in einer spanischen Oberflaeche).
+      Bereits gespeicherte Nachrichten behalten ihr damals erzeugtes Format
+    - index.html: exportLabels() sendet fuer Sprachen ohne Sie/Du-Unterscheidung
+      (en, es) nur noch "Modus: ..." statt "Tratamiento sie, modo: chat"; der
+      interne Wert 'sie' erschien bisher im Klartext. Die Export-Skripte
+      brauchten dafuer keine Aenderung (Platzhalter {0} entfaellt)
+    - index.html: SERVER_NAME "DeepSeek Chat Server" -> "Multi-LLM Chat Server"
+      (erscheint in der Kopfzeile aller Exporte)
+    - language.xml: neue ID 307 ("Mode: {1}" / "Modus: {1}" / "Modo: {1}") in
+      en, de, es und custom (je 198 Texte)
+    - Doku: Readme_EN/DE/ES.md (ID-Bereich der Export-Labels 283-307)
+    - Verifiziert: JS-Syntaxcheck OK; XML wohlgeformt, alle vier Sprachbloecke
+      mit denselben IDs; Datums-/Zahlenformate fuer en-US, de-CH, es-ES
+      geprueft; export-markdown.py und export-pdf.py mit Label 307 aufgerufen
+      ("Configuracion: Modo: chat"). Nicht im Browser getestet
+    - Dateien: index.html, language.xml, Readme_EN.md, Readme_DE.md,
+      Readme_ES.md
+
     ============================================================================
 

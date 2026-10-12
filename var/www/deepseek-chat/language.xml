@@ -186,6 +186,7 @@ Adding a new language:
     <text id="304">Message</text>
     <text id="305">Unknown</text>
     <text id="306">Exported with Multi-LLM Chat</text>
+    <text id="307">Mode: {1}</text>
 
     <text id="241">Hugging Face</text>
     <text id="242">HF Plan</text>
@@ -412,6 +413,7 @@ Adding a new language:
     <text id="304">Nachricht</text>
     <text id="305">Unbekannt</text>
     <text id="306">Exportiert mit Multi-LLM-Chat</text>
+    <text id="307">Modus: {1}</text>
 
     <text id="241">Hugging Face</text>
     <text id="242">HF-Plan</text>
@@ -636,6 +638,7 @@ Adding a new language:
     <text id="304">Mensaje</text>
     <text id="305">Desconocido</text>
     <text id="306">Exportado con Multi-LLM Chat</text>
+    <text id="307">Modo: {1}</text>
 
     <text id="241">Hugging Face</text>
     <text id="242">Plan HF</text>
@@ -853,6 +856,7 @@ Adding a new language:
     <text id="304">Message</text>
     <text id="305">Unknown</text>
     <text id="306">Exported with Multi-LLM Chat</text>
+    <text id="307">Mode: {1}</text>
 
     <text id="241">Hugging Face</text>
     <text id="242">HF Plan</text>

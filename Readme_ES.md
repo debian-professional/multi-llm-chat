@@ -510,7 +510,7 @@ Cada conversación se gestiona automáticamente como una sesión del lado del se
 | RTF | Lado del cliente |
 | PDF | Lado del servidor (mensaje individual enviado a `export-pdf.py`) |
 
-**Idioma de exportación:** Todos los rótulos de las exportaciones (título, «Fecha», «Hora», «Mensajes», nombres de rol, encabezados de estadísticas, índice, pie) siguen el idioma de la interfaz. El frontend los envía con cada exportación como `chatData.labels` (generados por `exportLabels()` a partir de `language.xml`, IDs 283–306); los cuatro scripts CGI usan valores predeterminados en alemán si no llegan rótulos. RTF codifica todos los caracteres no ASCII (diéresis, acentos españoles, `¿`, `€`, …) como códigos de escape RTF. El banner de envío, los mensajes del micrófono y los tooltips de cierre también proceden de `language.xml` (IDs 279–282), y los formatos numéricos siguen el idioma de la interfaz.
+**Idioma de exportación:** Todos los rótulos de las exportaciones (título, «Fecha», «Hora», «Mensajes», nombres de rol, encabezados de estadísticas, índice, pie) siguen el idioma de la interfaz. El frontend los envía con cada exportación como `chatData.labels` (generados por `exportLabels()` a partir de `language.xml`, IDs 283–307); los cuatro scripts CGI usan valores predeterminados en alemán si no llegan rótulos. RTF codifica todos los caracteres no ASCII (diéresis, acentos españoles, `¿`, `€`, …) como códigos de escape RTF. El banner de envío, los mensajes del micrófono y los tooltips de cierre también proceden de `language.xml` (IDs 279–282), y los formatos numéricos siguen el idioma de la interfaz.
 
 **Contenido de exportación** (exportación global PDF/Markdown):
 - Cabecera: nombre del servidor, IP, fecha de exportación, idioma activo, forma de tratamiento

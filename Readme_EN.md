@@ -511,7 +511,7 @@ Every conversation is automatically managed as a server-side session:
 | RTF | Client-side |
 | PDF | Server-side (single message sent to `export-pdf.py`) |
 
-**Export language:** All captions in the exports (title, "Date", "Time", "Messages", role names, statistics headings, table of contents, footer) follow the UI language. The frontend sends them with each export request as `chatData.labels` (built by `exportLabels()` from `language.xml`, IDs 283–306); the four CGI scripts use German defaults if no labels arrive. RTF encodes all non-ASCII characters (umlauts, Spanish accents, `¿`, `€`, …) as RTF escape codes. The sending banner, the microphone messages and the close tooltips also come from `language.xml` (IDs 279–282), and number formats follow the UI language.
+**Export language:** All captions in the exports (title, "Date", "Time", "Messages", role names, statistics headings, table of contents, footer) follow the UI language. The frontend sends them with each export request as `chatData.labels` (built by `exportLabels()` from `language.xml`, IDs 283–307); the four CGI scripts use German defaults if no labels arrive. RTF encodes all non-ASCII characters (umlauts, Spanish accents, `¿`, `€`, …) as RTF escape codes. The sending banner, the microphone messages and the close tooltips also come from `language.xml` (IDs 279–282), and number formats follow the UI language.
 
 **Export content** (PDF / Markdown global export):
 - Header: server name, IP, export date, active language, address form

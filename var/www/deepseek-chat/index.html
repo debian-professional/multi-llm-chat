@@ -1726,7 +1726,7 @@
         const FEEDBACK_LOG_URL = '/cgi-bin/feedback-log.py';
         const COMPRESS_CONTEXT_URL = '/cgi-bin/compress-context.py';
         
-        const SERVER_NAME = 'DeepSeek Chat Server';
+        const SERVER_NAME = 'Multi-LLM Chat Server';
 
         // =====================================================================
         // MODELL-KONFIGURATION: DeepSeek V4 (Stand: 11.05.2026)
@@ -2100,7 +2100,9 @@
             return {
                 title: t(283), server: t(284), date: t(285), time: t(286),
                 messages: t(287), user: t(288), ai: t(289), exported: t(290),
-                export_date: t(291), settings: t(292), form_mode: t(293),
+                export_date: t(291), settings: t(292),
+                // Sprachen ohne Sie/Du-Unterscheidung: nur der Modus, ohne 'sie'/'du'
+                form_mode: (langMeta[currentLang] && langMeta[currentLang].has_address_form) ? t(293) : t(307),
                 stats: t(294), total: t(295), modes: t(296), files: t(297),
                 tokens: t(298), duration: t(299), none: t(300), to: t(301),
                 toc: t(302), history: t(303), message: t(304), unknown: t(305),
@@ -2358,7 +2360,7 @@
             const estimatedTokens = Math.ceil(content.length * TOKENS_PER_CHAR);
             contextHistory.messages.push({
                 id: msgId, role: 'user', content, mode, hasFile,
-                timestamp: new Date().toLocaleString(),
+                timestamp: new Date().toLocaleString(numberLocale()),
                 estimatedTokens
             });
             updateContextEstimation();
@@ -2370,7 +2372,7 @@
             const estimatedTokens = Math.ceil(content.length * TOKENS_PER_CHAR);
             contextHistory.messages.push({
                 id: msgId, role: 'assistant', content, mode,
-                timestamp: new Date().toLocaleString(),
+                timestamp: new Date().toLocaleString(numberLocale()),
                 estimatedTokens
             });
             updateContextEstimation();
@@ -2628,7 +2630,7 @@
                     const item = document.createElement('div');
                     item.className = 'session-item';
                     const msgCount = session.messageCount || 0;
-                    const sessionDate = session.timestamp ? new Date(session.timestamp).toLocaleString() : '';
+                    const sessionDate = session.timestamp ? new Date(session.timestamp).toLocaleString(numberLocale()) : '';
                     item.innerHTML = `
                         <div class="session-header">
                             <div class="session-id"></div>
@@ -2743,7 +2745,7 @@
                     // Wiederverwendung der .session-item-Klassen (identisches Layout).
                     const item = document.createElement('div');
                     item.className = 'session-item';
-                    const bookmarkDate = bookmark.timestamp ? new Date(bookmark.timestamp).toLocaleString() : '';
+                    const bookmarkDate = bookmark.timestamp ? new Date(bookmark.timestamp).toLocaleString(numberLocale()) : '';
                     item.innerHTML = `
                         <div class="session-header">
                             <div class="session-id"></div>
@@ -3052,7 +3054,7 @@
         function exportSingleAsTxt(msgId) {
             const text = getMsgText(msgId);
             const role = getMsgRole(msgId) === 'user' ? t(288) : t(289);
-            const timestamp = new Date().toLocaleString();
+            const timestamp = new Date().toLocaleString(numberLocale());
             const content = `${t(283)}\n${t(290)}: ${timestamp}\n\n${role}:\n${'='.repeat(40)}\n${text}\n`;
             const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
             triggerDownload(blob, `message-${msgId}.txt`);
@@ -3061,7 +3063,7 @@
         function exportSingleAsMarkdown(msgId) {
             const text = getMsgText(msgId);
             const role = getMsgRole(msgId) === 'user' ? t(288) : t(289);
-            const timestamp = new Date().toLocaleString();
+            const timestamp = new Date().toLocaleString(numberLocale());
             const content = `# ${t(283)}\n\n**${t(290)}:** ${timestamp}\n\n## ${role}\n\n${text}\n`;
             const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
             triggerDownload(blob, `message-${msgId}.md`);
@@ -3092,7 +3094,7 @@
         function exportSingleAsRtf(msgId) {
             const text = getMsgText(msgId);
             const role = getMsgRole(msgId) === 'user' ? t(288) : t(289);
-            const timestamp = new Date().toLocaleString();
+            const timestamp = new Date().toLocaleString(numberLocale());
             const escapedText = rtfEscape(text);
             const rtfContent = `{\\rtf1\\ansi\\deff0\n{\\fonttbl{\\f0 Arial;}}\n{\\colortbl;\\red0\\green86\\blue179;\\red40\\green40\\blue40;}\n\\f0\\fs24\n{\\b\\cf1 ${rtfEscape(t(283))}}\\par\n{\\cf2 ${rtfEscape(t(290))}: ${rtfEscape(timestamp)}}\\par\n\\par\n{\\b\\cf1 ${rtfEscape(role)}:}\\par\n${'_'.repeat(40)}\\par\n\\par\n${escapedText}\\par\n}`;
             const blob = new Blob([rtfContent], { type: 'application/rtf' });
@@ -4613,7 +4615,7 @@
                         }
                         const ctxConfig = MODEL_CONFIG[modelNameCtx] || MODEL_CONFIG['deepseek-flash'];
                         if (estimatedFileTokens > ctxConfig.maxContextTokens) {
-                            alert(tf(262, estimatedFileTokens.toLocaleString(), ctxConfig.maxContextTokens.toLocaleString()));
+                            alert(tf(262, estimatedFileTokens.toLocaleString(numberLocale()), ctxConfig.maxContextTokens.toLocaleString(numberLocale())));
                             fileUpload.value = '';
                             return;
                         }

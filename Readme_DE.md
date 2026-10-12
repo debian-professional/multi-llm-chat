@@ -510,7 +510,7 @@ Jedes Gespräch wird automatisch als serverseitige Session verwaltet:
 | RTF | Clientseitig |
 | PDF | Serverseitig (einzelne Nachricht an `export-pdf.py` gesendet) |
 
-**Exportsprache:** Alle Beschriftungen in den Exporten (Titel, «Datum», «Uhrzeit», «Nachrichten», Rollennamen, Statistik-Überschriften, Inhaltsverzeichnis, Fusszeile) folgen der Oberflächensprache. Das Frontend sendet sie bei jedem Export als `chatData.labels` mit (aufgebaut von `exportLabels()` aus `language.xml`, IDs 283–306); die vier CGI-Skripte verwenden deutsche Standardwerte, falls keine Labels ankommen. RTF kodiert alle Nicht-ASCII-Zeichen (Umlaute, spanische Akzente, `¿`, `€`, …) als RTF-Escape-Codes. Auch Sende-Banner, Mikrofon-Meldungen und Schliessen-Tooltips stammen aus `language.xml` (IDs 279–282), und Zahlenformate folgen der Oberflächensprache.
+**Exportsprache:** Alle Beschriftungen in den Exporten (Titel, «Datum», «Uhrzeit», «Nachrichten», Rollennamen, Statistik-Überschriften, Inhaltsverzeichnis, Fusszeile) folgen der Oberflächensprache. Das Frontend sendet sie bei jedem Export als `chatData.labels` mit (aufgebaut von `exportLabels()` aus `language.xml`, IDs 283–307); die vier CGI-Skripte verwenden deutsche Standardwerte, falls keine Labels ankommen. RTF kodiert alle Nicht-ASCII-Zeichen (Umlaute, spanische Akzente, `¿`, `€`, …) als RTF-Escape-Codes. Auch Sende-Banner, Mikrofon-Meldungen und Schliessen-Tooltips stammen aus `language.xml` (IDs 279–282), und Zahlenformate folgen der Oberflächensprache.
 
 **Export-Inhalt** (PDF/Markdown globaler Export):
 - Header: Server-Name, IP, Export-Datum, aktive Sprache, Anredeform
