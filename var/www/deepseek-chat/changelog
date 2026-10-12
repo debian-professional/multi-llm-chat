@@ -2342,4 +2342,30 @@
       compress-context.py, Readme_EN.md, Readme_DE.md, Readme_ES.md,
       overview-LLM.md
 
+    111. [12.10.2026] Neu: shell-scripts/api-test.py - Testskript fuer die Anbieter-APIs
+    - Zweck: Modelle und Parameter nicht mehr nur gegen die Doku, sondern
+      gegen die echten APIs pruefen (Anlass: Pruefungen 109/110, bei denen
+      mehrere falsche Limits und Warnungen erst durch Doku-Abgleich
+      auffielen). Ablage im Repo unter shell-scripts/ - bewusst nicht in
+      cgi-bin, daher wird es von deploy.sh nicht nach Produktion kopiert
+    - Funktionsweise: laeuft auf swtor10 als root (liest die API-Keys aus
+      /etc/apache2/envvars, gibt sie nie aus) und baut die Anfragen mit
+      denselben Parametern wie die CGI-Proxys (max_completion_tokens bei
+      OpenAI, thinking-Steuerung bei DeepSeek, inline_data bei Gemini);
+      Modelllisten, Output-Limits und Bild-/Audio-Faehigkeiten werden direkt
+      aus der deployten index.html gelesen (Fallback: Repo-Kopie)
+    - Tests: 0 Modell in der Anbieter-Modellliste vorhanden; A Text mit dem
+      vollen Output-Limit aus MODEL_CONFIG; B Bild (rotes 16x16-PNG, Antwort
+      muss "rot" enthalten); C Audio (Sinuston als WAV, mit ffmpeg
+      zusaetzlich als WebM = echtes Browser-Format; gpt-4.1 als Gegenprobe);
+      D DeepSeek DeepThink (thinking enabled, reasoning_effort high);
+      E abgeloester Alias deepseek-v4-flash
+    - Aufruf: sudo python3 shell-scripts/api-test.py [anbieter ...]
+      [--no-media] [--dry] [--html=PFAD]; Ausgabe PASS/WARN/FAIL/SKIP je
+      Modell und Zusammenfassung. Kosten: wenige Cent pro Lauf
+    - Doku: Readme_EN/DE/ES.md (Skriptliste, Tabelle, Verzeichnisbaum)
+    - Dateien: shell-scripts/api-test.py, Readme_EN.md, Readme_DE.md,
+      Readme_ES.md
+
     ============================================================================
+

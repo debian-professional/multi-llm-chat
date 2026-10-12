@@ -145,6 +145,7 @@ La arquitectura es intencionalmente simple pero bien pensada:
 - `sync-back.sh` — copia archivos modificados desde producción de vuelta al repositorio fuente.
 - `install.sh` — instala `deploy.sh` y `sync-back.sh` en el directorio de producción.
 - `tag-release.sh` — crea un tag Git con número de versión auto-incrementado (p.ej. `v0.94 → v0.95`) y lo envía. Ejecuta `git fetch --tags` automáticamente para evitar conflictos con tags remotos existentes.
+- `api-test.py` — prueba las APIs de los proveedores con los mismos parámetros que los proxies CGI (lista de modelos, texto con el límite de salida completo, imagen, audio, DeepThink de DeepSeek). Lee las listas de modelos y límites de `index.html` y las claves API de `/etc/apache2/envvars`; ejecutar como root en el servidor. No se despliega en producción.
 - `repo2text.sh` — exporta todo el repositorio como un único archivo de texto delimitado para asistentes de IA.
 
 ---
@@ -1142,6 +1143,7 @@ Desde el 17 de septiembre de 2026, la etiqueta visible de cada modelo en los des
 | `sync-back.sh <user>` | Copia archivos modificados desde producción de vuelta al repositorio fuente |
 | `install.sh` | Instala `deploy.sh` y `sync-back.sh` en el directorio de producción |
 | `tag-release.sh` | Crea un tag Git con número de versión auto-incrementado y lo envía. Ejecuta primero `git fetch --tags` para evitar conflictos con tags remotos existentes. |
+| `api-test.py` | Prueba todos los proveedores/modelos con los parámetros reales de los proxies (`sudo python3 shell-scripts/api-test.py [proveedor…] [--no-media] [--dry]`). No se despliega en producción. |
 
 **Importante — `deploy.sh` no se despliega a sí mismo.** La propia lista `cp` del script cubre `index.html`, `manifest`, `files-directorys`, `cgi-bin/*.py` y `language.xml` — nunca se copia a sí mismo. Tras modificar `deploy.sh` en el repositorio fuente y ejecutar `git pull` en el servidor, la copia de producción en `/var/www/deepseek-chat/deploy.sh` sigue siendo la versión **antigua** hasta que se copia manualmente:
 ```bash
@@ -1164,7 +1166,8 @@ Esto causó un tropiezo real durante la sesión del 19 de julio de 2026 — `sud
 │   ├── deploy.sh                       Copia repositorio fuente → producción
 │   ├── sync-back.sh                    Copia producción → repositorio fuente
 │   ├── install.sh                      Instala scripts deploy/sync-back
-│   └── tag-release.sh                  Crea y envía tags de versión Git
+│   ├── tag-release.sh                  Crea y envía tags de versión Git
+│   └── api-test.py                     Prueba las APIs de los proveedores con los parámetros de los proxies
 ├── var/www/deepseek-chat/
 │   ├── index.html                      Aplicación principal (~5.000 líneas, todo JS/CSS/HTML)
 │   ├── language.xml                    Todos los textos UI en todos los idiomas (EN, DE, ES, Personalizado)
