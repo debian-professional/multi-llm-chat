@@ -2677,5 +2677,22 @@
    - --check und die Kurzpruefung vor dem Lauf nutzen denselben Test.
    - Dateien: shell-scripts/web-test.py
 
+
+126. 12.10.2026 - web-test.py: Tests fuer Bild-/PDF-Upload, Zwischenablage, Mikrofon, Kompressor
+   - Neue Testgruppe "upload": Bild nur bei bildfaehigem Modell (sonst Hinweis ID 239),
+     Bilddaten und Typ im Request, Entfernen-Knopf, falsche Endung (ID 10), PDF-Text wird
+     gelesen und mitgesendet, defektes PDF (Fehleranzeige statt Absturz).
+   - Neue Testgruppe "zwischenablage": Copy-Knopf, Export "Copy to clipboard", Text einfuegen
+     (am Cursor / als Datei / abbrechen), Bild einfuegen (inkl. Textmodell-Hinweis), Dateipfade (ID 240).
+   - Neue Testgruppe "mikrofon": Aufnahme mit Fake-Mikrofon, Audio im Request, Verwerfen,
+     Zugriff verweigert (ID 281), keine Mikrofon-Schnittstelle (ID 280).
+   - Neue Testgruppe "kompressor": Aufruf ab 70 % Auslastung, Zusammenfassung im System-Prompt,
+     Fehlerfall (ID 47, Chat laeuft weiter), abgeschaltet.
+   - Neue Option --pdfjs=DIR: pdf.js lokal statt vom CDN (Offline); ohne erreichbares CDN wird
+     der PDF-Test uebersprungen (SKIP). --check prueft zusaetzlich pdf.js.
+   - Bei --url ist die fehlende reportlab-Installation kein Hinweis mehr (PDF entsteht auf dem Server).
+   - Readme DE/EN/ES: neue Testbereiche und --check.
+   - Dateien: shell-scripts/web-test.py, Readme_DE.md, Readme_EN.md, Readme_ES.md
+
     ============================================================================
 

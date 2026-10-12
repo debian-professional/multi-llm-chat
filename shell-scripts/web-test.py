@@ -29,6 +29,13 @@ Tests (Gruppen):
                Titel, Rollen, Akzente, Zeitstempel, RTF-Kodierung
   speicher     Sitzungen und Lesezeichen speichern/laden/loeschen
   dateien      Textdatei hochladen, ausfuehrbare Datei wird abgelehnt
+  upload       Bild- und PDF-Upload: Bild nur bei bildfaehigem Modell, falsche Endung,
+               PDF-Text wird gelesen und mitgesendet (PDF braucht pdf.js vom CDN)
+  zwischenablage  Copy-Knopf, Export "Copy to clipboard", Einfuegen von Text (am Cursor /
+               als Datei / abbrechen), Einfuegen von Bild und Dateipfaden
+  mikrofon     Aufnahme-Knopf (Fake-Mikrofon): aufnehmen, senden, entfernen, Meldungen
+               bei fehlender Berechtigung / fehlender Mikrofon-Schnittstelle
+  kompressor   Kontext-Komprimierung bei hoher Auslastung, Fehlerfall, abgeschaltet
 
 Einrichtung (einmalig, auf dem Rechner mit Browser, z.B. hpenvy):
   python3 -m venv ~/.venvs/webtest
@@ -47,6 +54,8 @@ Aufruf (aus dem Repo-Verzeichnis):
   --headed      Browserfenster anzeigen (zum Zuschauen)
   --insecure    Zertifikatsfehler ignorieren (bei --url)
   --keep=DIR    Downloads der Exporte in DIR behalten (zum Nachschauen)
+  --pdfjs=DIR   pdf.min.js + pdf.worker.min.js aus DIR statt vom CDN laden (Offline;
+                ohne Internet wird der PDF-Test sonst uebersprungen)
   --check       nur die installierte Zusatzsoftware pruefen, kein Test
   --no-check    die kurze Voraussetzungspruefung vor dem Test ueberspringen
   --vpn-ip=IP   Adresse fuer den VPN-Test (Standard 172.29.255.1)
@@ -61,13 +70,16 @@ Einstufung: PASS / FAIL; SKIP wenn eine Voraussetzung fehlt (z.B. pdftotext,
 reportlab). Exit-Code 1 bei mindestens einem FAIL.
 """
 
+import base64
 import json
 import os
 import re
 import shutil
 import subprocess
 import sys
+import struct
 import tempfile
+import zlib
 import threading
 import functools
 import http.server
@@ -161,6 +173,8 @@ class Mock:
         self.chat_reply = None        # None = normale Antwort, sonst (status, dict)
         self.chat_text = 'Hallo! Das ist die Mock-Antwort mit Umlauten äöü und ¿Qué tal? Gruss.'
         self.export_calls = []
+        self.compress_calls = []      # Nutzdaten der Kompressor-Anfragen
+        self.compress_reply = None    # None = Erfolg, sonst (status, dict)
 
     # --- Chat ---
     def sse(self, text):
@@ -246,8 +260,13 @@ class Mock:
         if name == 'delete-bookmark.py':
             self.bookmarks.pop(payload.get('bookmarkId'), None)
             return j({'success': True})
-        if name in ('feedback-log.py', 'compress-context.py'):
-            return j({'success': True, 'summary': 'Mock-Zusammenfassung'})
+        if name == 'compress-context.py':
+            self.compress_calls.append(payload)
+            if self.compress_reply is not None:
+                return j(self.compress_reply[1], self.compress_reply[0])
+            return j({'summary': 'Mock-Zusammenfassung'})
+        if name == 'feedback-log.py':
+            return j({'success': True})
         if name == 'get-log.py':
             return route.fulfill(status=200, headers={'Content-Type': 'text/plain'}, body='Mock-Log')
         if name.startswith('export-'):
@@ -310,7 +329,25 @@ def new_page(C, settings=None, fast=False, lang=None):
     page.errors = []
     page.on('pageerror', lambda e: page.errors.append('pageerror: ' + str(e)))
     page.on('console', lambda m: page.errors.append('console: ' + m.text) if (m.type == 'error' and 'net::ERR_' not in m.text) else None)  # reine Netzwerkfehler (z.B. CDN offline) ignorieren
-    page.on('dialog', lambda d: d.accept(page.dialog_answer if hasattr(page, 'dialog_answer') else ''))
+    page.dialogs = []   # Texte aller alert()-Meldungen
+    def on_dialog(d):
+        page.dialogs.append(d.message)
+        d.accept(page.dialog_answer if hasattr(page, 'dialog_answer') else '')
+    page.on('dialog', on_dialog)
+    try:   # Zwischenablage und Mikrofon fuer die Tests freigeben (nur fuer diese Adresse)
+        ctx.grant_permissions(['clipboard-read', 'clipboard-write', 'microphone'], origin=C.base.rstrip('/'))
+    except Exception:
+        pass
+    if getattr(C, 'pdfjs', None):   # pdf.js lokal statt vom CDN ausliefern (Offline-Betrieb)
+        def pdfjs_route(route):
+            name = 'pdf.worker.min.js' if 'worker' in route.request.url else 'pdf.min.js'
+            path = os.path.join(C.pdfjs, name)
+            hdr = {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/javascript'}
+            if os.path.exists(path):
+                route.fulfill(status=200, headers=hdr, body=b'' if route.request.method == 'HEAD' else open(path, 'rb').read())
+            else:
+                route.abort()
+        ctx.route(re.compile(r'https://(cdnjs\.cloudflare\.com/ajax/libs/pdf\.js/[\d.]+|unpkg\.com/pdfjs-dist@[\d.]+/build)/pdf(\.worker)?\.min\.js'), pdfjs_route)
     if fast:   # Wartezeiten ab 1 s (Retry-Countdown) auf 10 ms kuerzen
         page.add_init_script("(() => { const st = window.setTimeout; "
                              "window.setTimeout = (f, d, ...a) => st(f, (d >= 1000 ? 10 : d), ...a); })()")
@@ -962,6 +999,379 @@ def t_dateien(C):
 
 
 # ---------------------------------------------------------------------------
+# Testdateien erzeugen (ohne Zusatzpakete)
+# ---------------------------------------------------------------------------
+
+def make_png(path, w=8, h=8):
+    """Kleines gueltiges PNG (rote Flaeche). Rueckgabe: Bytes."""
+    raw = b''.join(b'\x00' + b'\xff\x00\x00' * w for _ in range(h))
+    def chunk(t, d):
+        return struct.pack('>I', len(d)) + t + d + struct.pack('>I', zlib.crc32(t + d) & 0xffffffff)
+    data = (b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 2, 0, 0, 0)) +
+            chunk(b'IDAT', zlib.compress(raw)) + chunk(b'IEND', b''))
+    open(path, 'wb').write(data)
+    return data
+
+
+def make_pdf(path, text):
+    """Einseitiges PDF mit einer Textzeile (nur ASCII)."""
+    stream = ('BT /F1 18 Tf 72 720 Td (%s) Tj ET' % text.replace('\\', '\\\\').replace('(', '\\(').replace(')', '\\)')).encode('latin-1')
+    objs = [b'<< /Type /Catalog /Pages 2 0 R >>',
+            b'<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+            b'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>',
+            b'<< /Length %d >>\nstream\n' % len(stream) + stream + b'\nendstream',
+            b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>']
+    out = b'%PDF-1.4\n'
+    offs = []
+    for i, o in enumerate(objs, 1):
+        offs.append(len(out))
+        out += b'%d 0 obj\n' % i + o + b'\nendobj\n'
+    xref = len(out)
+    out += b'xref\n0 %d\n0000000000 65535 f \n' % (len(objs) + 1)
+    for o in offs:
+        out += b'%010d 00000 n \n' % o
+    out += b'trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n' % (len(objs) + 1, xref)
+    open(path, 'wb').write(out)
+
+
+IMG_MODEL = {'apiService': 'deepseek', 'selectedModel': 'deepseek-flash'}                       # kann Bilder
+TXT_MODEL = {'apiService': 'groq', 'groqTier': 'free', 'selectedModel': 'openai/gpt-oss-120b'}   # nur Text
+AUDIO_MODEL = {'apiService': 'google', 'googleTier': 'free', 'selectedModel': 'gemini-3.8-flash'}
+
+
+def last_payload(C):
+    return C.mock.requests[-1][1] if C.mock.requests else {}
+
+
+# ---------------------------------------------------------------------------
+# Bild- und PDF-Upload
+# ---------------------------------------------------------------------------
+
+@test('upload')
+def t_upload(C):
+    png_path = os.path.join(C.tmpdir, 'bild.png')
+    png = make_png(png_path)
+
+    # Bild mit bildfaehigem Modell
+    p = new_page(C, IMG_MODEL)
+    p.set_input_files('#fileUpload', png_path)
+    p.wait_for_selector('#fileInfo.visible', timeout=10000)
+    info = p.inner_text('#fileInfo')
+    add('upload', 'Bild: Name erscheint in der Dateianzeige', 'bild.png' in info, info[:60].replace('\n', ' '))
+    send(p, 'Was ist auf dem Bild?')
+    pl = last_payload(C)
+    got = base64.b64decode(pl.get('image_data', '') or '')
+    add('upload', 'Bild: Daten und Typ gehen an den Anbieter', got == png and pl.get('image_mime_type') == 'image/png',
+        f"{len(got)} Bytes, {pl.get('image_mime_type')}")
+    close(p)
+
+    # Bild entfernen -> nicht mehr gesendet
+    p = new_page(C, IMG_MODEL)
+    p.set_input_files('#fileUpload', png_path)
+    p.wait_for_selector('#removeFile', timeout=10000)
+    p.click('#removeFile')
+    vis = p.evaluate('document.getElementById("fileInfo").classList.contains("visible")')
+    send(p, 'Nur Text')
+    add('upload', 'Bild: Entfernen-Knopf, danach kein Bild im Request', not vis and 'image_data' not in last_payload(C),
+        f'Anzeige sichtbar={vis}')
+    close(p)
+
+    # Bild mit reinem Textmodell -> Hinweis (ID 239), nichts wird gesendet
+    p = new_page(C, TXT_MODEL)
+    p.set_input_files('#fileUpload', png_path)
+    p.wait_for_timeout(600)
+    want = tx(C, 'en', 239)
+    send(p, 'Hallo')
+    add('upload', 'Bild bei Textmodell: Hinweis (ID 239)', want in p.dialogs, (p.dialogs[0][:60] if p.dialogs else 'kein Hinweis'))
+    add('upload', 'Bild bei Textmodell: kein Bild im Request', 'image_data' not in last_payload(C), '')
+    close(p)
+
+    # nicht erlaubte Endung
+    p = new_page(C, IMG_MODEL)
+    z = os.path.join(C.tmpdir, 'daten.zip')
+    open(z, 'wb').write(b'PK\x03\x04' + b'\x00' * 40)
+    p.set_input_files('#fileUpload', z)
+    p.wait_for_timeout(600)
+    msg = p.dialogs[0] if p.dialogs else ''
+    vis = p.evaluate('document.getElementById("fileInfo").classList.contains("visible")')
+    add('upload', 'Falsche Endung (.zip): Hinweis ID 10 mit Endung', '.zip' in msg and msg.startswith(tx(C, 'en', 10).split('{0}')[0]), msg[:70])
+    add('upload', 'Falsche Endung (.zip): nichts uebernommen', not vis, f'sichtbar={vis}')
+    close(p)
+
+    # PDF
+    pdf_path = os.path.join(C.tmpdir, 'bericht.pdf')
+    make_pdf(pdf_path, 'Geheimer PDF-Inhalt 4711')
+    p = new_page(C, IMG_MODEL)
+    if p.evaluate('typeof pdfjsLib') == 'undefined':
+        add('upload', 'PDF: Text auslesen und mitsenden', None, 'pdf.js nicht geladen (CDN offline?) - Option --pdfjs=DIR')
+        close(p)
+        return
+    p.set_input_files('#fileUpload', pdf_path)
+    try:
+        p.wait_for_selector('#removeFile, .pdf-error', timeout=30000)
+    except Exception:
+        pass
+    info = p.inner_text('#fileInfo')
+    err = p.query_selector('#fileInfo .pdf-error')
+    add('upload', 'PDF: Text wird ausgelesen (Anzeige ID 35)', err is None and 'bericht.pdf' in info and p.query_selector('#removeFile') is not None,
+        info[:70].replace('\n', ' '))
+    send(p, 'Fasse das PDF zusammen')
+    msgs = last_payload(C).get('messages', [])
+    txt = msgs[-1]['content'] if msgs else ''
+    add('upload', 'PDF: Inhalt wird mit der Frage gesendet', 'Geheimer PDF-Inhalt 4711' in txt and 'Fasse das PDF zusammen' in txt,
+        txt[:70].replace('\n', ' '))
+    close(p)
+
+    # defektes PDF -> Fehleranzeige statt Absturz
+    bad = os.path.join(C.tmpdir, 'kaputt.pdf')
+    open(bad, 'wb').write(b'%PDF-1.4\nDas ist kein PDF\n')
+    p = new_page(C, IMG_MODEL)
+    p.set_input_files('#fileUpload', bad)
+    p.wait_for_selector('.pdf-error, #removeFile', timeout=30000)
+    add('upload', 'Defektes PDF: Fehlermeldung statt Absturz', p.query_selector('#fileInfo .pdf-error') is not None and not p.errors,
+        (p.inner_text('#fileInfo')[:70].replace('\n', ' ')))
+    close(p)
+
+
+# ---------------------------------------------------------------------------
+# Zwischenablage
+# ---------------------------------------------------------------------------
+
+PASTE_TEXT_JS = """(text) => { const dt = new DataTransfer(); dt.setData('text/plain', text);
+    const e = new ClipboardEvent('paste', {clipboardData: dt, bubbles: true, cancelable: true});
+    document.getElementById('input').dispatchEvent(e); return e.defaultPrevented; }"""
+
+PASTE_IMAGE_JS = """(b64) => { const bin = atob(b64); const u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    const dt = new DataTransfer(); dt.items.add(new File([u8], 'zwischenablage.png', {type: 'image/png'}));
+    const e = new ClipboardEvent('paste', {clipboardData: dt, bubbles: true, cancelable: true});
+    document.getElementById('input').dispatchEvent(e); return e.defaultPrevented; }"""
+
+
+def overlay_visible(p):
+    return p.evaluate('getComputedStyle(document.getElementById("pasteOverlay")).display') != 'none'
+
+
+@test('zwischenablage')
+def t_zwischenablage(C):
+    # --- Copy-Knopf unter der Antwort ---
+    p = new_page(C, IMG_MODEL)
+    send(p, 'Hallo')
+    p.locator('#chat .feedback-btn', has_text=tx(C, 'en', 217)).first.dispatch_event('click')
+    p.wait_for_timeout(400)
+    try:
+        clip = p.evaluate('navigator.clipboard.readText()')
+    except Exception as e:
+        clip = None
+        add('zwischenablage', 'Copy-Knopf: Antworttext in der Zwischenablage', None, f'Zwischenablage nicht lesbar: {str(e)[:60]}')
+    if clip is not None:
+        add('zwischenablage', 'Copy-Knopf: Antworttext in der Zwischenablage', clip == C.mock.chat_text, clip[:50])
+        label = p.locator('#chat .feedback-btn.copied').first.inner_text() if p.query_selector('#chat .feedback-btn.copied') else ''
+        add('zwischenablage', 'Copy-Knopf: Bestaetigung (ID 14)', label.strip() == tx(C, 'en', 14), label.strip())
+
+        # --- Export "Copy to clipboard" ---
+        p.click('#exportButton')
+        p.click('#exportClipboardBtn')
+        p.wait_for_timeout(400)
+        clip = p.evaluate('navigator.clipboard.readText()')
+        want = [tx(C, 'en', 283).upper(), tx(C, 'en', 288).upper(), tx(C, 'en', 289).upper(), 'Hallo', C.mock.chat_text]
+        missing = [w for w in want if w not in clip]
+        add('zwischenablage', 'Export "Copy to clipboard": Kopf, Rollen und Chat', not missing, 'fehlt: ' + ', '.join(missing) if missing else f'{len(clip)} Zeichen')
+        lbl = p.inner_text('#exportButton')
+        add('zwischenablage', 'Export "Copy to clipboard": Bestaetigung am Knopf (ID 14)', tx(C, 'en', 14) in lbl, ' '.join(lbl.split()))
+    close(p)
+
+    # --- Text einfuegen ---
+    text = 'Eingefuegter Text mit Umlauten äöü und ¿Qué?'
+    p = new_page(C, IMG_MODEL)
+    prevented = p.evaluate(PASTE_TEXT_JS, text)
+    p.wait_for_timeout(300)
+    prev = p.inner_text('#pastePreview')
+    add('zwischenablage', 'Text einfuegen: Auswahldialog mit Vorschau', overlay_visible(p) and prev == text and prevented, prev[:50])
+    p.click('#pasteAtCursorBtn')
+    val = p.input_value('#input')
+    add('zwischenablage', 'Text einfuegen: "Am Cursor einfuegen"', val == text and not overlay_visible(p), val[:50])
+
+    p.evaluate(PASTE_TEXT_JS, 'Zweiter Text')
+    p.wait_for_timeout(300)
+    p.click('#pasteCancelBtn')
+    add('zwischenablage', 'Text einfuegen: Abbrechen aendert nichts', p.input_value('#input') == text and not overlay_visible(p), '')
+
+    p.evaluate(PASTE_TEXT_JS, 'Als Datei angehaengter Inhalt 8815')
+    p.wait_for_timeout(300)
+    p.click('#pasteAsFileBtn')
+    info = p.inner_text('#fileInfo')
+    send(p, 'Was steht drin?')
+    msgs = last_payload(C).get('messages', [])
+    last = msgs[-1]['content'] if msgs else ''
+    add('zwischenablage', 'Text einfuegen: "Als Datei anhaengen" und senden', '8815' in last and 'Was steht drin?' in last and not overlay_visible(p),
+        info[:50].replace('\n', ' '))
+    close(p)
+
+    # --- Dateipfade einfuegen -> Hinweis ID 240, kein Dialog ---
+    p = new_page(C, IMG_MODEL)
+    p.evaluate(PASTE_TEXT_JS, '/home/user/a.txt\n/home/user/b.txt')
+    p.wait_for_timeout(300)
+    add('zwischenablage', 'Dateipfade einfuegen: Hinweis (ID 240)', tx(C, 'en', 240) in p.dialogs and not overlay_visible(p),
+        (p.dialogs[0][:50] if p.dialogs else 'kein Hinweis'))
+    close(p)
+
+    # --- Bild einfuegen ---
+    png_path = os.path.join(C.tmpdir, 'clip.png')
+    png = make_png(png_path)
+    b64 = base64.b64encode(png).decode()
+    p = new_page(C, IMG_MODEL)
+    p.evaluate(PASTE_IMAGE_JS, b64)
+    p.wait_for_selector('#clipboardImagePreview.visible', timeout=10000)
+    info = p.inner_text('#clipboardImageInfo')
+    add('zwischenablage', 'Bild einfuegen: Vorschau (ID 231)', info.startswith(tx(C, 'en', 231)), info)
+    send(p, 'Beschreibe das Bild')
+    pl = last_payload(C)
+    add('zwischenablage', 'Bild einfuegen: Daten gehen an den Anbieter', base64.b64decode(pl.get('image_data', '') or '') == png and pl.get('image_mime_type') == 'image/png',
+        f"{pl.get('image_mime_type')}")
+    close(p)
+
+    p = new_page(C, IMG_MODEL)
+    p.evaluate(PASTE_IMAGE_JS, b64)
+    p.wait_for_selector('#clipboardImagePreview.visible', timeout=10000)
+    p.click('#clipboardImageRemove')
+    vis = p.evaluate('document.getElementById("clipboardImagePreview").classList.contains("visible")')
+    send(p, 'Nur Text')
+    add('zwischenablage', 'Bild einfuegen: Entfernen-Knopf', not vis and 'image_data' not in last_payload(C), f'Vorschau sichtbar={vis}')
+    close(p)
+
+    p = new_page(C, TXT_MODEL)
+    p.evaluate(PASTE_IMAGE_JS, b64)
+    p.wait_for_timeout(500)
+    add('zwischenablage', 'Bild einfuegen bei Textmodell: Hinweis (ID 239)', tx(C, 'en', 239) in p.dialogs, (p.dialogs[0][:50] if p.dialogs else 'kein Hinweis'))
+    close(p)
+
+
+# ---------------------------------------------------------------------------
+# Mikrofon (Chromium-Fake-Mikrofon)
+# ---------------------------------------------------------------------------
+
+@test('mikrofon')
+def t_mikrofon(C):
+    p = new_page(C, AUDIO_MODEL)
+    btn = lambda: p.inner_text('#audioButton').strip()
+    add('mikrofon', 'Aufnahme-Knopf sichtbar, Beschriftung (ID 247)', btn() == tx(C, 'en', 247) and p.is_visible('#audioButton'), btn())
+    p.click('#audioButton')
+    try:
+        p.wait_for_function(f'document.getElementById("audioButton").textContent.trim() === {json.dumps(tx(C, "en", 248))}', timeout=8000)
+        rec = True
+    except Exception:
+        rec = False
+    add('mikrofon', 'Aufnahme startet (Knopf zeigt "Stopp", ID 248)', rec and 'active' in (p.get_attribute('#audioButton', 'class') or ''), btn())
+    if not rec:
+        close(p)
+        return
+    p.wait_for_timeout(1500)
+    p.click('#audioButton')
+    try:
+        p.wait_for_function('document.getElementById("removeAudio")', timeout=10000)
+        done = True
+    except Exception:
+        done = False
+    info = p.inner_text('#fileInfo')
+    add('mikrofon', 'Aufnahme beendet: Hinweis (ID 249) und Entfernen-Knopf', done and tx(C, 'en', 249) in info and btn() == tx(C, 'en', 247), info[:50].replace('\n', ' '))
+    send(p, 'Was wurde gesagt?')
+    pl = last_payload(C)
+    audio = pl.get('audio_data') or ''
+    add('mikrofon', 'Audio geht an den Anbieter (Daten + Typ audio/...)', len(audio) > 100 and str(pl.get('audio_mime_type', '')).startswith('audio/'),
+        f"{len(audio)} Zeichen base64, {pl.get('audio_mime_type')}")
+    close(p)
+
+    # Aufnahme verwerfen
+    p = new_page(C, AUDIO_MODEL)
+    p.click('#audioButton')
+    p.wait_for_timeout(1200)
+    p.click('#audioButton')
+    p.wait_for_function('document.getElementById("removeAudio")', timeout=10000)
+    p.click('#removeAudio')
+    vis = p.evaluate('document.getElementById("fileInfo").classList.contains("visible")')
+    send(p, 'Nur Text')
+    add('mikrofon', 'Aufnahme verwerfen: kein Audio im Request', not vis and 'audio_data' not in last_payload(C), f'Anzeige sichtbar={vis}')
+    close(p)
+
+    # Zugriff verweigert -> Meldung ID 281
+    p = new_page(C, AUDIO_MODEL)
+    p.evaluate("() => { navigator.mediaDevices.getUserMedia = () => Promise.reject(new DOMException('Permission denied', 'NotAllowedError')); }")
+    p.click('#audioButton')
+    p.wait_for_timeout(600)
+    add('mikrofon', 'Zugriff verweigert: Meldung (ID 281)', tx(C, 'en', 281) in p.dialogs and 'active' not in (p.get_attribute('#audioButton', 'class') or ''),
+        (p.dialogs[0][:50] if p.dialogs else 'keine Meldung'))
+    close(p)
+
+    # keine Mikrofon-Schnittstelle (z.B. unsichere Verbindung) -> Meldung ID 280
+    p = new_page(C, AUDIO_MODEL)
+    p.evaluate("() => { Object.defineProperty(navigator, 'mediaDevices', {get: () => undefined}); }")
+    p.click('#audioButton')
+    p.wait_for_timeout(400)
+    add('mikrofon', 'Keine Mikrofon-Schnittstelle: Meldung (ID 280)', tx(C, 'en', 280) in p.dialogs, (p.dialogs[0][:50] if p.dialogs else 'keine Meldung'))
+    close(p)
+
+
+# ---------------------------------------------------------------------------
+# Kompressor (Kontext-Komprimierung)
+# ---------------------------------------------------------------------------
+
+HF_SETTINGS = {'apiService': 'huggingface', 'hfTier': 'free', 'selectedModel': 'Qwen/Qwen2.5-72B-Instruct',
+               'compressorEnabled': True, 'compressorService': 'deepseek', 'compressorModel': 'deepseek-flash'}
+BIG_TEXT = ('Lorem ipsum dolor sit amet. ' * 14500)[:400000]    # ~100000 Tokens = ~78 % von 128000
+
+
+@test('kompressor')
+def t_kompressor(C):
+    # normaler Fall
+    p = new_page(C, HF_SETTINGS)
+    send(p, 'Erste Frage')
+    send(p, 'Zweite Frage')
+    add('kompressor', 'Kleiner Chat: keine Komprimierung', len(C.mock.compress_calls) == 0, f'{len(C.mock.compress_calls)} Aufrufe')
+    send(p, BIG_TEXT)
+    calls = C.mock.compress_calls
+    ok = len(calls) == 1
+    add('kompressor', 'Ab 70 % Auslastung: Kompressor wird einmal aufgerufen', ok, f'{len(calls)} Aufrufe')
+    if ok:
+        c = calls[0]
+        add('kompressor', 'Kompressor-Anfrage: aeltere Haelfte, Anbieter und Modell',
+            len(c.get('messages', [])) == 2 and c.get('compressorService') == 'deepseek' and c.get('compressorModel') == 'deepseek-flash',
+            f"{len(c.get('messages', []))} Nachrichten, {c.get('compressorService')}/{c.get('compressorModel')}")
+    pl = last_payload(C)
+    msgs = pl.get('messages', [])
+    system = msgs[0]['content'] if msgs else ''
+    add('kompressor', 'Zusammenfassung steckt im System-Prompt der Chat-Anfrage',
+        'Mock-Zusammenfassung' in system and 'COMPRESSED CONTEXT' in system, f'{len(msgs)} Nachrichten')
+    add('kompressor', 'Alte Nachrichten ersetzt (System + 3 Nachrichten)', len(msgs) == 4 and msgs[-1]['content'] == BIG_TEXT, f'{len(msgs)} Nachrichten')
+    info = p.inner_text('#compressorInfo').strip()
+    warn = 'warning' in (p.get_attribute('#compressorInfo', 'class') or '')
+    banner = p.evaluate('getComputedStyle(document.getElementById("kompressorBanner")).display')
+    add('kompressor', 'Anzeige nach Komprimierung (ID 46), Banner weg', bool(info) and not warn and banner == 'none', info[:60])
+    close(p)
+
+    # Kompressor-Fehler: Chat laeuft weiter, Warnung (ID 47)
+    p = new_page(C, HF_SETTINGS)
+    C.mock.compress_reply = (500, {'error': 'kaputt'})
+    send(p, 'Erste Frage')
+    send(p, 'Zweite Frage')
+    send(p, BIG_TEXT)
+    info = p.inner_text('#compressorInfo').strip()
+    warn = 'warning' in (p.get_attribute('#compressorInfo', 'class') or '')
+    answered = chat_texts(p) and chat_texts(p)[-1] == C.mock.chat_text
+    add('kompressor', 'Kompressor-Fehler: Warnung (ID 47) mit HTTP 500', warn and 'HTTP 500' in info, info[:60])
+    add('kompressor', 'Kompressor-Fehler: Chat wird trotzdem beantwortet', bool(answered), '')
+    close(p)
+
+    # abgeschaltet
+    p = new_page(C, dict(HF_SETTINGS, compressorEnabled=False))
+    send(p, 'Erste Frage')
+    send(p, 'Zweite Frage')
+    send(p, BIG_TEXT)
+    add('kompressor', 'Abgeschaltet: kein Aufruf trotz hoher Auslastung', len(C.mock.compress_calls) == 0, f'{len(C.mock.compress_calls)} Aufrufe')
+    close(p)
+
+
+# ---------------------------------------------------------------------------
 # main
 # ---------------------------------------------------------------------------
 
@@ -977,7 +1387,7 @@ GUIDE_VENV = (
     '  Danach immer mit ~/.venvs/webtest/bin/python aufrufen.')
 
 
-def check_requirements(url=None, insecure=False, launch=True, vpn_ip=VPN_IP, ping=True):
+def check_requirements(url=None, insecure=False, launch=True, vpn_ip=VPN_IP, ping=True, pdfjs=None):
     """Prueft die Zusatzsoftware. Rueckgabe: (Pflicht_fehlt, Optional_fehlt, Zeilen)."""
     rows = []   # (Status, Name, Detail, Anleitung)
 
@@ -1061,10 +1471,32 @@ def check_requirements(url=None, insecure=False, launch=True, vpn_ip=VPN_IP, pin
     r = subprocess.run([py, '-c', 'import reportlab; print(reportlab.Version)'], capture_output=True)
     if r.returncode == 0:
         row('OK', 'reportlab (fuer PDF-Export, in ' + py + ')', r.stdout.decode().strip())
-    else:
-        row('FEHLT' if local else 'OPTIONAL', 'reportlab (fuer PDF-Export, in ' + py + ')',
-            'nur im lokalen Modus noetig' if not local else 'PDF-Export-Test wird sonst fehlschlagen',
+    elif local:
+        row('FEHLT', 'reportlab (fuer PDF-Export, in ' + py + ')', 'im lokalen Modus laufen die Export-Skripte hier',
             '  sudo apt install python3-reportlab')
+    else:
+        row('OK', 'reportlab (fuer PDF-Export)', 'nicht installiert - bei --url nicht noetig (PDF entsteht auf dem Server)')
+
+    # pdf.js fuer den PDF-Upload-Test: kommt vom CDN (oder lokal mit --pdfjs=DIR)
+    if pdfjs:
+        miss = [f for f in ('pdf.min.js', 'pdf.worker.min.js') if not os.path.exists(os.path.join(pdfjs, f))]
+        if miss:
+            row('OPTIONAL', 'pdf.js lokal (--pdfjs)', 'fehlt in ' + pdfjs + ': ' + ', '.join(miss),
+                '  cd /tmp && npm install pdfjs-dist@3.11.174\n'
+                '  --pdfjs=/tmp/node_modules/pdfjs-dist/build')
+        else:
+            row('OK', 'pdf.js lokal (--pdfjs)', pdfjs)
+    else:
+        import urllib.request
+        try:
+            urllib.request.urlopen(urllib.request.Request(
+                'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js', method='HEAD'), timeout=6)
+            row('OK', 'pdf.js vom CDN erreichbar (PDF-Upload-Test)', 'cdnjs.cloudflare.com')
+        except Exception as e:
+            row('OPTIONAL', 'pdf.js vom CDN erreichbar (PDF-Upload-Test)', 'ohne: PDF-Upload-Test wird uebersprungen (SKIP)',
+                '  Internetzugang pruefen, oder pdf.js lokal bereitstellen:\n'
+                '  cd /tmp && npm install pdfjs-dist@3.11.174\n'
+                '  und mit --pdfjs=/tmp/node_modules/pdfjs-dist/build aufrufen')
 
     if shutil.which('pdftotext'):
         row('OK', 'pdftotext (PDF-Inhalt pruefen)', shutil.which('pdftotext'))
@@ -1110,13 +1542,13 @@ def main():
 
     if '--check' in args:
         print('web-test.py - Pruefung der Voraussetzungen')
-        must, optl, rows = check_requirements(url, '--insecure' in args, vpn_ip=vpn_ip, ping=not NOVPN(args))
+        must, optl, rows = check_requirements(url, '--insecure' in args, vpn_ip=vpn_ip, ping=not NOVPN(args), pdfjs=opt('--pdfjs'))
         print_requirements(rows)
         if must:
             print(f'\n=== {len(must)} Pflicht-Voraussetzung(en) fehlen - Test kann nicht laufen ===')
             return 2
         print('\n=== Alles Noetige ist installiert' +
-              (f' ({len(optl)} optionale Hilfen fehlen, einzelne Pruefungen werden dann uebersprungen)' if optl else '') +
+              (f' ({len(optl)} optionale Hilfe(n) fehlen, die zugehoerigen Pruefungen werden uebersprungen)' if optl else '') +
               ' ===')
         return 0
 
@@ -1126,13 +1558,13 @@ def main():
               'Pruefen: web-test.py --check')
         return 2
     if '--no-check' not in args:
-        must, optl, rows = check_requirements(url, '--insecure' in args, vpn_ip=vpn_ip, ping=not NOVPN(args))
+        must, optl, rows = check_requirements(url, '--insecure' in args, vpn_ip=vpn_ip, ping=not NOVPN(args), pdfjs=opt('--pdfjs'))
         if must:
             print('web-test.py - Voraussetzungen fehlen:')
             print_requirements([r_ for r_ in rows if r_[0] != 'OK'])
             return 2
         if optl:
-            print('Hinweis: optionale Hilfen fehlen (einzelne Pruefungen werden uebersprungen):')
+            print('Hinweis: optionale Hilfen fehlen (die zugehoerigen Pruefungen werden uebersprungen):')
             print_requirements(optl)
 
     C = Ctx()
@@ -1141,6 +1573,7 @@ def main():
     C.no_vpn = NOVPN(args)
     C.insecure = '--insecure' in args
     C.keep = opt('--keep')
+    C.pdfjs = opt('--pdfjs')
     if C.keep:
         os.makedirs(C.keep, exist_ok=True)
     C.tmpdir = tempfile.mkdtemp(prefix='web-test-')
@@ -1166,7 +1599,8 @@ def main():
           f'Texte: {len(C.texts["en"])} je Sprache')
 
     with sync_playwright() as pw:
-        C.browser = pw.chromium.launch(headless='--headed' not in args)
+        C.browser = pw.chromium.launch(headless='--headed' not in args,
+                                       args=['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'])
         for group, fn in TESTS:
             if only and group not in only:
                 continue
