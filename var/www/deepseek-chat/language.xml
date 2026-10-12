@@ -719,6 +719,20 @@ Adding a new language:
     <text id="260">Start new chat with current context</text>
     <text id="261">Start new chat without context</text>
     <text id="262">This file (~{0} tokens) exceeds the context window of the current model ({1} tokens). Please select a model with a larger context window (e.g. Google Gemini) or upload only a portion of the file.</text>
+    <text id="263">Download Mode</text>
+    <text id="264">Generating response... ({0} characters so far)</text>
+    <text id="265">Response ready ({0} characters). Use the download button below this message to save it.</text>
+    <text id="266">New Chat</text>
+    <text id="267">New Chat Anonymous</text>
+    <text id="268">Bookmarks</text>
+    <text id="269">This chat is not being saved</text>
+    <text id="270">Saved Prompts</text>
+    <text id="271">Save as bookmark</text>
+    <text id="272">Enter a short title for this bookmark:</text>
+    <text id="273">No bookmarks saved yet.</text>
+    <text id="274">Error loading bookmarks: {0}</text>
+    <text id="275">Error deleting bookmark: {0}</text>
+    <text id="276">Delete this bookmark?</text>
 
     <text id="241">Hugging Face</text>
     <text id="242">HF Plan</text>
