@@ -2278,6 +2278,68 @@
     - Dateien: google-api.py, index.html, Readme_EN.md, Readme_DE.md,
       Readme_ES.md, overview-LLM.md
 
+    110. [12.10.2026] Update: DeepSeek und OpenAI - Alias-Bereinigung, GPT-6.1 Sol /
+         GPT-6 Luna, falsche Warnungen und Limits korrigiert
+    - Anlass: Pruefung der Einstellungen gegen die offiziellen Docs
+      (DeepSeek API Updates/Preisseite, OpenAI Deprecations/Modellseiten/
+      Changelog, Stand 12.10.2026), nach der Gemini-Pruefung (Eintrag 109)
+    - DeepSeek, Befund 1 (falsche Aussage): Header, overview-LLM.md und
+      Readmes behaupteten, deepseek-v4-pro werde seit 14.09.2026 auf V4.1
+      Flash umgeleitet. Laut DeepSeek wird NUR deepseek-v4-flash (und
+      -vision-exp) temporaer umgeleitet; deepseek-v4-pro ist ein eigenes
+      Modell (V4-Pro-0813, nur Text) und laeuft unveraendert weiter
+        * Korrigiert in deepseek-api.py-Header, overview-LLM.md, Readmes
+        * overview-LLM.md Preise: Pro-Spalte auf die aktuellen Werte
+          ($0.022 / $0.66 / $1.98), Peak-/Off-Peak-Zeiten ergaenzt
+    - DeepSeek, Befund 2 (Standardmodell): Standard/Fallback war an ca. 20
+      Stellen der abgeloeste Alias deepseek-v4-flash
+        * Neuer Standard und Fallback ueberall: deepseek-flash (index.html:
+          Einstellungen, Fallbacks, Kompressor; deepseek-api.py;
+          compress-context.py)
+        * Auswahl (DEEPSEEK_MODELS, COMPRESSOR_MODELS, statische <option>):
+          nur noch deepseek-flash und deepseek-v4-pro
+        * Migration in migrateSettings(): gespeicherte Werte
+          deepseek-v4-flash (selectedModel/compressorModel) werden
+          automatisch auf deepseek-flash umgestellt; die Eintraege in
+          MODEL_CONFIG/MODEL_CAPABILITIES/MODEL_DISPLAY_LABELS bleiben
+          nur fuer alte Werte erhalten (Label: "Alias fuer V4.1 Flash")
+    - OpenAI, Befund 1 (falsche Warnung): "Abschaltung gpt-4o/gpt-4o-mini am
+      23.10.2026" (openai-api.py, Readmes, Overview, Changelog) war falsch.
+      Am 23.10.2026 werden nur bestimmte Snapshots abgeschaltet
+      (gpt-4o-2024-05-13, gpt-4.1-nano, gpt-4-turbo, o1, o3-mini, o4-mini
+      u.a.); die Aliase gpt-4o, gpt-4o-mini und gpt-4.1 stehen nicht auf der
+      Deprecations-Liste. Hinweis aufgenommen: gpt-4o nach dem 23.10.2026
+      kurz testen
+    - OpenAI, Befund 2 (echter Fehler): gpt-5.4 war mit 16384 Output-Token
+      hinterlegt, laut OpenAI sind es 128000 (MODEL_CONFIG, Header, Doku)
+    - OpenAI, Befund 3 (Audio): gpt-4.1 aus AUDIO_CAPABLE_MODELS entfernt -
+      laut OpenAI-Modellseite kein Audio-Input; der Mikrofon-Button wurde
+      dort bisher faelschlich angeboten. gpt-4o bleibt (Live-Test steht aus,
+      da OpenAI input_audio ueber Chat Completions offiziell nicht fuer das
+      normale gpt-4o belegt)
+    - OpenAI, neue Modelle (Text + Bild, 1.050.000 Kontext / 128.000 Output):
+        * gpt-6.1-sol  "OpenAI GPT-6.1 Sol (29.09.2026)"  $2 / $10 pro 1 Mio.
+        * gpt-6-luna   "OpenAI GPT-6 Luna (22.09.2026)"   $0.10 / $0.50
+        * aufgenommen in OPENAI_MODELS_PAID (6.1 Sol, 6 Luna) und
+          OPENAI_MODELS_FREE (6 Luna), MODEL_CAPABILITIES, MODEL_CONFIG,
+          MODEL_DISPLAY_LABELS; gpt-6-sol (von 6.1 abgeloest) bewusst nicht
+        * Kompressor (COMPRESSOR_MODELS) unveraendert
+    - overview-LLM.md: gpt-5.6-sol Preis auf $4 / $20 (Aktionspreis bis
+      mindestens 21.11.2026) korrigiert; GPT-6.1 Sol / GPT-6 Luna Zeilen
+    - Zusaetzlich: in openai-api.py eine versehentlich am Dateiende
+      stehende Export-Markierungszeile (Kommentar, ohne Wirkung) entfernt
+    - Geprueft ohne Befund: GPT-6 Astra akzeptiert kein eigenes
+      temperature/top_p - openai-api.py sendet beides nicht;
+      max_completion_tokens korrekt; DeepSeek Thinking-Steuerung
+      (thinking enabled/disabled, reasoning_effort high) weiterhin gueltig
+    - Bekannte Nebenpunkte (nicht geaendert): OpenAI meldet Rate-Limits seit
+      02.09.2026 als 429 "slow_down" / Ueberlast als 503 - openai-api.py
+      behandelt diese Codes nicht gesondert; DeepSeek bietet Thinking-Stufen
+      low/high/max, genutzt wird nur high
+    - Verifiziert: Python- und JS-Syntaxcheck OK; Diff gegen den Export
+      zeigt ausschliesslich die beschriebenen Aenderungen
+    - Dateien: index.html, deepseek-api.py, openai-api.py,
+      compress-context.py, Readme_EN.md, Readme_DE.md, Readme_ES.md,
+      overview-LLM.md
+
     ============================================================================
-
-

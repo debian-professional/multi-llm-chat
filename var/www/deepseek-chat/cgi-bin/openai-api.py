@@ -4,7 +4,9 @@
 # =============================================================================
 # OPENAI API PROXY
 # Erstellt: 10.03.2026
-# Aktualisiert: 14.09.2026 (GPT-6 Astra ergaenzt); 17.09.2026 (Korrektur:
+# Aktualisiert: 14.09.2026 (GPT-6 Astra ergaenzt); 12.10.2026 (GPT-6.1 Sol und
+# GPT-6 Luna ergaenzt, Korrekturen gpt-5.4 / Abschaltwarnung / Audio, siehe
+# unten); 17.09.2026 (Korrektur:
 # gpt-4o-mini/gpt-4o/gpt-4.1 zeigten faelschlich das Erstellungsdatum
 # dieser Datei als "Version"-Datum statt des echten historischen
 # Veroeffentlichungsdatums - jetzt korrigiert)
@@ -19,8 +21,8 @@
 #     Version      : GPT-4o Mini (Veroeffentlicht 18.07.2024)
 #     Kontext      : 128.000 Token Input / 16.384 Token Output
 #     Faehigkeiten : Text, Bilder (Vision), JSON-Mode, Function Calling
-#     Achtung      : Abschaltung angekuendigt fuer 23.10.2026 (mit GPT-4o,
-#                    GPT-4, GPT-4 Turbo, GPT-3.5 Turbo u.a.)
+#     Hinweis      : Der Alias gpt-4o-mini steht NICHT auf der Deprecations-
+#                    Liste (Korrektur 12.10.2026, siehe unten)
 #
 #   gpt-5.6-luna  [Free]
 #     Version      : GPT-5.6 Luna (Veroeffentlicht 09.07.2026)
@@ -28,7 +30,24 @@
 #     Faehigkeiten : Text, Bilder, Function Calling — guenstigste/schnellste
 #                    Stufe der GPT-5.6-Familie (entspricht der frueheren "nano"-Stufe)
 #
+#   gpt-6-luna  [Free] [NEU seit 12.10.2026]
+#     Version      : GPT-6 Luna (Veroeffentlicht 22.09.2026)
+#     Kontext      : 1.050.000 Token Input / 128.000 Token Output
+#     Faehigkeiten : Text, Bilder (kein Audio/Video)
+#     Preis        : $0.10 / Mio. Input-Token, $0.50 / Mio. Output-Token
+#     Hinweis      : Reasoning-Stufen none..max (Standard: medium)
+#
 #   --- PAID PLAN ---
+#
+#   gpt-6.1-sol  [Paid] [NEU seit 12.10.2026]
+#     Version      : GPT-6.1 Sol (Veroeffentlicht 29.09.2026)
+#     Kontext      : 1.050.000 Token Input / 128.000 Token Output
+#     Faehigkeiten : Text, Bilder (kein Audio/Video)
+#     Preis        : $2 / Mio. Input-Token, $10 / Mio. Output-Token
+#     Hinweis      : "Near-Astra performance at a lower cost"; loest gpt-6-sol
+#                    (22.09.2026, hier nicht aufgenommen) ab. Reasoning-Stufen
+#                    low..max (Standard: medium). Chat Completions ohne
+#                    Tool-Calling (nutzt dieser Proxy nicht).
 #
 #   gpt-6-astra  [Paid] [NEU seit 14.09.2026]
 #     Version      : GPT-6 Astra (Veroeffentlicht 03./04.09.2026, ChatGPT-GA
@@ -65,19 +84,23 @@
 #
 #   gpt-5.4  [Paid]
 #     Version      : GPT-5.4 (Veroeffentlicht 05.03.2026)
-#     Kontext      : 1.050.000 Token Input / 16.384 Token Output
+#     Kontext      : 1.050.000 Token Input / 128.000 Token Output
+#                    (Korrektur 12.10.2026: bisher faelschlich 16.384)
 #     Faehigkeiten : Text, Bilder, Computer Use, Function Calling, Tool Search
 #
 #   gpt-4o  [Paid]
 #     Version      : GPT-4o (Veroeffentlicht 13.05.2024)
 #     Kontext      : 128.000 Token Input / 16.384 Token Output
 #     Faehigkeiten : Text, Bilder, Audio, Function Calling
-#     Achtung      : Abschaltung angekuendigt fuer 23.10.2026
+#     Hinweis      : Nur der Snapshot gpt-4o-2024-05-13 wird am 23.10.2026
+#                    abgeschaltet; der Alias gpt-4o steht nicht auf der Liste
+#                    (Korrektur 12.10.2026, siehe unten)
 #
 #   gpt-4.1  [Paid]
 #     Version      : GPT-4.1 (Veroeffentlicht 14.04.2025)
 #     Kontext      : 1.048.576 Token Input / 32.768 Token Output
-#     Faehigkeiten : Text, Bilder, Function Calling (optimiert fuer Coding)
+#     Faehigkeiten : Text, Bilder, Function Calling (optimiert fuer Coding);
+#                    KEIN Audio-Input (Korrektur 12.10.2026)
 #
 #   gpt-4o-mini  [Paid]
 #     (auch im Free Plan verfuegbar)
@@ -85,13 +108,30 @@
 # ENTFERNT (nicht mehr auf OpenAIs offizieller Modell-/Preisliste gefuehrt,
 # Stand 19.07.2026): gpt-5-mini, gpt-5.2-chat-latest
 #
+# Korrekturen 12.10.2026 (Abgleich mit OpenAI-Deprecations-Seite):
+#   - Die Warnung "Abschaltung gpt-4o / gpt-4o-mini am 23.10.2026" war falsch.
+#     Am 23.10.2026 werden u.a. die Snapshots gpt-4o-2024-05-13 und
+#     gpt-4.1-nano sowie gpt-4-turbo, o1, o3-mini, o4-mini abgeschaltet.
+#     Die Aliase gpt-4o, gpt-4o-mini und gpt-4.1 stehen nicht auf der Liste.
+#     Nach dem 23.10.2026 kurz testen, ob gpt-4o weiter antwortet.
+#   - gpt-5.4: Output-Limit 128.000 (statt 16.384).
+#   - Audio-Input (input_audio): gpt-4.1 unterstuetzt laut OpenAI kein Audio
+#     und wurde aus AUDIO_CAPABLE_MODELS entfernt. Ob der normale gpt-4o
+#     input_audio ueber Chat Completions akzeptiert, ist nicht belegt (OpenAI
+#     fuehrt dafuer die Familie gpt-4o-audio, Abschaltung 20.01.2027) - live
+#     testen.
+#   - GPT-6 Astra akzeptiert kein eigenes temperature/top_p; dieser Proxy
+#     sendet beides nicht.
+#   - Neue Fehlercodes seit 02.09.2026 (429 "slow_down", 503
+#     "server_is_overloaded") werden hier nicht gesondert behandelt.
+#
 # Hinweis: GPT-5.4/5.5/5.6 Pro-Varianten sind ausschliesslich ueber die
 #          Responses API verfuegbar und werden hier nicht unterstuetzt
 #          (Chat Completions API only). Fuer GPT-5.4/5.5/5.6 existiert kein
 #          offizieller kostenloser API-Tier (Stand 19.07.2026) — die "Free"-
 #          Einstufung hier bezeichnet lediglich die guenstigsten Modelle.
 #
-# Quelle: https://platform.openai.com/docs/models (Stand 14.09.2026)
+# Quelle: https://developers.openai.com/api/docs/models und /deprecations (Stand 12.10.2026)
 # =============================================================================
 
 import json
@@ -378,4 +418,3 @@ if __name__ == '__main__':
 
 
 
-############ FILE: var/www/deepseek-chat/cgi-bin/save-session.py ############

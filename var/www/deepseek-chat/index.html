@@ -1381,7 +1381,7 @@
                             </span>
                         </label>
                         <div class="setting-description" id="chatModeDescription">
-                            Standard conversation mode for general questions. (deepseek-v4-flash)
+                            Standard conversation mode for general questions. (deepseek-flash)
                         </div>
                     </div>
                     <div class="setting-item" id="deepthinkModeItem">
@@ -1393,7 +1393,7 @@
                             </span>
                         </label>
                         <div class="setting-description" id="deepthinkModeDescription">
-                            In-depth analysis with reasoning. (deepseek-v4-flash)
+                            In-depth analysis with reasoning. (deepseek-flash)
                         </div>
                     </div>
                 </div>
@@ -1570,7 +1570,7 @@
                     <div class="group-title" id="kompressorModelTitle" style="font-size:13px;color:#aaa;margin-bottom:6px;">Compressor Model</div>
                     <div class="model-select-wrapper">
                         <select id="kompressorModelSelect">
-                            <option value="deepseek-v4-flash">DeepSeek V4.0 Flash (31.07.2026)</option>
+                            <option value="deepseek-flash">DeepSeek V4.1 Flash (10.09.2026)</option>
                             <option value="deepseek-v4-pro">DeepSeek V4.0 Pro (13.08.2026)</option>
                         </select>
                     </div>
@@ -1584,7 +1584,7 @@
                 </div>
                 <div class="model-select-wrapper">
                     <select id="modelSelect">
-                        <option value="deepseek-v4-flash">DeepSeek V4.0 Flash (31.07.2026)</option>
+                        <option value="deepseek-flash">DeepSeek V4.1 Flash (10.09.2026)</option>
                         <option value="deepseek-v4-pro">DeepSeek V4.0 Pro (13.08.2026)</option>
                     </select>
                 </div>
@@ -1657,17 +1657,21 @@
 
         // MODEL CAPABILITY MAP: which file types each model supports
         const MODEL_CAPABILITIES = {
-            // DeepSeek: reiner Text, kein Bild (siehe deepseek-api.py Header)
-            'deepseek-v4-flash': { images: false, text: true },
+            // DeepSeek V4 Pro: reiner Text, kein Bild (siehe deepseek-api.py Header)
             'deepseek-v4-pro':   { images: false, text: true },
+            // Korrektur (12.10.2026): 'deepseek-v4-flash' ist laut DeepSeek ein
+            // abgeloester Alias, der serverseitig temporaer auf V4.1 Flash
+            // (= deepseek-flash) umgeleitet und dort abgerechnet wird. Nicht mehr
+            // in der Auswahl; Eintrag bleibt nur fuer alte gespeicherte Werte.
+            'deepseek-v4-flash': { images: true,  text: true },
             // Update (14.09.2026): DeepSeek V4.1 Flash (veroeffentlicht
             // 10.09.2026), offizieller neuer Modellname 'deepseek-flash'.
             // Natives multimodales Verstehen (Bild+Text von Beginn an
-            // gemeinsam trainiert). DeepSeek leitet die alten Namen
-            // deepseek-v4-flash sowie seit 14.09.2026 auch deepseek-v4-pro
-            // serverseitig temporaer auf V4.1 Flash um - diese Aliase
-            // bleiben also vorerst funktional, gelten aber als abgeloest.
-            // Quelle: DeepSeek API Change Log.
+            // gemeinsam trainiert). Korrektur (12.10.2026): DeepSeek leitet
+            // nur den alten Namen deepseek-v4-flash (und -vision-exp)
+            // temporaer auf V4.1 Flash um. deepseek-v4-pro bleibt ein
+            // eigenes Modell (V4-Pro-0813, nur Text) und wird weiter
+            // bereitgestellt. Quelle: DeepSeek API Change Log (10.09.2026).
             'deepseek-flash': { images: true, text: true },
             // Google Gemini: alle aktuell angebotenen Modelle sind multimodal (siehe google-api.py Header)
             'gemini-2.5-flash':  { images: true,  text: true },
@@ -1689,6 +1693,9 @@
             // Text- und Bild-Input. Quelle: OpenAI, siehe openai-api.py
             // Header fuer Details.
             'gpt-6-astra':          { images: true,  text: true },
+            // Update (12.10.2026): GPT-6.1 Sol und GPT-6 Luna (Text + Bild)
+            'gpt-6.1-sol':          { images: true,  text: true },
+            'gpt-6-luna':           { images: true,  text: true },
             // GroqCloud: aktuell nur Text (siehe groq-api.py Header)
             'llama-3.3-70b-versatile':                    { images: false, text: true },
             'llama-3.1-8b-instant':                       { images: false, text: true },
@@ -1834,9 +1841,10 @@
                 maxOutputTokens:   32768,
                 maxContextMessages: 100
             },
+            // Korrektur (12.10.2026): Output-Limit 128000 (bisher 16384)
             'gpt-5.4': {
                 maxContextTokens:  1048576,
-                maxOutputTokens:   16384,
+                maxOutputTokens:   128000,
                 maxContextMessages: 100
             },
             'gpt-5.5': {
@@ -1867,9 +1875,22 @@
                 maxContextTokens:  1048576,
                 maxOutputTokens:   128000,
                 maxContextMessages: 100
+            },
+            // Update (12.10.2026): GPT-6.1 Sol (2 $/10 $ pro 1 Mio. Token) und
+            // GPT-6 Luna (0,10 $/0,50 $), je 1.050.000 Kontext / 128.000 Output.
+            // Quelle: OpenAI Modellseiten, Stand 12.10.2026.
+            'gpt-6.1-sol': {
+                maxContextTokens:  1048576,
+                maxOutputTokens:   128000,
+                maxContextMessages: 100
+            },
+            'gpt-6-luna': {
+                maxContextTokens:  1048576,
+                maxOutputTokens:   128000,
+                maxContextMessages: 100
             }
         };
-        const DEEPSEEK_MODELS      = ['deepseek-v4-flash', 'deepseek-v4-pro', 'deepseek-flash'];
+        const DEEPSEEK_MODELS      = ['deepseek-flash', 'deepseek-v4-pro']; // deepseek-v4-flash (Alias) seit 12.10.2026 nicht mehr waehlbar
 
         // =====================================================================
         // MODELL-ANZEIGE-BESCHRIFTUNGEN (17.09.2026)
@@ -1883,7 +1904,7 @@
         // kein Label hat.
         // =====================================================================
         const MODEL_DISPLAY_LABELS = {
-            'deepseek-v4-flash': 'DeepSeek V4.0 Flash (31.07.2026)',
+            'deepseek-v4-flash': 'DeepSeek V4 Flash (Alias fuer V4.1 Flash)',
             'deepseek-v4-pro':   'DeepSeek V4.0 Pro (13.08.2026)',
             'deepseek-flash':    'DeepSeek V4.1 Flash (10.09.2026)',
             // OpenAI (17.09.2026). Hinweis: gpt-4o/-mini und gpt-4.1 zeigen
@@ -1899,6 +1920,9 @@
             'gpt-5.6-terra': 'OpenAI GPT-5.6 Terra (09.07.2026)',
             'gpt-5.6-luna':  'OpenAI GPT-5.6 Luna (09.07.2026)',
             'gpt-6-astra':   'OpenAI GPT-6 Astra (04.09.2026)',
+            // Update (12.10.2026), Daten laut OpenAI-Changelog
+            'gpt-6.1-sol':   'OpenAI GPT-6.1 Sol (29.09.2026)',
+            'gpt-6-luna':    'OpenAI GPT-6 Luna (22.09.2026)',
             // Google Gemini (17.09.2026). Beide Modelle erreichten am
             // 17.06.2025 gemeinsam die allgemeine Verfuegbarkeit (GA).
             'gemini-2.5-flash': 'Google Gemini 2.5 Flash (17.06.2025)',
@@ -1931,8 +1955,8 @@
         function getModelDisplayLabel(modelId) {
             return MODEL_DISPLAY_LABELS[modelId] || modelId;
         }
-        const OPENAI_MODELS_FREE   = ['gpt-4o-mini', 'gpt-5.6-luna'];
-        const OPENAI_MODELS_PAID   = ['gpt-6-astra', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-5.4', 'gpt-4o', 'gpt-4.1', 'gpt-4o-mini'];
+        const OPENAI_MODELS_FREE   = ['gpt-4o-mini', 'gpt-5.6-luna', 'gpt-6-luna'];
+        const OPENAI_MODELS_PAID   = ['gpt-6-astra', 'gpt-6.1-sol', 'gpt-6-luna', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-5.4', 'gpt-4o', 'gpt-4.1', 'gpt-4o-mini'];
         // gemini-2.5-flash bleibt an erster Stelle (= Standardmodell), bis die neuen Modelle getestet sind
         const GOOGLE_MODELS_FREE   = ['gemini-2.5-flash', 'gemini-3.8-flash', 'gemini-3.5-flash-lite'];
         const GOOGLE_MODELS_PAID   = ['gemini-2.5-flash', 'gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-2.5-pro'];
@@ -1943,11 +1967,12 @@
         const GOOGLE_MODELS        = GOOGLE_MODELS_FREE; // Fallback
         const AUDIO_CAPABLE_MODELS = [
             'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3.8-flash', 'gemini-3.5-flash-lite',
-            'gpt-4o', 'gpt-4.1'
+            // gpt-4.1 entfernt (12.10.2026): laut OpenAI-Modellseite kein Audio-Input
+            'gpt-4o'
         ];
         // Modelle je Kompressor-Anbieter (nur bezahlte Provider)
         const COMPRESSOR_MODELS = {
-            deepseek: ['deepseek-v4-flash', 'deepseek-v4-pro', 'deepseek-flash'],
+            deepseek: ['deepseek-flash', 'deepseek-v4-pro'],
             openai:   ['gpt-4o-mini', 'gpt-5.6-luna', 'gpt-4o', 'gpt-4.1', 'gpt-6-astra'],
             google:   ['gemini-2.5-flash', 'gemini-2.5-pro']
         };
@@ -2423,9 +2448,9 @@
                     settings.apiService === 'groq'   || settings.apiService === 'openai') {
                     modelName2 = settings.selectedModel;
                 } else {
-                    modelName2 = settings.selectedModel || 'deepseek-v4-flash';
+                    modelName2 = settings.selectedModel || 'deepseek-flash';
                 }
-                const config2 = MODEL_CONFIG[modelName2] || MODEL_CONFIG['deepseek-v4-flash'];
+                const config2 = MODEL_CONFIG[modelName2] || MODEL_CONFIG['deepseek-flash'];
                 const pct = Math.round(
                     (contextHistory.totalEstimatedTokens / config2.maxContextTokens) * 100
                 );
@@ -2458,9 +2483,9 @@
                 settings.apiService === 'groq'   || settings.apiService === 'openai') {
                 modelName = settings.selectedModel;
             } else {
-                modelName = settings.selectedModel || 'deepseek-v4-flash';
+                modelName = settings.selectedModel || 'deepseek-flash';
             }
-            const config = MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-v4-flash'];
+            const config = MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-flash'];
             const pct = Math.min(100, Math.round(
                 (contextHistory.totalEstimatedTokens / config.maxContextTokens) * 100
             ));
@@ -2482,9 +2507,9 @@
             if (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq' || settings.apiService === 'openai') {
                 modelName = settings.selectedModel;
             } else {
-                modelName = settings.selectedModel || 'deepseek-v4-flash';
+                modelName = settings.selectedModel || 'deepseek-flash';
             }
-            const config = MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-v4-flash'];
+            const config = MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-flash'];
             const maxMessages = config.maxContextMessages;
             const recentMessages = contextHistory.messages.slice(-maxMessages);
             const totalTokens = recentMessages.reduce((sum, msg) => sum + (msg.estimatedTokens || 0), 0);
@@ -2497,9 +2522,9 @@
             if (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq' || settings.apiService === 'openai') {
                 modelName = settings.selectedModel;
             } else {
-                modelName = settings.selectedModel || 'deepseek-v4-flash';
+                modelName = settings.selectedModel || 'deepseek-flash';
             }
-            const config = MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-v4-flash'];
+            const config = MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-flash'];
             const pct = Math.min(100, Math.round((contextHistory.totalEstimatedTokens / config.maxContextTokens) * 100));
             const contextInfoEl = document.getElementById('contextInfo');
             contextInfoEl.textContent = t(2) + ' ' + pct + '% (' + modelName + ')';
@@ -2817,9 +2842,9 @@
                 settings.apiService === 'groq'   || settings.apiService === 'openai') {
                 modelName = settings.selectedModel;
             } else {
-                modelName = settings.selectedModel || 'deepseek-v4-flash';
+                modelName = settings.selectedModel || 'deepseek-flash';
             }
-            const config = MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-v4-flash'];
+            const config = MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-flash'];
             return Math.floor(config.maxContextTokens * 4 * 0.75);
         }
 
@@ -3176,14 +3201,14 @@
                 });
                 const modelName = (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq' || settings.apiService === 'openai')
                     ? (settings.selectedModel || (settings.apiService === 'google' ? 'gemini-2.5-flash' : (settings.apiService === 'groq' ? 'llama-3.3-70b-versatile' : (settings.apiService === 'openai' ? 'gpt-4o-mini' : 'Qwen/Qwen2.5-72B-Instruct'))))
-                    : (settings.selectedModel || 'deepseek-v4-flash');
+                    : (settings.selectedModel || 'deepseek-flash');
                 let activeApiUrl;
                 if (settings.apiService === 'google') activeApiUrl = GOOGLE_API_URL;
                 else if (settings.apiService === 'huggingface') activeApiUrl = HF_API_URL;
                 else if (settings.apiService === 'groq') activeApiUrl = GROQ_API_URL;
                 else if (settings.apiService === 'openai') activeApiUrl = OPENAI_API_URL;
                 else activeApiUrl = API_URL;
-                const maxTokens = (MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-v4-flash']).maxOutputTokens;
+                const maxTokens = (MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-flash']).maxOutputTokens;
                 // Fix (28.08.2026): siehe sendMessage() - thinking_enabled macht den
                 // Chat/DeepThink-Unterschied auch bei Regenerate auf API-Ebene real.
                 // Massgeblich ist der Modus der urspruenglichen Nutzernachricht (userMsg.mode).
@@ -3359,10 +3384,15 @@
         // =====================================================================
         function migrateSettings(oldSettings) {
             if (!oldSettings || typeof oldSettings !== 'object') {
-                return { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', hfTier: 'free', groqTier: 'free', openaiTier: 'free', selectedModel: 'deepseek-v4-flash', compressorEnabled: true, compressorService: 'deepseek', compressorModel: 'deepseek-v4-flash' };
+                return { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', hfTier: 'free', groqTier: 'free', openaiTier: 'free', selectedModel: 'deepseek-flash', compressorEnabled: true, compressorService: 'deepseek', compressorModel: 'deepseek-flash' };
             }
             let defaultMode = oldSettings.defaultMode || 'chat';
             if (defaultMode === 'search') defaultMode = 'chat';
+            // Migration (12.10.2026): abgeloester Alias deepseek-v4-flash -> deepseek-flash
+            // (DeepSeek routet den alten Namen nur temporaer auf V4.1 Flash um)
+            const legacyModelMap = { 'deepseek-v4-flash': 'deepseek-flash' };
+            if (legacyModelMap[oldSettings.selectedModel]) oldSettings.selectedModel = legacyModelMap[oldSettings.selectedModel];
+            if (legacyModelMap[oldSettings.compressorModel]) oldSettings.compressorModel = legacyModelMap[oldSettings.compressorModel];
             return {
                 version:       SETTINGS_VERSION,
                 language:      oldSettings.language || 'en',
@@ -3374,14 +3404,14 @@
                 hfTier:        oldSettings.hfTier || 'free',
                 groqTier:      oldSettings.groqTier || 'free',
                 openaiTier:    oldSettings.openaiTier || 'free',
-                selectedModel:       oldSettings.selectedModel || 'deepseek-v4-flash',
+                selectedModel:       oldSettings.selectedModel || 'deepseek-flash',
                 compressorEnabled:   oldSettings.compressorEnabled !== undefined ? oldSettings.compressorEnabled : true,
                 compressorService:   oldSettings.compressorService || 'deepseek',
-                compressorModel:     oldSettings.compressorModel || 'deepseek-v4-flash'
+                compressorModel:     oldSettings.compressorModel || 'deepseek-flash'
             };
         }
         
-        let settings = { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', hfTier: 'free', groqTier: 'free', openaiTier: 'free', selectedModel: 'deepseek-v4-flash', compressorEnabled: true, compressorService: 'deepseek', compressorModel: 'deepseek-v4-flash' };
+        let settings = { version: SETTINGS_VERSION, language: 'en', addressForm: 'sie', defaultMode: 'chat', noTraining: true, apiService: 'deepseek', googleTier: 'free', hfTier: 'free', groqTier: 'free', openaiTier: 'free', selectedModel: 'deepseek-flash', compressorEnabled: true, compressorService: 'deepseek', compressorModel: 'deepseek-flash' };
         let currentMode = 'chat';
         // Feature (29.08.2026): Download-Modus, orthogonal zu currentMode
         // (kombinierbar mit Chat oder DeepThink) - unterdrueckt die Live-
@@ -3529,7 +3559,7 @@
             // (z.B. deepseek-v4-flash) zu nennen. huggingface/groq bekamen den
             // Modellnamen bereits genannt - jetzt konsistent fuer alle Provider.
             if (settings.apiService === 'deepseek') {
-                const modelName = settings.selectedModel || 'deepseek-v4-flash';
+                const modelName = settings.selectedModel || 'deepseek-flash';
                 base += ' You are DeepSeek, an AI assistant made by DeepSeek. You are currently running as the model "' + modelName + '". If asked which model or version you are, answer with this exact model name.';
                 // Fix (29.08.2026): DeepSeek hat fuer die V4-Familie kein
                 // offizielles Knowledge-Cutoff-Datum veroeffentlicht. Ohne
@@ -3566,7 +3596,7 @@
             // unabhaengig vom jeweils oben verwendeten Anzeige-Modellnamen.
             const contextModelName = (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq' || settings.apiService === 'openai')
                 ? (settings.selectedModel || (settings.apiService === 'google' ? 'gemini-2.5-flash' : (settings.apiService === 'groq' ? 'llama-3.3-70b-versatile' : (settings.apiService === 'openai' ? 'gpt-4o-mini' : 'Qwen/Qwen2.5-72B-Instruct'))))
-                : (settings.selectedModel || 'deepseek-v4-flash');
+                : (settings.selectedModel || 'deepseek-flash');
             const contextCfg = MODEL_CONFIG[contextModelName];
             if (contextCfg && contextCfg.maxContextTokens) {
                 base += ' Your maximum context window for this conversation is ' + contextCfg.maxContextTokens.toLocaleString('en-US') + ' tokens. If asked about your context size or context window, answer with this exact number.';
@@ -4032,14 +4062,14 @@
                 });
                 const modelName = (settings.apiService === 'google' || settings.apiService === 'huggingface' || settings.apiService === 'groq' || settings.apiService === 'openai')
                     ? (settings.selectedModel || (settings.apiService === 'google' ? 'gemini-2.5-flash' : (settings.apiService === 'groq' ? 'llama-3.3-70b-versatile' : (settings.apiService === 'openai' ? 'gpt-4o-mini' : 'Qwen/Qwen2.5-72B-Instruct'))))
-                    : (settings.selectedModel || 'deepseek-v4-flash');
+                    : (settings.selectedModel || 'deepseek-flash');
                 let activeApiUrl;
                 if (settings.apiService === 'google') activeApiUrl = GOOGLE_API_URL;
                 else if (settings.apiService === 'huggingface') activeApiUrl = HF_API_URL;
                 else if (settings.apiService === 'groq') activeApiUrl = GROQ_API_URL;
                 else if (settings.apiService === 'openai') activeApiUrl = OPENAI_API_URL;
                 else activeApiUrl = API_URL;
-                const maxTokens = (MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-v4-flash']).maxOutputTokens;
+                const maxTokens = (MODEL_CONFIG[modelName] || MODEL_CONFIG['deepseek-flash']).maxOutputTokens;
                 const requestPayload = { model: modelName, messages, max_tokens: maxTokens, no_training: settings.noTraining };
                 // Fix (28.08.2026): DeepSeeks Thinking-Mode ist API-seitig standardmaessig
                 // aktiv (High-Effort), unabhaengig vom Modellnamen und unabhaengig davon,
@@ -4496,9 +4526,9 @@
                             settings.apiService === 'groq'   || settings.apiService === 'openai') {
                             modelNameCtx = settings.selectedModel;
                         } else {
-                            modelNameCtx = settings.selectedModel || 'deepseek-v4-flash';
+                            modelNameCtx = settings.selectedModel || 'deepseek-flash';
                         }
-                        const ctxConfig = MODEL_CONFIG[modelNameCtx] || MODEL_CONFIG['deepseek-v4-flash'];
+                        const ctxConfig = MODEL_CONFIG[modelNameCtx] || MODEL_CONFIG['deepseek-flash'];
                         if (estimatedFileTokens > ctxConfig.maxContextTokens) {
                             alert(tf(262, estimatedFileTokens.toLocaleString(), ctxConfig.maxContextTokens.toLocaleString()));
                             fileUpload.value = '';

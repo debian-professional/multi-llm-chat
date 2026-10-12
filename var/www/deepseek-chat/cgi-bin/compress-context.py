@@ -352,7 +352,7 @@ def main():
         # Parameter validieren
         messages           = request_data.get('messages', [])
         compressor_service = request_data.get('compressorService', 'deepseek')
-        compressor_model   = request_data.get('compressorModel', 'deepseek-v4-flash')
+        compressor_model   = request_data.get('compressorModel', 'deepseek-flash')
 
         if not messages or not isinstance(messages, list):
             send_error(400, {

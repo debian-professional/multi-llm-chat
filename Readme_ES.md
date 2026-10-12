@@ -4,8 +4,8 @@
 
 Aspectos destacados:
 - **Soporte Multi-LLM** – Cambio entre OpenAI, DeepSeek, Google Gemini, Hugging Face y GroqCloud mediante un toggle de proveedor en el panel de configuración LLM. Cada proveedor tiene su propia lista de modelos, selección de tier y opciones de configuración.
-- **Etiquetas de modelo claras con fecha de lanzamiento** – Los desplegables de modelo muestran etiquetas legibles con la fecha real de lanzamiento en lugar de los IDs crudos de la API (p. ej. "OpenAI GPT-6 Astra (04.09.2026)" en vez de `gpt-6-astra`). Cubre los 23 modelos de los cinco proveedores. El valor realmente enviado a la API no cambia, solo la etiqueta visible es más clara.
-- **DeepSeek V4.1 Flash** – Desde el 10 de septiembre de 2026, `deepseek-flash` aporta la primera comprensión nativa (no añadida posteriormente) de imágenes de DeepSeek, junto a los ya existentes `deepseek-v4-flash`/`deepseek-v4-pro` (ventanas de contexto de 1M tokens; los nombres heredados `deepseek-chat`/`deepseek-reasoner` fueron retirados el 24 de julio de 2026 según lo programado; el modelo experimental intermedio `deepseek-v4-flash-vision-exp` fue eliminado el 17 de septiembre de 2026, reemplazado por completo por `deepseek-flash`).
+- **Etiquetas de modelo claras con fecha de lanzamiento** – Los desplegables de modelo muestran etiquetas legibles con la fecha real de lanzamiento en lugar de los IDs crudos de la API (p. ej. "OpenAI GPT-6 Astra (04.09.2026)" en vez de `gpt-6-astra`). Cubre los 27 modelos de los cinco proveedores. El valor realmente enviado a la API no cambia, solo la etiqueta visible es más clara.
+- **DeepSeek V4.1 Flash** – Desde el 10 de septiembre de 2026, `deepseek-flash` aporta la primera comprensión nativa (no añadida posteriormente) de imágenes de DeepSeek, junto al ya existente `deepseek-v4-pro` (el alias antiguo `deepseek-v4-flash` está sustituido en DeepSeek, solo se redirige temporalmente a V4.1 Flash y ya no es seleccionable desde el 12.10.2026) (ventanas de contexto de 1M tokens; los nombres heredados `deepseek-chat`/`deepseek-reasoner` fueron retirados el 24 de julio de 2026 según lo programado; el modelo experimental intermedio `deepseek-v4-flash-vision-exp` fue eliminado el 17 de septiembre de 2026, reemplazado por completo por `deepseek-flash`).
 - **Listo para GPT-6 Astra** – El nuevo modelo insignia de OpenAI (`gpt-6-astra`, lanzado el 3/4 de septiembre de 2026) se suma a la familia GPT-5.6 existente (Sol, Terra, Luna), GPT-5.5, GPT-4o y GPT-4.1. Las solicitudes usan `max_completion_tokens`, el parámetro requerido por todos los modelos actuales de OpenAI.
 - **HTTPS real vía Let's Encrypt** – Desde el 15 de septiembre de 2026, el cliente es accesible mediante un certificado TLS públicamente confiable (`swtor10-chat.ddnsfree.com`, emitido vía `acme.sh` y un desafío DNS-01 contra Dynu), reemplazando el certificado autofirmado `mkcert` anterior, que requería configurar la confianza manualmente en cada dispositivo. No se requiere reenvío de puertos públicos — el dominio resuelve a la dirección VPN privada del servidor, que sigue siendo inalcanzable desde internet en general.
 - **Reforzado contra fugas de DNS y auditado en seguridad** – Una revisión de seguridad estructurada en varias etapas (26 de julio – 15 de septiembre de 2026) cerró brechas de XSS almacenado, path traversal, CORS wildcard y tamaño de solicitud en todo el backend CGI, añadió limitación de líneas de log, corrigió un riesgo de inyección de cabecera Host, y cerró por separado una fuga de DNS-over-TLS en el gateway VPN circundante. Ver [Refuerzo de Seguridad](#refuerzo-de-seguridad-26-de-julio--15-de-septiembre-de-2026) más abajo para el relato completo, incluyendo lo que se dejó deliberadamente sin cambios y por qué.
@@ -13,7 +13,7 @@ Aspectos destacados:
 - **Modo Descarga** – Para respuestas de IA muy largas, un interruptor opcional suprime el renderizado en vivo carácter por carácter en el chat y muestra solo un contador de caracteres en curso, ofreciendo luego los botones de exportación existentes una vez completada la respuesta — notablemente más rápido para respuestas de varios cientos de miles de caracteres en hardware modesto.
 - **Pipeline de visión funcional** – La subida de imágenes y el pegado desde el portapapeles están completamente conectados de extremo a extremo para Google Gemini, OpenAI y DeepSeek (`deepseek-flash`): las imágenes se codifican en base64 en el cliente y se entregan como bloques nativos `inline_data` (Gemini) o `image_url` (OpenAI/DeepSeek, formato compatible con OpenAI). La detección de capacidades del modelo (`MODEL_CAPABILITIES`) está poblada por proveedor, en lugar de asumir por defecto "sin soporte de imágenes".
 - **Subida de múltiples archivos** – Seleccionar y enviar varios archivos simultáneamente. Los contenidos se combinan y envían como contexto con cabeceras y separadores por archivo.
-- **Grabación de audio mediante micrófono** – Grabar audio directamente en el navegador y enviarlo a la IA. Soporte nativo de Google Gemini (`gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-3.8-flash`, `gemini-3.5-flash-lite`) y OpenAI (`gpt-4o`, `gpt-4.1`). El botón de grabación aparece automáticamente solo con modelos compatibles con audio.
+- **Grabación de audio mediante micrófono** – Grabar audio directamente en el navegador y enviarlo a la IA. Soporte nativo de Google Gemini (`gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-3.8-flash`, `gemini-3.5-flash-lite`) y OpenAI (`gpt-4o`). El botón de grabación aparece automáticamente solo con modelos compatibles con audio.
 - **Gestión de contexto única** – Eliminar mensajes individuales junto con todos los posteriores. El chat permanece consistente y el uso de tokens se recalcula dinámicamente.
 - **Máxima seguridad** – Las claves API nunca son visibles en el cliente, las subidas están protegidas contra archivos ejecutables mediante inspección de bytes mágicos, y las sesiones se almacenan con permisos de archivo restrictivos.
 - **Sin frameworks exóticos** – Todo se basa en Apache, Python 3, Bash y HTML/JavaScript/CSS puro. Sin Node.js, sin React, sin pipeline de compilación.
@@ -199,13 +199,15 @@ Todas las respuestas de IA se reciben y muestran **token por token** usando Serv
 - **Endpoint**: `https://api.openai.com/v1/chat/completions`
 - **Arquitectura**: Formato nativo OpenAI Chat Completions — sin conversión de formato requerida. Flujo SSE reenviado directamente por `openai-api.py`.
 - **Clave API**: `OPENAI_API_KEY` mediante variables de entorno de Apache.
-- **Modelos Tier Gratuito**: `gpt-4o-mini`, `gpt-5.6-luna`
-- **Modelos Tier de Pago**: `gpt-6-astra`, `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`, `gpt-5.5`, `gpt-5.4`, `gpt-4o`, `gpt-4.1`, `gpt-4o-mini`
+- **Modelos Tier Gratuito**: `gpt-4o-mini`, `gpt-5.6-luna`, `gpt-6-luna`
+- **Modelos Tier de Pago**: `gpt-6-astra`, `gpt-6.1-sol`, `gpt-6-luna`, `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`, `gpt-5.5`, `gpt-5.4`, `gpt-4o`, `gpt-4.1`, `gpt-4o-mini`
 - **Parámetro de tokens de salida**: `max_completion_tokens` — requerido por todos los modelos actuales de OpenAI (GPT-4o/4.1 también lo aceptan, por lo que un único parámetro funciona en todo el lineup). El parámetro más antiguo `max_tokens` es rechazado por los modelos GPT-5.x con HTTP 400 (`Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.`).
-- **Entrada de imágenes**: `gpt-4o-mini`, `gpt-4o`, `gpt-4.1`, `gpt-5.4`, `gpt-5.5`, `gpt-6-astra` y toda la familia GPT-5.6 aceptan entrada de imágenes. Las imágenes se envían como bloques de contenido `image_url` con una URL de datos base64 (`data:{mime};base64,{data}`).
-- **Entrada de audio**: `gpt-4o` y `gpt-4.1` soportan grabaciones de micrófono. El audio se envía como bloques `input_audio` en el formato nativo de OpenAI. El botón de grabación se muestra/oculta automáticamente según el modelo activo.
+- **Entrada de imágenes**: `gpt-4o-mini`, `gpt-4o`, `gpt-4.1`, `gpt-5.4`, `gpt-5.5`, `gpt-6-astra`, `gpt-6.1-sol`, `gpt-6-luna` y toda la familia GPT-5.6 aceptan entrada de imágenes. Las imágenes se envían como bloques de contenido `image_url` con una URL de datos base64 (`data:{mime};base64,{data}`).
+- **Entrada de audio**: `gpt-4o` soporta grabaciones de micrófono (`gpt-4.1` eliminado el 12.10.2026: OpenAI no indica entrada de audio para él; prueba en vivo de `gpt-4o` pendiente). El audio se envía como bloques `input_audio` en el formato nativo de OpenAI. El botón de grabación se muestra/oculta automáticamente según el modelo activo.
 - **Sin tier gratuito de API para GPT-5.x**: OpenAI no ofrece un tier realmente gratuito para GPT-5.4/5.5/5.6 en la API — la agrupación "Free" en este cliente denota los modelos más económicos disponibles (`gpt-4o-mini`, `gpt-5.6-luna`), no una cuota de $0.
-- **Retiro programado**: `gpt-4o` y `gpt-4o-mini` (junto con GPT-4, GPT-4 Turbo, GPT-3.5 Turbo y la serie o) están programados para su cierre en toda la API el **23 de octubre de 2026**.
+- **Sin retiro de los alias (12.10.2026)**: El aviso anterior de un cierre en toda la API de `gpt-4o` y `gpt-4o-mini` el 23 de octubre de 2026 era incorrecto. Ese día OpenAI solo retira instantáneas concretas (`gpt-4o-2024-05-13`, `gpt-4.1-nano`, `gpt-4-turbo`, `o1`, `o3-mini`, `o4-mini` y otras); los alias `gpt-4o`, `gpt-4o-mini` y `gpt-4.1` no figuran en la lista de obsolescencia. Por favor, vuelve a probar `gpt-4o` después del 23 de octubre de 2026.
+- **GPT-6.1 Sol / GPT-6 Luna (12.10.2026)**: añadidos `gpt-6.1-sol` (29.09.2026, 2 $/10 $ por 1 M de tokens) y `gpt-6-luna` (22.09.2026, 0,10 $/0,50 $) — texto + imagen, 1.050.000 de contexto / 128.000 de salida. `gpt-6-sol` (reemplazado por 6.1) no se añadió deliberadamente.
+- **Límite de salida corregido (12.10.2026)**: `gpt-5.4` tiene 128.000 tokens de salida (antes erróneamente 16.384).
 - El botón DeepThink y el indicador se ocultan cuando OpenAI es el proveedor activo.
 - El prompt del sistema identifica el modelo activo: *"You are [model], an AI assistant made by OpenAI."*
 
@@ -255,7 +257,7 @@ Un panel de **Configuración LLM** dedicado (separado del panel de Configuració
 - **Opciones de Google**: Toggle de plan Gratuito/De pago con actualización automática de la lista de modelos.
 - **Opciones de Hugging Face**: Toggle de plan Gratuito/De pago con actualización automática de la lista de modelos.
 - **Opciones de GroqCloud**: Toggle de plan Gratuito/De pago con actualización automática de la lista de modelos.
-- **Opciones del Kompressor**: Toggle de activación, selección de proveedor de compresión (solo proveedores de pago), selección de modelo de compresión. Predeterminado: activado, DeepSeek / `deepseek-v4-flash`.
+- **Opciones del Kompressor**: Toggle de activación, selección de proveedor de compresión (solo proveedores de pago), selección de modelo de compresión. Predeterminado: activado, DeepSeek / `deepseek-flash`.
 - **Dropdown de modelos**: Siempre visible, el contenido se actualiza automáticamente según el proveedor activo y el plan seleccionado.
 - Toda la configuración LLM se persiste en `localStorage` y sobrevive a recargas de página.
 
@@ -296,7 +298,7 @@ Un sofisticado manejador de portapapeles intercepta todos los eventos de pegado 
 
 | Modelo | maxContextTokens | Máx. contenido de archivo |
 |--------|-----------------|--------------------------|
-| `deepseek-v4-flash` | 1.048.576 | ~3.145.000 caracteres |
+| `deepseek-flash` | 1.048.576 | ~3.145.000 caracteres |
 | `deepseek-v4-pro` | 1.048.576 | ~3.145.000 caracteres |
 | `gemini-2.5-flash` | 1.048.576 | ~3.145.000 caracteres |
 | `gemini-3.8-flash` | 1.048.576 | ~3.145.000 caracteres |
@@ -354,7 +356,7 @@ Este sistema se aplica **solo al contenido de archivos**, nunca a mensajes regul
 DeepThink es un modo dedicado para el razonamiento analítico profundo, disponible exclusivamente cuando DeepSeek es el proveedor activo:
 
 - Activado mediante un botón pill-style dedicado en la segunda fila de botones debajo del campo de entrada.
-- Cuando está activo, se usa `deepseek-v4-flash` (o `deepseek-v4-pro`, si se selecciona en el dropdown de modelos) con el Thinking Mode de DeepSeek explícitamente activado con esfuerzo de razonamiento alto. El más capaz `deepseek-v4-pro` se selecciona manualmente mediante el dropdown de modelos para máxima profundidad de razonamiento en cualquier modo. **Nota**: antes del 19 de julio de 2026, un error de copiar-pegar en la lógica de selección de modelo causaba que `deepseek-v4-pro` nunca se solicitara realmente sin importar la selección del dropdown — esto se corrigió; ver [Actualización de Mantenimiento y Funciones del 19 de Julio de 2026](#actualización-de-mantenimiento-y-funciones-del-19-de-julio-de-2026). **Actualización (28.08.2026)**: antes de esta fecha, este punto describía el modo como un cambio únicamente del prompt del sistema, no del modelo — eso era cierto, pero incompleto: el Thinking Mode de la API de DeepSeek está activado por defecto con esfuerzo alto en cada solicitud, sin importar el prompt del sistema, por lo que el modo Chat también razonaba con esfuerzo completo sin querer. El modo Chat ahora desactiva explícitamente el Thinking Mode en lugar de depender del valor por defecto de la API; ver [Corrección del 28.08.2026](#corrección-del-28082026-control-explícito-del-thinking-mode-de-deepseek).
+- Cuando está activo, se usa `deepseek-flash` (o `deepseek-v4-pro`, si se selecciona en el dropdown de modelos) con el Thinking Mode de DeepSeek explícitamente activado con esfuerzo de razonamiento alto. El más capaz `deepseek-v4-pro` se selecciona manualmente mediante el dropdown de modelos para máxima profundidad de razonamiento en cualquier modo. **Nota**: antes del 19 de julio de 2026, un error de copiar-pegar en la lógica de selección de modelo causaba que `deepseek-v4-pro` nunca se solicitara realmente sin importar la selección del dropdown — esto se corrigió; ver [Actualización de Mantenimiento y Funciones del 19 de Julio de 2026](#actualización-de-mantenimiento-y-funciones-del-19-de-julio-de-2026). **Actualización (28.08.2026)**: antes de esta fecha, este punto describía el modo como un cambio únicamente del prompt del sistema, no del modelo — eso era cierto, pero incompleto: el Thinking Mode de la API de DeepSeek está activado por defecto con esfuerzo alto en cada solicitud, sin importar el prompt del sistema, por lo que el modo Chat también razonaba con esfuerzo completo sin querer. El modo Chat ahora desactiva explícitamente el Thinking Mode en lugar de depender del valor por defecto de la API; ver [Corrección del 28.08.2026](#corrección-del-28082026-control-explícito-del-thinking-mode-de-deepseek).
 - El botón cambia visualmente: inactivo (oscuro `#2d2d2d`) → activo azul (`#1e3a5f` fondo, `#4dabf7` borde y texto).
 - Aparece una barra indicadora debajo de la fila de botones: *"Modo DeepThink activo: Análisis en profundidad en progreso"*.
 - Los límites de contexto y de tokens de salida se ajustan automáticamente según la entrada `MODEL_CONFIG` del modelo activo.
@@ -372,7 +374,6 @@ Al inicio, `index.html` consulta `/cgi-bin/deepseek-models.py`, que llama al end
   const MODEL_CAPABILITIES = {
       // DeepSeek: solo texto, excepto deepseek-flash (comprensión nativa de imágenes, añadida 14.09.2026;
       // deepseek-v4-flash-vision-exp fue eliminado el 17.09.2026, reemplazado por completo por deepseek-flash)
-      'deepseek-v4-flash': { images: false, text: true },
       'deepseek-v4-pro':   { images: false, text: true },
       'deepseek-flash':    { images: true,  text: true },
       // Google Gemini: multimodal
@@ -571,7 +572,7 @@ El cliente incluye un **botón de grabación de micrófono** incorporado que per
 - **Visibilidad**: Controlada por `updateAudioButtonVisibility()`, llamada en cada cambio de modelo. Visible solo cuando el modelo activo está listado en `AUDIO_CAPABLE_MODELS`.
 - **Modelos compatibles con audio** (constante `AUDIO_CAPABLE_MODELS`):
   - Google Gemini: `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-3.8-flash`, `gemini-3.5-flash-lite`
-  - OpenAI: `gpt-4o`, `gpt-4.1`
+  - OpenAI: `gpt-4o`
 - **Flujo de grabación**: `getUserMedia()` → API `MediaRecorder` → grabación por fragmentos (intervalos de 10ms) → `Blob` ensamblado al detener → codificado en base64.
 - **Auto-detección de tipo MIME**: `audio/webm` (Chrome/Firefox) o `audio/mp4` (Safari) — detectado en tiempo de ejecución mediante `MediaRecorder.isTypeSupported()`.
 - **Después de la grabación**: Los datos de audio se muestran en el cuadro `fileInfo` como tarjeta de insignia AUDIO.
@@ -622,11 +623,11 @@ El Kompressor hace una llamada LLM separada que puede involucrar grandes cantida
 
 | Proveedor | Modelos de Compresión Disponibles |
 |-----------|----------------------------------|
-| DeepSeek | `deepseek-v4-flash`, `deepseek-v4-pro`, `deepseek-flash` |
+| DeepSeek | `deepseek-flash`, `deepseek-v4-pro` |
 | OpenAI | `gpt-4o-mini`, `gpt-5.6-luna`, `gpt-4o`, `gpt-4.1`, `gpt-6-astra` |
 | Google | `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-3.8-flash`, `gemini-3.5-flash-lite` |
 
-**Predeterminado recomendado**: DeepSeek + `deepseek-v4-flash` — sin límites de tasa, menor costo por token, resultados más fiables.
+**Predeterminado recomendado**: DeepSeek + `deepseek-flash` — sin límites de tasa, menor costo por token, resultados más fiables.
 
 #### Archivos de Resultados
 
@@ -1084,7 +1085,7 @@ const MODEL_CONFIG = {
     // 8192/32768 — el valor real y correcto siempre fue 384000.
     // deepseek-v4-flash-vision-exp eliminado el 17.09.2026, reemplazado
     // por deepseek-flash)
-    'deepseek-v4-flash': { maxContextTokens: 1048576, maxOutputTokens: 384000, maxContextMessages: 50 },
+    'deepseek-v4-flash': { maxContextTokens: 1048576, maxOutputTokens: 384000, maxContextMessages: 50 }, // retired alias, kept for stored values only (12.10.2026)
     'deepseek-v4-pro':   { maxContextTokens: 1048576, maxOutputTokens: 384000, maxContextMessages: 50 },
     'deepseek-flash':    { maxContextTokens: 1048576, maxOutputTokens: 384000, maxContextMessages: 50 }, // V4.1 Flash, comprensión nativa de imágenes
     // Google Gemini
@@ -1108,23 +1109,25 @@ const MODEL_CONFIG = {
     'gpt-4o-mini':    { maxContextTokens: 128000,  maxOutputTokens: 16384,  maxContextMessages: 80  },
     'gpt-4o':         { maxContextTokens: 128000,  maxOutputTokens: 16384,  maxContextMessages: 80  },
     'gpt-4.1':        { maxContextTokens: 1048576, maxOutputTokens: 32768,  maxContextMessages: 100 },
-    'gpt-5.4':        { maxContextTokens: 1048576, maxOutputTokens: 16384,  maxContextMessages: 100 },
+    'gpt-5.4':        { maxContextTokens: 1048576, maxOutputTokens: 128000, maxContextMessages: 100 }, // corrected 12.10.2026
     'gpt-5.5':        { maxContextTokens: 1048576, maxOutputTokens: 128000, maxContextMessages: 100 },
     'gpt-5.6-sol':    { maxContextTokens: 1048576, maxOutputTokens: 128000, maxContextMessages: 100 },
     'gpt-5.6-terra':  { maxContextTokens: 1048576, maxOutputTokens: 128000, maxContextMessages: 100 },
     'gpt-5.6-luna':   { maxContextTokens: 1048576, maxOutputTokens: 128000, maxContextMessages: 100 },
     'gpt-6-astra':    { maxContextTokens: 1048576, maxOutputTokens: 128000, maxContextMessages: 100 }, // nuevo buque insignia, añadido 14.09.2026
+    'gpt-6.1-sol':    { maxContextTokens: 1048576, maxOutputTokens: 128000, maxContextMessages: 100 }, // 12.10.2026
+    'gpt-6-luna':     { maxContextTokens: 1048576, maxOutputTokens: 128000, maxContextMessages: 100 }, // 12.10.2026
 };
-const DEEPSEEK_MODELS    = ['deepseek-v4-flash', 'deepseek-v4-pro', 'deepseek-flash'];
-const OPENAI_MODELS_FREE = ['gpt-4o-mini', 'gpt-5.6-luna'];
-const OPENAI_MODELS_PAID = ['gpt-6-astra', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-5.4', 'gpt-4o', 'gpt-4.1', 'gpt-4o-mini'];
+const DEEPSEEK_MODELS    = ['deepseek-flash', 'deepseek-v4-pro'];
+const OPENAI_MODELS_FREE = ['gpt-4o-mini', 'gpt-5.6-luna', 'gpt-6-luna'];
+const OPENAI_MODELS_PAID = ['gpt-6-astra', 'gpt-6.1-sol', 'gpt-6-luna', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-5.4', 'gpt-4o', 'gpt-4.1', 'gpt-4o-mini'];
 const GOOGLE_MODELS_FREE = ['gemini-2.5-flash', 'gemini-3.8-flash', 'gemini-3.5-flash-lite'];
 const GOOGLE_MODELS_PAID = ['gemini-2.5-flash', 'gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-2.5-pro'];
 const HF_MODELS_FREE     = ['Qwen/Qwen2.5-72B-Instruct', 'mistralai/Mistral-7B-Instruct-v0.3', 'microsoft/Phi-3.5-mini-instruct'];
 const HF_MODELS_PAID     = ['meta-llama/Meta-Llama-3.1-70B-Instruct', 'meta-llama/Meta-Llama-3.1-405B-Instruct', 'Qwen/Qwen2.5-72B-Instruct'];
 const GROQ_MODELS_FREE   = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'meta-llama/llama-4-scout-17b-16e-instruct', 'qwen/qwen3-32b'];
 const GROQ_MODELS_PAID   = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'meta-llama/llama-4-scout-17b-16e-instruct', 'qwen/qwen3-32b', 'moonshotai/kimi-k2-instruct-0905'];
-const AUDIO_CAPABLE_MODELS = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gpt-4o', 'gpt-4.1'];
+const AUDIO_CAPABLE_MODELS = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gpt-4o'];
 ```
 
 Desde el 17 de septiembre de 2026, la etiqueta visible de cada modelo en los desplegables anteriores se busca por separado vía `MODEL_DISPLAY_LABELS` / `getModelDisplayLabel()` — ver [Etiquetas de Modelo y Limpieza](#17-de-septiembre-de-2026-etiquetas-de-modelo-y-limpieza). Los arrays anteriores siguen definiendo qué IDs crudos son válidos y se envían a la API de cada proveedor; solo difiere el texto en pantalla.
@@ -1227,7 +1230,7 @@ Todos los modelos de lenguaje actuales tienden a recordar de forma fiable el con
 
 **Impacto práctico**:
 - Un export del repositorio de este proyecto es aproximadamente 700.000 caracteres ≈ ~175.000 tokens.
-- Los modelos DeepSeek V4 (`deepseek-v4-flash`, `deepseek-v4-pro`) tienen una ventana de contexto de 1M tokens — el export completo del repositorio cabe cómodamente.
+- Los modelos DeepSeek V4 (`deepseek-flash`, `deepseek-v4-pro`) tienen una ventana de contexto de 1M tokens — el export completo del repositorio cabe cómodamente.
 - Google Gemini con contexto de 1–2M tokens maneja el export sin problemas.
 - Los modelos OpenAI con contexto de 128k (p.ej. `gpt-4o`) **no pueden** cargar el export completo — el cliente bloqueará la subida con un mensaje de error claro.
 - **Recomendación**: Incluso con modelos que técnicamente caben en el export, subir solo los archivos relevantes para la tarea actual para maximizar la atención efectiva del modelo.
@@ -1297,7 +1300,7 @@ Este proyecto demuestra desarrollo web de nivel profesional en un enfoque minima
 - Respuestas en streaming con latencia de primer token sub-segundo.
 - Gestión de contexto flexible única — eliminar cualquier mensaje y todos los siguientes.
 - Manejo inteligente del portapapeles para texto, imágenes y protección de rutas de archivo.
-- Grabación de audio directamente en el navegador para Gemini (todos los modelos) y OpenAI (`gpt-4o`, `gpt-4.1`).
+- Grabación de audio directamente en el navegador para Gemini (todos los modelos) y OpenAI (`gpt-4o`).
 - Kompressor — compresión automática de contexto habilitando conversaciones indefinidamente largas.
 - Manejo de contexto superado — cuadro interactivo en el chat con transferencia inteligente de contexto (Opción C).
 - Banners de cuota — feedback visual claro y persistente por crédito agotado o límites diarios.
@@ -1314,13 +1317,13 @@ Este proyecto demuestra desarrollo web de nivel profesional en un enfoque minima
 - Verificación de despliegue integrada en la pipeline de deployment — `deploy.sh` imprime sumas de comprobación MD5 de cada archivo copiado, detectando despliegues obsoletos/desajustados de inmediato en lugar de descubrirlos por comportamiento inexplicable en tiempo de ejecución.
 - Rastro de auditoría completo mediante Git, changelog detallado de 106 entradas y manifiesto de diseño.
 
-**Listo para DeepSeek V4.1** — `deepseek-flash` (comprensión nativa de imágenes) se suma a `deepseek-v4-flash`/`deepseek-v4-pro` (ventanas de contexto de 1M tokens), bastante antes del (ya transcurrido) plazo de retiro de modelos heredados del 24 de julio de 2026. El modelo experimental intermedio `deepseek-v4-flash-vision-exp` fue eliminado el 17 de septiembre de 2026, reemplazado por completo.
+**Listo para DeepSeek V4.1** — `deepseek-flash` (comprensión nativa de imágenes) se suma a `deepseek-v4-pro` (ventanas de contexto de 1M tokens; `deepseek-v4-flash` es un alias retirado y ya no es seleccionable desde el 12.10.2026), bastante antes del (ya transcurrido) plazo de retiro de modelos heredados del 24 de julio de 2026. El modelo experimental intermedio `deepseek-v4-flash-vision-exp` fue eliminado el 17 de septiembre de 2026, reemplazado por completo.
 
 **Listo para GPT-6 Astra** — lineup de OpenAI actualizado hasta el nuevo buque insignia Astra (3/4 de septiembre de 2026) y la generación Sol/Terra/Luna (9 de julio de 2026), usando `max_completion_tokens` de forma consistente para compatibilidad en todo el rango de modelos.
 
 **Auditado en seguridad y públicamente confiable** — una revisión de seguridad por etapas (26 de julio – 15 de septiembre de 2026) cerró brechas de XSS almacenado, path traversal, CORS y tamaño de solicitud en el backend; el sitio ahora sirve un certificado Let's Encrypt real en lugar de uno autofirmado, sin necesidad de exposición de puertos públicos.
 
-**Etiquetas de modelo legibles** — los 23 modelos de los cinco proveedores muestran un nombre en lenguaje claro y la fecha real de lanzamiento en lugar de un ID de API crudo, añadido el 17 de septiembre de 2026.
+**Etiquetas de modelo legibles** — los 27 modelos de los cinco proveedores muestran un nombre en lenguaje claro y la fecha real de lanzamiento en lugar de un ID de API crudo, añadido el 17 de septiembre de 2026.
 
 **Para un desarrollador profesional**, este proyecto demuestra:
 - **Conciencia de seguridad** — protección de claves API, detección de ejecutables, almacenamiento seguro de sesiones, sin path traversal.

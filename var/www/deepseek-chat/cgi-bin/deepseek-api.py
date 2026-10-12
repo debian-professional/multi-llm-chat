@@ -4,7 +4,8 @@
 
 # =============================================================================
 # DEEPSEEK API PROXY
-# Importiert / aktualisiert: 14.09.2026 (DeepSeek V4.1 Flash ergaenzt)
+# Importiert / aktualisiert: 14.09.2026 (DeepSeek V4.1 Flash ergaenzt);
+# 12.10.2026 (Korrektur Alias-/Pro-Angaben, Standardmodell deepseek-flash)
 # =============================================================================
 #
 # Unterstuetzte Modelle:
@@ -20,17 +21,21 @@
 #                    deepseek-v4-flash vollstaendig
 #     Quelle       : DeepSeek API Change Log / OpenRouter, Stand 14.09.2026
 #
-#   deepseek-v4-flash  (DeepSeek V4 Flash) [ALIAS, siehe Hinweis unten]
-#     Version      : V4 GA (0731, Stand 31.07.2026)
+#   deepseek-v4-pro  (DeepSeek V4 Pro)
+#     Version      : V4-Pro-0813 (GA 13.08.2026)
 #     Kontext      : 1.048.576 Token Input / 384.000 Token Output
 #     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
 #                    Thinking- und Non-Thinking-Mode verfuegbar
+#     Hinweis      : Eigenstaendiges Modell, nicht umgeleitet. Laut DeepSeek
+#                    laeuft der Service nach dem 14.09.2026 unveraendert
+#                    weiter. Teurer als Flash.
 #
-#   deepseek-v4-pro  (DeepSeek V4 Pro) [ALIAS, siehe Hinweis unten]
-#     Version      : V4 GA (0813, Stand 13.08.2026)
-#     Kontext      : 1.048.576 Token Input / 384.000 Token Output
-#     Faehigkeiten : Nur Text (kein Bild, kein Audio, kein Video)
-#                    Thinking- und Non-Thinking-Mode verfuegbar
+#   deepseek-v4-flash  (DeepSeek V4 Flash) [ABGELOESTER ALIAS - nicht mehr waehlbar]
+#     DeepSeek hat V4 Flash mit V4.1 Flash (10.09.2026) abgeloest; der alte
+#     Name wird laut DeepSeek nur noch "temporaer" auf V4.1 Flash umgeleitet
+#     und zum Flash-Preis abgerechnet. Das Frontend bietet ihn seit
+#     12.10.2026 nicht mehr an (alte gespeicherte Auswahl wird automatisch
+#     auf deepseek-flash migriert); dieses Skript akzeptiert ihn weiterhin.
 #
 # Aufgeraeumt (17.09.2026): deepseek-v4-flash-vision-exp (experimentelles
 # Bild-Modell, veroeffentlicht 21.08.2026) wurde aus der Modellauswahl des
@@ -40,20 +45,17 @@
 # siehe unten) ist modellunabhaengig implementiert und funktioniert
 # unveraendert fuer deepseek-flash weiter.
 #
-# WICHTIGER HINWEIS (14.09.2026): Seit der Veroeffentlichung von V4.1 Flash
-# am 10.09.2026 leitet DeepSeek serverseitig den Modellnamen deepseek-v4-flash
-# temporaer auf V4.1 Flash um. Seit heute, 14.09.2026 (12:00 Uhr Pekinger
-# Zeit), gilt dasselbe auch fuer deepseek-v4-pro. Diese beiden alten Namen
-# funktionieren also weiterhin, liefern aber technisch bereits V4.1-Flash-
-# Antworten. Der neue, offizielle Modellname ist deepseek-flash. Da DeepSeek
-# diese Umleitung ausdruecklich als "temporaer" bezeichnet (kein festes
-# Enddatum bekannt), sollte mittelfristig auf deepseek-flash als primaeres
-# Modell umgestellt werden; die alten Namen bleiben hier vorerst als
-# Optionen erhalten, um Sessions mit gespeicherter alter Modellauswahl
-# nicht zu brechen.
+# WICHTIGER HINWEIS (korrigiert 12.10.2026): Seit der Veroeffentlichung von
+# V4.1 Flash am 10.09.2026 leitet DeepSeek NUR die alten Namen
+# deepseek-v4-flash und deepseek-v4-flash-vision-exp serverseitig temporaer
+# auf V4.1 Flash um. Die fruehere Angabe in diesem Header, auch
+# deepseek-v4-pro werde seit 14.09.2026 umgeleitet, war falsch: laut
+# DeepSeek-Preisseite ist deepseek-v4-pro ein eigenes Modell (V4-Pro-0813).
+# Offizieller Name fuer Flash ist deepseek-flash - dies ist seit 12.10.2026
+# auch das Standardmodell dieses Skripts und des Frontends.
 #
-# Hinweis: deepseek-chat und deepseek-reasoner werden ab 24.07.2026
-#          abgeschaltet (routen aktuell auf deepseek-v4-flash).
+# Hinweis: deepseek-chat und deepseek-reasoner wurden am 24.07.2026
+#          abgeschaltet.
 #
 # Fix (28.08.2026): Der DeepSeek-Thinking-Mode ist API-seitig standardmaessig
 # aktiv (High-Effort) - unabhaengig vom Modellnamen, seit deepseek-chat/
@@ -67,7 +69,10 @@
 #   thinking_enabled == False -> {"thinking": {"type": "disabled"}}
 # Quelle: https://api-docs.deepseek.com/guides/thinking_mode (Stand 28.08.2026)
 #
-# Quelle: https://api-docs.deepseek.com (Stand 29.08.2026)
+# Thinking-Stufen laut DeepSeek (13.08.2026): low, high, max - dieses Skript
+# nutzt nur 'high' (Thinking an) bzw. aus (Chat-Modus).
+#
+# Quelle: https://api-docs.deepseek.com (Stand 12.10.2026)
 # =============================================================================
 
 import json
@@ -175,7 +180,7 @@ def main():
         request_data = json.loads(post_data)
 
         # Validierung
-        model = request_data.get('model', 'deepseek-v4-flash')  # ueberschreibt das None von oben
+        model = request_data.get('model', 'deepseek-flash')  # ueberschreibt das None von oben
         messages = request_data.get('messages', [])
         max_tokens = request_data.get('max_tokens', 2000)
         no_training = request_data.get('no_training', True)
