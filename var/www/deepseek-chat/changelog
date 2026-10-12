@@ -2648,5 +2648,15 @@
    - v0.97 -> v0.98, v0.97a -> v0.97b, v0.97z -> v0.98.
    Dateien: shell-scripts/tag-release.sh
 
+123. 12.10.2026 - web-test.py: Pruefung der Zusatzsoftware
+     mit Installationsanleitung
+   - Neu: "--check" prueft Python, Playwright, Chromium (Startversuch), Repo-Kopie,
+     reportlab, pdftotext, LibreOffice und mit --url die Erreichbarkeit des Servers.
+   - Bei Fehlendem wird die passende Installationsanleitung angezeigt
+     (Pflicht: Playwright/Chromium; optional: pdftotext, LibreOffice).
+   - Vor jedem Testlauf laeuft eine Kurzpruefung; "--no-check" ueberspringt sie.
+   - Ohne Playwright im aufrufenden Python erscheint die vollstaendige Einrichtungsanleitung.
+   Dateien: shell-scripts/web-test.py
+
     ============================================================================
 

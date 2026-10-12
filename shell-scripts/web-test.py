@@ -33,6 +33,10 @@ Einrichtung (einmalig, auf dem Rechner mit Browser, z.B. hpenvy):
   ~/.venvs/webtest/bin/pip install playwright
   ~/.venvs/webtest/bin/playwright install chromium
 
+Voraussetzungen pruefen (zeigt bei Fehlendem die Installationsanleitung):
+  ~/.venvs/webtest/bin/python shell-scripts/web-test.py --check
+  (laeuft auch mit dem normalen python3, wenn Playwright noch fehlt)
+
 Aufruf (aus dem Repo-Verzeichnis):
   ~/.venvs/webtest/bin/python shell-scripts/web-test.py              # alles, lokale Repo-Kopie
   ~/.venvs/webtest/bin/python shell-scripts/web-test.py --only=sprache,export
@@ -41,6 +45,8 @@ Aufruf (aus dem Repo-Verzeichnis):
   --headed      Browserfenster anzeigen (zum Zuschauen)
   --insecure    Zertifikatsfehler ignorieren (bei --url)
   --keep=DIR    Downloads der Exporte in DIR behalten (zum Nachschauen)
+  --check       nur die installierte Zusatzsoftware pruefen, kein Test
+  --no-check    die kurze Voraussetzungspruefung vor dem Test ueberspringen
 
 Ohne --url wird die Seite aus var/www/deepseek-chat/ im Repo ueber einen lokalen
 Mini-Server (127.0.0.1) ausgeliefert - getestet wird also der Stand VOR dem
@@ -68,10 +74,7 @@ from urllib.parse import urlparse
 try:
     from playwright.sync_api import sync_playwright
 except ImportError:
-    print('FEHLER: Playwright fehlt. Einrichtung siehe Kopf dieses Skripts:\n'
-          '  python3 -m venv ~/.venvs/webtest && ~/.venvs/webtest/bin/pip install playwright '
-          '&& ~/.venvs/webtest/bin/playwright install chromium')
-    sys.exit(2)
+    sync_playwright = None   # --check und main() melden das mit Anleitung
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
@@ -914,6 +917,126 @@ def t_dateien(C):
 # main
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Voraussetzungen pruefen (--check und automatisch vor jedem Lauf)
+# ---------------------------------------------------------------------------
+
+GUIDE_VENV = (
+    '  sudo apt install python3-venv                    # falls "python3 -m venv" fehlschlaegt\n'
+    '  python3 -m venv ~/.venvs/webtest\n'
+    '  ~/.venvs/webtest/bin/pip install playwright\n'
+    '  ~/.venvs/webtest/bin/playwright install chromium\n'
+    '  Danach immer mit ~/.venvs/webtest/bin/python aufrufen.')
+
+
+def check_requirements(url=None, insecure=False, launch=True):
+    """Prueft die Zusatzsoftware. Rueckgabe: (Pflicht_fehlt, Optional_fehlt, Zeilen)."""
+    rows = []   # (Status, Name, Detail, Anleitung)
+
+    def row(status, name, detail='', how=''):
+        rows.append((status, name, detail, how))
+
+    v = sys.version_info
+    if v >= (3, 8):
+        row('OK', 'Python', f'{v.major}.{v.minor}.{v.micro} ({sys.executable})')
+    else:
+        row('FEHLT', 'Python >= 3.8', f'{v.major}.{v.minor}', 'sudo apt install python3')
+
+    pw_ok = sync_playwright is not None
+    if pw_ok:
+        try:
+            from importlib.metadata import version
+            ver = version('playwright')
+        except Exception:
+            ver = '?'
+        row('OK', 'Playwright (Python-Modul)', ver)
+    else:
+        row('FEHLT', 'Playwright (Python-Modul)', 'import schlaegt fehl - falsches Python?', GUIDE_VENV)
+
+    if pw_ok and launch:
+        try:
+            with sync_playwright() as pw:
+                exe = pw.chromium.executable_path
+                if not os.path.exists(exe):
+                    row('FEHLT', 'Chromium (Browser fuer Playwright)', 'nicht installiert',
+                        '  ~/.venvs/webtest/bin/playwright install chromium')
+                else:
+                    b = pw.chromium.launch(headless=True)
+                    ver = b.version
+                    b.close()
+                    row('OK', 'Chromium (Browser fuer Playwright)', f'{ver}')
+        except Exception as e:
+            msg = str(e)
+            if 'install-deps' in msg or 'shared libraries' in msg or 'Host system is missing' in msg:
+                row('FEHLT', 'Chromium: Systembibliotheken', 'Browser startet nicht',
+                    '  sudo ~/.venvs/webtest/bin/playwright install-deps chromium')
+            elif "Executable doesn't exist" in msg or 'playwright install' in msg:
+                row('FEHLT', 'Chromium (Browser fuer Playwright)', 'nicht installiert',
+                    '  ~/.venvs/webtest/bin/playwright install chromium')
+            else:
+                row('FEHLT', 'Chromium startet nicht', msg.strip().splitlines()[0][:120],
+                    '  ~/.venvs/webtest/bin/playwright install chromium\n'
+                    '  sudo ~/.venvs/webtest/bin/playwright install-deps chromium')
+
+    if not os.path.exists(os.path.join(WEBROOT, 'index.html')):
+        row('FEHLT', 'Repo-Kopie der Webseite', f'{WEBROOT}/index.html fehlt',
+            '  Skript aus dem Repo starten: cd ~/Desktop/ChatBoot/multi-llm-chat')
+    else:
+        row('OK', 'Repo-Kopie der Webseite', WEBROOT)
+
+    if url:
+        import ssl
+        import urllib.request
+        ctx = ssl._create_unverified_context() if insecure else None
+        try:
+            with urllib.request.urlopen(url, timeout=15, context=ctx) as r:
+                row('OK', 'Server erreichbar', f'{url} -> HTTP {r.status}')
+        except Exception as e:
+            row('FEHLT', 'Server erreichbar', f'{url}: {str(e)[:100]}',
+                '  VPN verbunden? Domain statt IP verwenden (sonst Zertifikatswarnung), '
+                'notfalls --insecure')
+
+    # Nur fuer den lokalen Modus Pflicht: dort laufen die Export-Skripte als Prozess
+    local = not url
+    py = '/usr/bin/python3' if os.path.exists('/usr/bin/python3') else sys.executable
+    r = subprocess.run([py, '-c', 'import reportlab; print(reportlab.Version)'], capture_output=True)
+    if r.returncode == 0:
+        row('OK', 'reportlab (fuer PDF-Export, in ' + py + ')', r.stdout.decode().strip())
+    else:
+        row('FEHLT' if local else 'OPTIONAL', 'reportlab (fuer PDF-Export, in ' + py + ')',
+            'nur im lokalen Modus noetig' if not local else 'PDF-Export-Test wird sonst fehlschlagen',
+            '  sudo apt install python3-reportlab')
+
+    if shutil.which('pdftotext'):
+        row('OK', 'pdftotext (PDF-Inhalt pruefen)', shutil.which('pdftotext'))
+    else:
+        row('OPTIONAL', 'pdftotext (PDF-Inhalt pruefen)', 'ohne: nur Dateiformat geprueft (SKIP)',
+            '  sudo apt install poppler-utils')
+
+    so = shutil.which('soffice') or shutil.which('libreoffice')
+    if so:
+        row('OK', 'LibreOffice (RTF-Inhalt pruefen)', so)
+    else:
+        row('OPTIONAL', 'LibreOffice (RTF-Inhalt pruefen)', 'ohne: RTF nur als ASCII geprueft (SKIP)',
+            '  sudo apt install libreoffice-writer')
+
+    must = [r_ for r_ in rows if r_[0] == 'FEHLT']
+    opt = [r_ for r_ in rows if r_[0] == 'OPTIONAL']
+    return must, opt, rows
+
+
+def print_requirements(rows, quiet_ok=False):
+    for status, name, detail, how in rows:
+        if status == 'OK' and quiet_ok:
+            continue
+        mark = {'OK': 'OK      ', 'FEHLT': 'FEHLT   ', 'OPTIONAL': 'OPTIONAL'}[status]
+        print(f'  {mark} {name}' + (f'  [{detail}]' if detail else ''))
+        if status != 'OK' and how:
+            print('           Loesung:')
+            for line in how.splitlines():
+                print('           ' + line)
+
+
 def main():
     args = sys.argv[1:]
     opt = lambda k: next((a.split('=', 1)[1] for a in args if a.startswith(k + '=')), None)
@@ -924,6 +1047,33 @@ def main():
     only = opt('--only')
     only = set(only.split(',')) if only else None
     url = opt('--url')
+
+    if '--check' in args:
+        print('web-test.py - Pruefung der Voraussetzungen')
+        must, optl, rows = check_requirements(url, '--insecure' in args)
+        print_requirements(rows)
+        if must:
+            print(f'\n=== {len(must)} Pflicht-Voraussetzung(en) fehlen - Test kann nicht laufen ===')
+            return 2
+        print('\n=== Alles Noetige ist installiert' +
+              (f' ({len(optl)} optionale Hilfen fehlen, einzelne Pruefungen werden dann uebersprungen)' if optl else '') +
+              ' ===')
+        return 0
+
+    if sync_playwright is None:
+        print('FEHLER: Playwright ist in diesem Python nicht installiert '
+              f'({sys.executable}).\nEinrichtung:\n{GUIDE_VENV}\n'
+              'Pruefen: web-test.py --check')
+        return 2
+    if '--no-check' not in args:
+        must, optl, rows = check_requirements(url, '--insecure' in args)
+        if must:
+            print('web-test.py - Voraussetzungen fehlen:')
+            print_requirements([r_ for r_ in rows if r_[0] != 'OK'])
+            return 2
+        if optl:
+            print('Hinweis: optionale Hilfen fehlen (einzelne Pruefungen werden uebersprungen):')
+            print_requirements(optl)
 
     C = Ctx()
     C.insecure = '--insecure' in args
