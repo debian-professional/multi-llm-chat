@@ -27,6 +27,7 @@ Repo-Verzeichnis oder mit vollem Pfad):
   sudo python3 shell-scripts/api-test.py google openai   # nur bestimmte Anbieter
   sudo python3 shell-scripts/api-test.py --no-media      # nur Test 0, A, D, E
   sudo python3 shell-scripts/api-test.py --dry           # nur anzeigen, was getestet wuerde
+  sudo python3 shell-scripts/api-test.py groq hf --list  # verfuegbare Modell-IDs des Anbieters auflisten
   --html=PFAD   andere index.html verwenden (Standard: Produktion, sonst Repo-Kopie)
 
 Kosten: wenige Cent. Es werden keine API-Keys ausgegeben.
@@ -223,6 +224,36 @@ def parse_reply(provider, status, body):
 # ----------------------------------------------------------------------------
 # Hauptprogramm
 # ----------------------------------------------------------------------------
+def list_models(provider, key, keys):
+    """Gibt die vom Anbieter gemeldeten Modell-IDs aus (ohne Tests, ohne Keys)."""
+    if provider == 'google':
+        st, body, _ = http('https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000',
+                           headers={'x-goog-api-key': key})
+        if st != 200:
+            print(f'FAIL  HTTP {st}: {clean(body, keys)}')
+            return
+        ids = sorted(m['name'].split('/', 1)[1] for m in json.loads(body).get('models', [])
+                     if 'generateContent' in m.get('supportedGenerationMethods', []))
+    else:
+        url = {'deepseek': 'https://api.deepseek.com/v1/models',
+               'openai': 'https://api.openai.com/v1/models',
+               'groq': 'https://api.groq.com/openai/v1/models',
+               'hf': 'https://router.huggingface.co/v1/models'}[provider]
+        st, body, _ = http(url, headers={'Authorization': f'Bearer {key}',
+                                         'User-Agent': 'Mozilla/5.0 (compatible; api-test/1.0)'})
+        if st != 200:
+            print(f'FAIL  HTTP {st}: {clean(body, keys)}')
+            return
+        try:
+            ids = sorted(m['id'] for m in json.loads(body).get('data', []))
+        except Exception:
+            print('FAIL  Antwort nicht lesbar')
+            return
+    print(f'{len(ids)} Modelle:')
+    for i in ids:
+        print('  ' + i)
+
+
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
     dry = '--dry' in sys.argv
@@ -234,6 +265,16 @@ def main():
     cfg, caps, lists = parse_html(html)
     keys = {} if dry else load_keys()
     todo = [p for p in PROVIDERS if not args or p in args]
+
+    if '--list' in sys.argv:
+        for p in todo:
+            key = keys.get(PROVIDERS[p]['key'], '')
+            print(f'\n=== {p.upper()} ===')
+            if not key:
+                print(f"FAIL  {PROVIDERS[p]['key']} nicht gefunden")
+                continue
+            list_models(p, key, keys)
+        return
 
     png = base64.b64encode(make_png()).decode()
     wav_b = make_wav()
