@@ -71,9 +71,21 @@ def get_labels(chat_data):
                 labels[key] = value
     return labels
 
+def winansi_safe(value):
+    """Ersetzt Zeichen, die die PDF-Standardschrift (Helvetica/WinAnsi) nicht
+    darstellen kann (Emoji, CJK usw.), durch '?' statt eines schwarzen Kastens."""
+    out = []
+    for ch in str(value):
+        try:
+            ch.encode('cp1252')
+            out.append(ch)
+        except UnicodeEncodeError:
+            out.append('?')
+    return ''.join(out)
+
 def pdf_text(value):
     """Maskiert Text fuer reportlab-Paragraph (Mini-HTML)."""
-    return str(value).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+    return winansi_safe(value).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
 def calculate_statistics(messages, L=None):
     """Berechnet Statistiken aus den Nachrichten."""
@@ -200,7 +212,7 @@ def create_pdf(chat_data):
     for idx, msg in enumerate(messages, 1):
         role = P['user'] if msg['role'] == 'user' else P['ai']
         preview = msg['content'][:50] + "..." if len(msg['content']) > 50 else msg['content']
-        preview = preview.replace('<', '&lt;').replace('>', '&gt;')
+        preview = winansi_safe(preview).replace('<', '&lt;').replace('>', '&gt;')
         story.append(Paragraph(f"{P['message']} {idx} ({role}): {preview}", stats_style))
     
     story.append(PageBreak())
@@ -212,7 +224,7 @@ def create_pdf(chat_data):
         role = P['user'] if msg['role'] == 'user' else P['ai']
         timestamp = msg.get('timestamp', '')
         mode = msg.get('mode', 'chat')
-        content = msg['content'].replace('<', '&lt;').replace('>', '&gt;').replace('\n', '<br/>')
+        content = winansi_safe(msg['content']).replace('<', '&lt;').replace('>', '&gt;').replace('\n', '<br/>')
         
         # Mode-Badge
         mode_color = '#28a745' if mode == 'deepthink' else '#17a2b8' if mode == 'search' else '#6c757d'

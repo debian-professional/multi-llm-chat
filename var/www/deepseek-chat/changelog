@@ -2531,5 +2531,31 @@
     - Dateien: index.html, language.xml, export-pdf.py, export-markdown.py,
       export-txt.py, export-rtf.py, Readme_EN.md, Readme_DE.md, Readme_ES.md
 
+    118. [12.10.2026] Nachbesserung zu 117: Einzelexport RTF (Zeichenkodierung)
+      und PDF (Sprache, Sonderzeichen)
+    - Anlass: Browser-Test von 117 mit spanischem Chat. Einzelexport TXT und
+      Markdown waren korrekt; Einzelexport RTF zeigte kaputte Akzente
+      (ExportaciÃ³n, Â¿Quieres), Einzelexport PDF zeigte "Chat-Verlauf" und
+      "Nachricht 1 - KI" auf Deutsch und Emoji als schwarzen Kasten
+    - index.html: neue Funktion rtfEscape(); exportSingleAsRtf() schrieb den
+      Text bisher als rohes UTF-8 in die RTF-Datei (RTF braucht Escape-Codes).
+      Jetzt Zeichen 128-255 als \'xx, darueber als \uN? (Emoji als
+      UTF-16-Paar), ausserdem werden Titel, Rolle und Zeitstempel escaped. Das
+      war ein Rest aus 117: dort war nur das Server-Skript export-rtf.py
+      korrigiert worden, diese Client-Funktion wurde uebersehen
+    - index.html: exportSingleAsPdf() schickt jetzt chatData.labels mit (war in
+      117 vergessen worden; die vier globalen Exporte hatten sie bereits)
+    - export-pdf.py: Zeichen, die die PDF-Standardschrift (Helvetica/WinAnsi)
+      nicht darstellen kann (Emoji, CJK), werden zu "?" statt zu einem
+      schwarzen Kasten (Funktion winansi_safe(), fuer Text, Vorschau und Labels)
+    - Verifiziert: JS-Syntaxcheck OK; rtfEscape() mit Akzenten, ¿, Emoji, Euro
+      und Sonderzeichen geprueft; erzeugte RTF-Datei in LibreOffice als UTF-8
+      konvertiert (Akzente und Emoji korrekt); export-pdf.py mit spanischen
+      Labels aufgerufen und per pdftotext geprueft (alle Kopfzeilen spanisch,
+      Emoji/CJK als ?). Doku unveraendert
+    - Offen: Zeitstempel (toLocaleString ohne Sprache) folgen noch der
+      Browsersprache statt der Oberflaechensprache
+    - Dateien: index.html, export-pdf.py
+
     ============================================================================
 
