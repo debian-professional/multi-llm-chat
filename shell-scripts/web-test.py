@@ -360,6 +360,9 @@ def new_page(C, settings=None, fast=False, lang=None):
     page.goto(C.base)
     page.wait_for_selector('#sendButton')
     page.wait_for_function('document.getElementById("sendButton").textContent.trim().length > 0')
+    # Das Seiten-Skript ist erst fertig, wenn DOMContentLoaded durchgelaufen ist (Sprache geladen,
+    # Klick-Handler gesetzt, Sitzungs-ID vergeben) - der Sendeknopf hat schon vorher einen Text.
+    page.wait_for_function('typeof currentSessionId !== "undefined" && currentSessionId !== null', timeout=30000)
     page.ctx = ctx
     return page
 

@@ -2694,5 +2694,15 @@
    - Readme DE/EN/ES: neue Testbereiche und --check.
    - Dateien: shell-scripts/web-test.py, Readme_DE.md, Readme_EN.md, Readme_ES.md
 
+127. 12.10.2026 - web-test.py: Race Condition beim Seitenstart behoben
+   - Fehler im Test, nicht in der Webseite: Der Test klickte "Senden", bevor das Seiten-Skript
+     fertig initialisiert war (Sprachdatei noch nicht geladen, Klick-Handler noch nicht gesetzt).
+     Der Sendeknopf hat schon im HTML eine Beschriftung ("Send"), die Wartebedingung war damit
+     zu frueh erfuellt. Folge: gelegentlich "Cannot read properties of undefined (reading 'id')"
+     im Export-Test oder ein Timeout im Dateien-Test, vor allem bei langsamer Verbindung.
+   - Neu: new_page() wartet, bis die Seite vollstaendig gestartet ist (Sitzungs-ID vergeben).
+   - Reproduziert mit kuenstlich verzoegerter language.xml: vorher 2 FAIL, nachher alles PASS.
+   - Dateien: shell-scripts/web-test.py
+
     ============================================================================
 
