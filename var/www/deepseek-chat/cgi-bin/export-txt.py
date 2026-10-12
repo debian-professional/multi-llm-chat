@@ -15,6 +15,32 @@ from datetime import datetime
 # Lesezugriffe sind per Browser-Default bereits blockiert.
 MAX_REQUEST_SIZE = 20 * 1024 * 1024  # 20 MB (Chat kann eingebettete Bilder enthalten)
 
+# Changelog 117 (12.10.2026): Beschriftungen kommen uebersetzt vom Frontend
+# (chatData.labels, aus language.xml). Fehlen sie, gelten diese deutschen
+# Standardwerte - alte Frontends funktionieren also unveraendert weiter.
+DEFAULT_LABELS = {
+    'title': 'Multi-LLM-Chat - Export', 'server': 'Server', 'date': 'Datum',
+    'time': 'Uhrzeit', 'messages': 'Nachrichten', 'user': 'Benutzer', 'ai': 'KI',
+    'exported': 'Exportiert', 'export_date': 'Export-Datum',
+    'settings': 'Einstellungen', 'form_mode': '{0}-Form, Modus: {1}',
+    'stats': 'Statistiken', 'total': 'Nachrichten gesamt',
+    'modes': 'Verwendete Modi', 'files': 'Hochgeladene Dateien',
+    'tokens': 'Geschaetzte Token-Nutzung', 'duration': 'Chat-Dauer',
+    'none': 'Keine Nachrichten', 'to': 'bis', 'toc': 'Inhaltsverzeichnis',
+    'history': 'Chat-Verlauf', 'message': 'Nachricht', 'unknown': 'Unbekannt',
+    'footer': 'Exportiert mit Multi-LLM-Chat',
+}
+
+def get_labels(chat_data):
+    """Liefert die Beschriftungen (Frontend-Labels ueberschreiben die Standardwerte)."""
+    labels = dict(DEFAULT_LABELS)
+    custom = chat_data.get('labels')
+    if isinstance(custom, dict):
+        for key, value in custom.items():
+            if key in labels and isinstance(value, str) and value.strip() and len(value) <= 200:
+                labels[key] = value
+    return labels
+
 def send_response(content, content_type, filename):
     if isinstance(content, str):
         content = content.encode('utf-8')
@@ -47,15 +73,16 @@ def main():
         messages = chat_data.get('messages', [])
         server_info = chat_data.get('serverInfo', {})
         timestamp = chat_data.get('timestamp', datetime.now().isoformat())
+        L = get_labels(chat_data)
 
         lines = []
         lines.append("=" * 60)
-        lines.append("DEEPSEEK CHAT - EXPORT")
+        lines.append(L['title'].upper())
         lines.append("=" * 60)
-        lines.append(f"Server: {server_info.get('name', 'DeepSeek Chat')}")
-        lines.append(f"IP:     {server_info.get('ip', 'unbekannt')}")
-        lines.append(f"Datum:  {timestamp[:10]}  Uhrzeit: {timestamp[11:19]}")
-        lines.append(f"Anzahl Nachrichten: {len(messages)}")
+        lines.append(f"{L['server']}: {server_info.get('name', 'Multi-LLM Chat')}")
+        lines.append(f"IP: {server_info.get('ip', L['unknown'].lower())}")
+        lines.append(f"{L['date']}: {timestamp[:10]}  {L['time']}: {timestamp[11:19]}")
+        lines.append(f"{L['messages']}: {len(messages)}")
         lines.append("=" * 60)
         lines.append("")
 
@@ -65,10 +92,10 @@ def main():
             msg_time = msg.get('timestamp', '')[:19].replace('T', ' ')
 
             if role == 'user':
-                lines.append(f"USER [{msg_time}]:")
+                lines.append(f"{L['user'].upper()} [{msg_time}]:")
                 lines.append("-" * 40)
             else:
-                lines.append(f"DEEPSEEK AI [{msg_time}]:")
+                lines.append(f"{L['ai'].upper()} [{msg_time}]:")
                 lines.append("-" * 40)
 
             lines.append(content)
@@ -85,6 +112,9 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
 
 
 

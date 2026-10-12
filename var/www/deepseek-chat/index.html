@@ -2083,6 +2083,31 @@
          * Apply all translations to static DOM elements.
          * Called after language change or on startup.
          */
+        /**
+         * Zahlenformat passend zur gewaehlten Oberflaechensprache
+         * (Changelog 117; vorher fest 'de-DE'). Fuer 'custom' gilt die Browser-Vorgabe.
+         */
+        function numberLocale() {
+            return ({ en: 'en-US', de: 'de-CH', es: 'es-ES' })[currentLang] || undefined;
+        }
+
+        /**
+         * Uebersetzte Beschriftungen fuer die serverseitigen Exporte
+         * (PDF/Markdown/TXT/RTF). Die CGI-Skripte haben deutsche Standardwerte
+         * und uebernehmen diese Labels, wenn sie mitgeschickt werden.
+         */
+        function exportLabels() {
+            return {
+                title: t(283), server: t(284), date: t(285), time: t(286),
+                messages: t(287), user: t(288), ai: t(289), exported: t(290),
+                export_date: t(291), settings: t(292), form_mode: t(293),
+                stats: t(294), total: t(295), modes: t(296), files: t(297),
+                tokens: t(298), duration: t(299), none: t(300), to: t(301),
+                toc: t(302), history: t(303), message: t(304), unknown: t(305),
+                footer: t(306)
+            };
+        }
+
         function applyLanguage() {
             const meta = langMeta[currentLang];
             if (!meta) return;
@@ -2116,6 +2141,14 @@
             document.getElementById('deepThinkIndicator').textContent = t(204);
             // --- Download-Modus button (Feature 29.08.2026) ---
             document.getElementById('downloadModeButtonLabel').textContent = t(263);
+
+            // --- Sende-Banner + Schliessen-Tooltips (Changelog 117) ---
+            const sendeBannerTextEl = document.getElementById('sendeBannerText');
+            if (sendeBannerTextEl) sendeBannerTextEl.textContent = t(279);
+            ['closeSettings', 'closeLlmSettings', 'closeSessions', 'closeBookmarks', 'closeLog'].forEach(function(cid) {
+                const cel = document.getElementById(cid);
+                if (cel) cel.title = t(282);
+            });
 
             // --- Guthaben-Banner Text aktualisieren (falls sichtbar) ---
             const guthabenBanner = document.getElementById('guthabenBanner');
@@ -2897,7 +2930,7 @@
             try {
                 const chatData = { version: "1.0", timestamp: new Date().toISOString(),
                     serverInfo: { name: SERVER_NAME, ip: getServerIP() },
-                    settings: settings, messages: contextHistory.messages };
+                    settings: settings, messages: contextHistory.messages, labels: exportLabels() };
                 const response = await fetch(EXPORT_PDF_URL, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ chatData })
@@ -2912,7 +2945,7 @@
             try {
                 const chatData = { version: "1.0", timestamp: new Date().toISOString(),
                     serverInfo: { name: SERVER_NAME, ip: getServerIP() },
-                    settings: settings, messages: contextHistory.messages };
+                    settings: settings, messages: contextHistory.messages, labels: exportLabels() };
                 const response = await fetch(EXPORT_MARKDOWN_URL, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ chatData })
@@ -2927,7 +2960,7 @@
             try {
                 const chatData = { version: "1.0", timestamp: new Date().toISOString(),
                     serverInfo: { name: SERVER_NAME, ip: getServerIP() },
-                    settings: settings, messages: contextHistory.messages };
+                    settings: settings, messages: contextHistory.messages, labels: exportLabels() };
                 const response = await fetch(EXPORT_TXT_URL, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ chatData })
@@ -2946,12 +2979,12 @@
                 const timeStr = timestamp.slice(11, 19);
                 const lines = [];
                 lines.push('='.repeat(60));
-                lines.push('MULTI-LLM CHAT - EXPORT');
+                lines.push(t(283).toUpperCase());
                 lines.push('='.repeat(60));
-                lines.push('Server: ' + SERVER_NAME);
+                lines.push(t(284) + ': ' + SERVER_NAME);
                 lines.push('IP:     ' + getServerIP());
-                lines.push('Datum:  ' + dateStr + '  Uhrzeit: ' + timeStr);
-                lines.push('Anzahl Nachrichten: ' + contextHistory.messages.length);
+                lines.push(t(285) + ': ' + dateStr + '  ' + t(286) + ': ' + timeStr);
+                lines.push(t(287) + ': ' + contextHistory.messages.length);
                 lines.push('='.repeat(60));
                 lines.push('');
                 contextHistory.messages.forEach(function(msg) {
@@ -2959,9 +2992,9 @@
                     const content = msg.content || '';
                     const msgTime = (msg.timestamp || '').slice(0, 19).replace('T', ' ');
                     if (role === 'user') {
-                        lines.push('USER [' + msgTime + ']:');
+                        lines.push(t(288).toUpperCase() + ' [' + msgTime + ']:');
                     } else {
-                        lines.push('AI [' + msgTime + ']:');
+                        lines.push(t(289).toUpperCase() + ' [' + msgTime + ']:');
                     }
                     lines.push('-'.repeat(40));
                     lines.push(content);
@@ -2986,7 +3019,7 @@
             try {
                 const chatData = { version: "1.0", timestamp: new Date().toISOString(),
                     serverInfo: { name: SERVER_NAME, ip: getServerIP() },
-                    settings: settings, messages: contextHistory.messages };
+                    settings: settings, messages: contextHistory.messages, labels: exportLabels() };
                 const response = await fetch(EXPORT_RTF_URL, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ chatData })
@@ -3018,30 +3051,30 @@
         
         function exportSingleAsTxt(msgId) {
             const text = getMsgText(msgId);
-            const role = getMsgRole(msgId) === 'user' ? 'User' : 'DeepSeek AI';
+            const role = getMsgRole(msgId) === 'user' ? t(288) : t(289);
             const timestamp = new Date().toLocaleString();
-            const content = `DeepSeek Chat\nExported: ${timestamp}\n\n${role}:\n${'='.repeat(40)}\n${text}\n`;
+            const content = `${t(283)}\n${t(290)}: ${timestamp}\n\n${role}:\n${'='.repeat(40)}\n${text}\n`;
             const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
             triggerDownload(blob, `message-${msgId}.txt`);
         }
         
         function exportSingleAsMarkdown(msgId) {
             const text = getMsgText(msgId);
-            const role = getMsgRole(msgId) === 'user' ? 'User' : 'DeepSeek AI';
+            const role = getMsgRole(msgId) === 'user' ? t(288) : t(289);
             const timestamp = new Date().toLocaleString();
-            const content = `# DeepSeek Chat\n\n**Exported:** ${timestamp}\n\n## ${role}\n\n${text}\n`;
+            const content = `# ${t(283)}\n\n**${t(290)}:** ${timestamp}\n\n## ${role}\n\n${text}\n`;
             const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
             triggerDownload(blob, `message-${msgId}.md`);
         }
         
         function exportSingleAsRtf(msgId) {
             const text = getMsgText(msgId);
-            const role = getMsgRole(msgId) === 'user' ? 'User' : 'DeepSeek AI';
+            const role = getMsgRole(msgId) === 'user' ? t(288) : t(289);
             const timestamp = new Date().toLocaleString();
             const escapedText = text
                 .replace(/\\/g, '\\\\').replace(/\{/g, '\\{').replace(/\}/g, '\\}')
                 .replace(/\n/g, '\\par\n');
-            const rtfContent = `{\\rtf1\\ansi\\deff0\n{\\fonttbl{\\f0 Arial;}}\n{\\colortbl;\\red0\\green86\\blue179;\\red40\\green40\\blue40;}\n\\f0\\fs24\n{\\b\\cf1 DeepSeek Chat}\\par\n{\\cf2 Exported: ${timestamp}}\\par\n\\par\n{\\b\\cf1 ${role}:}\\par\n${'_'.repeat(40)}\\par\n\\par\n${escapedText}\\par\n}`;
+            const rtfContent = `{\\rtf1\\ansi\\deff0\n{\\fonttbl{\\f0 Arial;}}\n{\\colortbl;\\red0\\green86\\blue179;\\red40\\green40\\blue40;}\n\\f0\\fs24\n{\\b\\cf1 ${t(283)}}\\par\n{\\cf2 ${t(290)}: ${timestamp}}\\par\n\\par\n{\\b\\cf1 ${role}:}\\par\n${'_'.repeat(40)}\\par\n\\par\n${escapedText}\\par\n}`;
             const blob = new Blob([rtfContent], { type: 'application/rtf' });
             triggerDownload(blob, `message-${msgId}.rtf`);
         }
@@ -3269,7 +3302,7 @@
                                         fullText += token;
                                         // Feature (29.08.2026): Download-Modus - Live-Anzeige unterdruecken
                                         if (downloadModeActive) {
-                                            aiText.textContent = tf(264, fullText.length.toLocaleString('de-DE'));
+                                            aiText.textContent = tf(264, fullText.length.toLocaleString(numberLocale()));
                                         } else {
                                             aiText.textContent = userMsg.hasFile ? decodeUmlautsFromAI(fullText) : fullText;
                                         }
@@ -3296,7 +3329,7 @@
                 // Feature (29.08.2026): Download-Modus - finalen Volltext nicht ins
                 // DOM schreiben, stattdessen Abschluss-Hinweis. fullText/contextHistory
                 // enthalten weiterhin den kompletten Text fuer Download/Kontext/Session.
-                aiText.textContent = downloadModeActive ? tf(265, fullText.length.toLocaleString('de-DE')) : fullText;
+                aiText.textContent = downloadModeActive ? tf(265, fullText.length.toLocaleString(numberLocale())) : fullText;
                 
                 const aiMsgId = addAIResponseToContext(fullText, userMsg.mode);
                 aiContainer.setAttribute('data-msg-id', aiMsgId);
@@ -3878,7 +3911,7 @@
 
         async function startAudioRecording() {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                alert('Ihr Browser unterstützt keine Mikrofon-Aufnahme.');
+                alert(t(280));
                 return;
             }
             // Vorhandene Datei-Auswahl leeren
@@ -3924,7 +3957,7 @@
                 audioButton.classList.add('active');
             } catch (err) {
                 console.error('Mikrofon-Zugriff verweigert:', err);
-                alert('Mikrofon-Zugriff verweigert. Bitte Berechtigung erteilen.');
+                alert(t(281));
             }
         }
 
@@ -4030,7 +4063,7 @@
             inputField.disabled = true;
             const sendeBanner = document.getElementById('sendeBanner');
             const sendeBannerText = document.getElementById('sendeBannerText');
-            if (sendeBanner) { sendeBannerText.textContent = t(48) ? 'Daten werden übermittelt...' : 'Sending...'; sendeBanner.style.display = 'block'; }
+            if (sendeBanner) { sendeBannerText.textContent = t(279); sendeBanner.style.display = 'block'; }
             let userMessage = message;
             if (fileTextContent) userMessage = `${t(12)}\n${encodeUmlautsForAI(fileTextContent)}\n\n${t(13)} ${message}`;
             const hasFile = !!fileTextContent;   // Audio wird direkt via API gesendet, nicht als Text
@@ -4215,7 +4248,7 @@
                                         // (showSingleExportDropdown) lesen ohnehin aus contextHistory, nicht
                                         // aus dem DOM, und funktionieren daher unveraendert.
                                         if (downloadModeActive) {
-                                            aiText.textContent = tf(264, fullText.length.toLocaleString('de-DE'));
+                                            aiText.textContent = tf(264, fullText.length.toLocaleString(numberLocale()));
                                         } else {
                                             aiText.textContent = hasFile ? decodeUmlautsFromAI(fullText) : fullText;
                                         }
@@ -4242,7 +4275,7 @@
                 // Feature (29.08.2026): Download-Modus - finalen Volltext nicht ins
                 // DOM schreiben, stattdessen Abschluss-Hinweis. fullText/contextHistory
                 // enthalten weiterhin den kompletten Text fuer Download/Kontext/Session.
-                aiText.textContent = downloadModeActive ? tf(265, fullText.length.toLocaleString('de-DE')) : fullText;
+                aiText.textContent = downloadModeActive ? tf(265, fullText.length.toLocaleString(numberLocale())) : fullText;
                 
                 const aiMsgId = addAIResponseToContext(fullText, currentMode);
                 aiContainer.setAttribute('data-msg-id', aiMsgId);

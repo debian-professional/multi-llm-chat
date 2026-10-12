@@ -31,20 +31,51 @@ def send_error(message, code=500):
     sys.stdout.write(json.dumps({"error": message}))
     sys.stdout.flush()
 
+# Changelog 117 (12.10.2026): Beschriftungen kommen uebersetzt vom Frontend
+# (chatData.labels, aus language.xml). Fehlen sie, gelten diese deutschen
+# Standardwerte - alte Frontends funktionieren also unveraendert weiter.
+DEFAULT_LABELS = {
+    'title': 'Multi-LLM-Chat - Export', 'server': 'Server', 'date': 'Datum',
+    'time': 'Uhrzeit', 'messages': 'Nachrichten', 'user': 'Benutzer', 'ai': 'KI',
+    'exported': 'Exportiert', 'export_date': 'Export-Datum',
+    'settings': 'Einstellungen', 'form_mode': '{0}-Form, Modus: {1}',
+    'stats': 'Statistiken', 'total': 'Nachrichten gesamt',
+    'modes': 'Verwendete Modi', 'files': 'Hochgeladene Dateien',
+    'tokens': 'Geschaetzte Token-Nutzung', 'duration': 'Chat-Dauer',
+    'none': 'Keine Nachrichten', 'to': 'bis', 'toc': 'Inhaltsverzeichnis',
+    'history': 'Chat-Verlauf', 'message': 'Nachricht', 'unknown': 'Unbekannt',
+    'footer': 'Exportiert mit Multi-LLM-Chat',
+}
+
+def get_labels(chat_data):
+    """Liefert die Beschriftungen (Frontend-Labels ueberschreiben die Standardwerte)."""
+    labels = dict(DEFAULT_LABELS)
+    custom = chat_data.get('labels')
+    if isinstance(custom, dict):
+        for key, value in custom.items():
+            if key in labels and isinstance(value, str) and value.strip() and len(value) <= 200:
+                labels[key] = value
+    return labels
+
 def escape_rtf(text):
     """Text fuer RTF escapen und Umlaute konvertieren"""
     # RTF Sonderzeichen escapen
     text = text.replace('\\', '\\\\')
     text = text.replace('{', '\\{')
     text = text.replace('}', '\\}')
-    # Umlaute als RTF-Codes
-    text = text.replace('ä', "\\'e4")
-    text = text.replace('ö', "\\'f6")
-    text = text.replace('ü', "\\'fc")
-    text = text.replace('ß', "\\'df")
-    text = text.replace('Ä', "\\'c4")
-    text = text.replace('Ö', "\\'d6")
-    text = text.replace('Ü', "\\'dc")
+    # Nicht-ASCII-Zeichen als RTF-Codes (Umlaute, Spanisch usw.; ansicpg1252)
+    # Changelog 117: vorher nur ae/oe/ue/ss, jetzt alle Zeichen ab 128.
+    out = []
+    for ch in text:
+        code = ord(ch)
+        if code < 128:
+            out.append(ch)
+        elif code < 256:
+            out.append("\\'%02x" % code)
+        else:
+            signed = code if code < 32768 else code - 65536
+            out.append("\\u%d?" % signed)
+    text = ''.join(out)
     # Zeilenumbrueche
     text = text.replace('\n', '\\par\n')
     return text
@@ -65,6 +96,7 @@ def main():
         messages = chat_data.get('messages', [])
         server_info = chat_data.get('serverInfo', {})
         timestamp = chat_data.get('timestamp', datetime.now().isoformat())
+        L = get_labels(chat_data)
 
         date_str = timestamp[:10]
         time_str = timestamp[11:19]
@@ -78,11 +110,11 @@ def main():
         rtf_parts.append('')
 
         # Titel
-        rtf_parts.append(r'{\pard\qc\sb300{\b\fs32\cf1 DeepSeek Chat - Export}\par}')
-        rtf_parts.append(r'{\pard\qc\sb100{\fs20\cf2 ' + f'Server: {escape_rtf(server_info.get("name", "DeepSeek Chat"))}' + r'}\par}')
-        rtf_parts.append(r'{\pard\qc\sb100{\fs20\cf2 ' + f'IP: {escape_rtf(server_info.get("ip", "unbekannt"))}' + r'}\par}')
-        rtf_parts.append(r'{\pard\qc\sb100{\fs20\cf2 ' + f'Datum: {date_str}  Uhrzeit: {time_str}' + r'}\par}')
-        rtf_parts.append(r'{\pard\qc\sb100{\fs20\cf2 ' + f'Nachrichten: {len(messages)}' + r'}\par}')
+        rtf_parts.append(r'{\pard\qc\sb300{\b\fs32\cf1 ' + escape_rtf(L['title']) + r'}\par}')
+        rtf_parts.append(r'{\pard\qc\sb100{\fs20\cf2 ' + f'{escape_rtf(L["server"])}: {escape_rtf(server_info.get("name", "Multi-LLM Chat"))}' + r'}\par}')
+        rtf_parts.append(r'{\pard\qc\sb100{\fs20\cf2 ' + f'IP: {escape_rtf(server_info.get("ip", L["unknown"].lower()))}' + r'}\par}')
+        rtf_parts.append(r'{\pard\qc\sb100{\fs20\cf2 ' + f'{escape_rtf(L["date"])}: {date_str}  {escape_rtf(L["time"])}: {time_str}' + r'}\par}')
+        rtf_parts.append(r'{\pard\qc\sb100{\fs20\cf2 ' + f'{escape_rtf(L["messages"])}: {len(messages)}' + r'}\par}')
         rtf_parts.append(r'{\pard\brdrb\brdrs\brdrw10\brsp20 \par}')
         rtf_parts.append('')
 
@@ -92,10 +124,10 @@ def main():
             msg_time = msg.get('timestamp', '')[:19].replace('T', ' ')
 
             if role == 'user':
-                label = f'USER [{msg_time}]'
+                label = f'{L["user"].upper()} [{msg_time}]'
                 color = r'\cf1'
             else:
-                label = f'DEEPSEEK AI [{msg_time}]'
+                label = f'{L["ai"].upper()} [{msg_time}]'
                 color = r'\cf4'
 
             # Rolle als Header
@@ -117,6 +149,9 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
 
 
 

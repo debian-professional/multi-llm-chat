@@ -26,8 +26,35 @@ def send_response(status_code, data, content_type='application/json'):
         print(json.dumps(data, ensure_ascii=False))
     sys.stdout.flush()
 
-def calculate_statistics(messages):
+# Changelog 117 (12.10.2026): Beschriftungen kommen uebersetzt vom Frontend
+# (chatData.labels, aus language.xml). Fehlen sie, gelten diese deutschen
+# Standardwerte - alte Frontends funktionieren also unveraendert weiter.
+DEFAULT_LABELS = {
+    'title': 'Multi-LLM-Chat - Export', 'server': 'Server', 'date': 'Datum',
+    'time': 'Uhrzeit', 'messages': 'Nachrichten', 'user': 'Benutzer', 'ai': 'KI',
+    'exported': 'Exportiert', 'export_date': 'Export-Datum',
+    'settings': 'Einstellungen', 'form_mode': '{0}-Form, Modus: {1}',
+    'stats': 'Statistiken', 'total': 'Nachrichten gesamt',
+    'modes': 'Verwendete Modi', 'files': 'Hochgeladene Dateien',
+    'tokens': 'Geschaetzte Token-Nutzung', 'duration': 'Chat-Dauer',
+    'none': 'Keine Nachrichten', 'to': 'bis', 'toc': 'Inhaltsverzeichnis',
+    'history': 'Chat-Verlauf', 'message': 'Nachricht', 'unknown': 'Unbekannt',
+    'footer': 'Exportiert mit Multi-LLM-Chat',
+}
+
+def get_labels(chat_data):
+    """Liefert die Beschriftungen (Frontend-Labels ueberschreiben die Standardwerte)."""
+    labels = dict(DEFAULT_LABELS)
+    custom = chat_data.get('labels')
+    if isinstance(custom, dict):
+        for key, value in custom.items():
+            if key in labels and isinstance(value, str) and value.strip() and len(value) <= 200:
+                labels[key] = value
+    return labels
+
+def calculate_statistics(messages, L=None):
     """Berechnet Statistiken aus den Nachrichten."""
+    L = L or DEFAULT_LABELS
     total_messages = len(messages)
     user_messages = len([m for m in messages if m['role'] == 'user'])
     ai_messages = len([m for m in messages if m['role'] == 'assistant'])
@@ -47,9 +74,9 @@ def calculate_statistics(messages):
     if messages:
         first_time = messages[0].get('timestamp', '')
         last_time = messages[-1].get('timestamp', '')
-        duration = f"{first_time} bis {last_time}"
+        duration = f"{first_time} {L['to']} {last_time}"
     else:
-        duration = "Keine Nachrichten"
+        duration = L['none']
     
     return {
         'total': total_messages,
@@ -63,62 +90,63 @@ def calculate_statistics(messages):
 
 def create_markdown(chat_data):
     """Erstellt Markdown aus Chat-Daten."""
+    L = get_labels(chat_data)
     lines = []
     
     # Titel
-    lines.append("# DeepSeek Chat - Export")
+    lines.append(f"# {L['title']}")
     lines.append("")
     
     # Server-Info
     server_info = chat_data.get('serverInfo', {})
-    lines.append(f"**Server:** {server_info.get('name', 'Unbekannt')} (IP: {server_info.get('ip', 'Unbekannt')})")
-    lines.append(f"**Export-Datum:** {chat_data.get('timestamp', 'Unbekannt')}")
+    lines.append(f"**{L['server']}:** {server_info.get('name', L['unknown'])} (IP: {server_info.get('ip', L['unknown'])})")
+    lines.append(f"**{L['export_date']}:** {chat_data.get('timestamp', L['unknown'])}")
     
     settings = chat_data.get('settings', {})
-    lines.append(f"**Einstellungen:** {settings.get('addressForm', 'sie')}-Form, Modus: {settings.get('defaultMode', 'chat')}")
+    lines.append(f"**{L['settings']}:** " + L['form_mode'].replace('{0}', str(settings.get('addressForm', 'sie'))).replace('{1}', str(settings.get('defaultMode', 'chat'))))
     lines.append("")
     lines.append("---")
     lines.append("")
     
     # Statistiken
     messages = chat_data.get('messages', [])
-    stats = calculate_statistics(messages)
+    stats = calculate_statistics(messages, L)
     
-    lines.append("## Statistiken")
+    lines.append(f"## {L['stats']}")
     lines.append("")
-    lines.append(f"- **Nachrichten gesamt:** {stats['total']} (Benutzer: {stats['user']}, KI: {stats['ai']})")
+    lines.append(f"- **{L['total']}:** {stats['total']} ({L['user']}: {stats['user']}, {L['ai']}: {stats['ai']})")
     
     modes_text = ", ".join([f"{mode}: {count}x" for mode, count in stats['modes'].items()])
-    lines.append(f"- **Verwendete Modi:** {modes_text}")
-    lines.append(f"- **Hochgeladene Dateien:** {stats['files']}")
-    lines.append(f"- **Geschaetzte Token-Nutzung:** {stats['tokens']}")
-    lines.append(f"- **Chat-Dauer:** {stats['duration']}")
+    lines.append(f"- **{L['modes']}:** {modes_text}")
+    lines.append(f"- **{L['files']}:** {stats['files']}")
+    lines.append(f"- **{L['tokens']}:** {stats['tokens']}")
+    lines.append(f"- **{L['duration']}:** {stats['duration']}")
     lines.append("")
     lines.append("---")
     lines.append("")
     
     # Inhaltsverzeichnis
-    lines.append("## Inhaltsverzeichnis")
+    lines.append(f"## {L['toc']}")
     lines.append("")
     for idx, msg in enumerate(messages, 1):
-        role = "Benutzer" if msg['role'] == 'user' else "KI"
+        role = L['user'] if msg['role'] == 'user' else L['ai']
         preview = msg['content'][:50] + "..." if len(msg['content']) > 50 else msg['content']
-        lines.append(f"- [Nachricht {idx} ({role})](#nachricht-{idx}): {preview}")
+        lines.append(f"- [{L['message']} {idx} ({role})](#msg-{idx}): {preview}")
     lines.append("")
     lines.append("---")
     lines.append("")
     
     # Nachrichten
-    lines.append("## Chat-Verlauf")
+    lines.append(f"## {L['history']}")
     lines.append("")
     
     for idx, msg in enumerate(messages, 1):
-        role = "Benutzer" if msg['role'] == 'user' else "KI"
+        role = L['user'] if msg['role'] == 'user' else L['ai']
         timestamp = msg.get('timestamp', '')
         mode = msg.get('mode', 'chat')
         content = msg['content']
         
-        lines.append(f"### Nachricht {idx} - {role} [{mode.upper()}] {{#nachricht-{idx}}}")
+        lines.append(f"### {L['message']} {idx} - {role} [{mode.upper()}] {{#msg-{idx}}}")
         lines.append(f"*{timestamp}*")
         lines.append("")
         lines.append(content)
@@ -127,7 +155,7 @@ def create_markdown(chat_data):
         lines.append("")
     
     # Footer
-    lines.append("*Exportiert mit DeepSeek Chat v1.0*")
+    lines.append(f"*{L['footer']}*")
     
     return "\n".join(lines)
 
@@ -183,3 +211,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+

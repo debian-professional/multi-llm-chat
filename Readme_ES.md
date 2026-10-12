@@ -498,7 +498,7 @@ Cada conversación se gestiona automáticamente como una sesión del lado del se
 | PDF | Lado del servidor (`export-pdf.py`, ReportLab) | Cabecera, estadísticas, tabla de contenidos, chat completo |
 | Markdown | Lado del servidor (`export-markdown.py`) | Estructura idéntica al PDF, con anchors |
 | TXT | Lado del servidor (`export-txt.py`) | Texto plano con separadores |
-| RTF | Lado del servidor (`export-rtf.py`) | Codificación RTF manual, umlauts como códigos de escape RTF |
+| RTF | Lado del servidor (`export-rtf.py`) | Codificación RTF manual, todos los caracteres no ASCII como códigos de escape RTF |
 | **Copiar al portapapeles** | **Solo del lado del cliente (sin roundtrip al servidor)** | Texto plano ensamblado en JavaScript, escrito mediante `navigator.clipboard.writeText()` |
 
 **Exportación por mensaje** (botón hover en cada mensaje):
@@ -509,6 +509,8 @@ Cada conversación se gestiona automáticamente como una sesión del lado del se
 | Markdown | Lado del cliente |
 | RTF | Lado del cliente |
 | PDF | Lado del servidor (mensaje individual enviado a `export-pdf.py`) |
+
+**Idioma de exportación:** Todos los rótulos de las exportaciones (título, «Fecha», «Hora», «Mensajes», nombres de rol, encabezados de estadísticas, índice, pie) siguen el idioma de la interfaz. El frontend los envía con cada exportación como `chatData.labels` (generados por `exportLabels()` a partir de `language.xml`, IDs 283–306); los cuatro scripts CGI usan valores predeterminados en alemán si no llegan rótulos. RTF codifica todos los caracteres no ASCII (diéresis, acentos españoles, `¿`, `€`, …) como códigos de escape RTF. El banner de envío, los mensajes del micrófono y los tooltips de cierre también proceden de `language.xml` (IDs 279–282), y los formatos numéricos siguen el idioma de la interfaz.
 
 **Contenido de exportación** (exportación global PDF/Markdown):
 - Cabecera: nombre del servidor, IP, fecha de exportación, idioma activo, forma de tratamiento

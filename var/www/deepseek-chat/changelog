@@ -2490,5 +2490,46 @@
     - Dateien: index.html, openai-api.py, language.xml, Readme_EN.md,
       Readme_DE.md, Readme_ES.md
 
-    ===========================================================================
+    117. [12.10.2026] Hardcodierte Texte beseitigt: Frontend und die 
+      vier Export-Skripte folgen jetzt der Oberflaechensprache
+    - Anlass: Audit auf Texte, die an language.xml vorbeilaufen. Die statischen
+      HTML-Beschriftungen waren sauber (alle per applyLanguage()/t() gesetzt);
+      fest eingebaut waren nur die unten genannten Stellen
+    - index.html: Sende-Banner "Daten werden uebermittelt..." war in jeder
+      Sprache deutsch (t(48) wurde nur als Wahr/Falsch-Test missbraucht und ist
+      "Kontext wird komprimiert") -> neue ID 279, wird auch in applyLanguage()
+      gesetzt. Zwei Mikrofon-alerts (IDs 280, 281). Tooltips "Close" der fuenf
+      Schliessen-Buttons (ID 282). Zahlenformat im Download-Modus war fest
+      'de-DE' -> numberLocale() (en-US, de-CH, es-ES, custom = Browser)
+    - index.html: "In Zwischenablage kopieren" (Kopf, Datum/Uhrzeit/Nachrichten,
+      Rollen) und Einzelexport TXT/MD/RTF (Titel, "Exported", Rolle) nutzen
+      t(); der Rollenname "DeepSeek AI" stimmte bei den anderen Anbietern nicht
+      und heisst jetzt neutral "KI"/"AI"/"IA"
+    - index.html: neue Funktion exportLabels(); die vier globalen Exporte
+      schicken die uebersetzten Beschriftungen als chatData.labels mit
+    - export-pdf.py, export-markdown.py, export-txt.py, export-rtf.py: lesen
+      chatData.labels (24 Schluessel, deutsche Standardwerte als Rueckfall, d.h.
+      ein altes Frontend funktioniert unveraendert). Titel neutral "Multi-LLM
+      Chat - Export" statt "DeepSeek Chat - Export"; "DEEPSEEK AI" in TXT/RTF
+      ersetzt durch das Rollenlabel. Markdown-Anker heissen jetzt #msg-N (statt
+      #nachricht-N). PDF maskiert die Labels fuer reportlab
+    - export-rtf.py: escape_rtf() kodiert jetzt alle Zeichen ab 128 (ansicpg1252
+      als \'xx, darueber als \uN?); vorher nur ae/oe/ue/ss, d.h. spanische
+      Akzente, Euro usw. waren im RTF kaputt
+    - language.xml: IDs 279-306 in en, de, es und custom (je 197 Texte)
+    - Doku: Readme_EN/DE/ES.md (Abschnitt Export, RTF-Zeile)
+    - Bewusst unveraendert: Systemprompts an die LLMs (englisch), console.error,
+      Modellnamen mit Datum, der Kontexttext fuer "Neuer Chat mit Kontext"
+      (geht an das LLM), die deutschen Fehlertexte der Session-/Bookmark-/Log-
+      Skripte (technische Meldungen, im UI nur als Zusatz hinter dem uebersetzten
+      Text)
+    - Verifiziert: Python- und JS-Syntaxcheck OK; XML wohlgeformt, alle vier
+      Sprachbloecke mit denselben IDs; alle vier Export-Skripte lokal mit
+      es/en/ohne Labels aufgerufen (Exit 0, Beschriftungen korrekt, RTF mit
+      \'f3/\'f1 usw.); Ausgangsstand der Skripte per MD5 gegen den deployten
+      Stand geprueft. Nicht im Browser getestet
+    - Dateien: index.html, language.xml, export-pdf.py, export-markdown.py,
+      export-txt.py, export-rtf.py, Readme_EN.md, Readme_DE.md, Readme_ES.md
+
+    ============================================================================
 

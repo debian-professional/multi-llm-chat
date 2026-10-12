@@ -45,8 +45,39 @@ def send_response(status_code, data, content_type='application/json'):
         print(json.dumps(data, ensure_ascii=False))
         sys.stdout.flush()
 
-def calculate_statistics(messages):
+# Changelog 117 (12.10.2026): Beschriftungen kommen uebersetzt vom Frontend
+# (chatData.labels, aus language.xml). Fehlen sie, gelten diese deutschen
+# Standardwerte - alte Frontends funktionieren also unveraendert weiter.
+DEFAULT_LABELS = {
+    'title': 'Multi-LLM-Chat - Export', 'server': 'Server', 'date': 'Datum',
+    'time': 'Uhrzeit', 'messages': 'Nachrichten', 'user': 'Benutzer', 'ai': 'KI',
+    'exported': 'Exportiert', 'export_date': 'Export-Datum',
+    'settings': 'Einstellungen', 'form_mode': '{0}-Form, Modus: {1}',
+    'stats': 'Statistiken', 'total': 'Nachrichten gesamt',
+    'modes': 'Verwendete Modi', 'files': 'Hochgeladene Dateien',
+    'tokens': 'Geschaetzte Token-Nutzung', 'duration': 'Chat-Dauer',
+    'none': 'Keine Nachrichten', 'to': 'bis', 'toc': 'Inhaltsverzeichnis',
+    'history': 'Chat-Verlauf', 'message': 'Nachricht', 'unknown': 'Unbekannt',
+    'footer': 'Exportiert mit Multi-LLM-Chat',
+}
+
+def get_labels(chat_data):
+    """Liefert die Beschriftungen (Frontend-Labels ueberschreiben die Standardwerte)."""
+    labels = dict(DEFAULT_LABELS)
+    custom = chat_data.get('labels')
+    if isinstance(custom, dict):
+        for key, value in custom.items():
+            if key in labels and isinstance(value, str) and value.strip() and len(value) <= 200:
+                labels[key] = value
+    return labels
+
+def pdf_text(value):
+    """Maskiert Text fuer reportlab-Paragraph (Mini-HTML)."""
+    return str(value).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+
+def calculate_statistics(messages, L=None):
     """Berechnet Statistiken aus den Nachrichten."""
+    L = L or DEFAULT_LABELS
     total_messages = len(messages)
     user_messages = len([m for m in messages if m['role'] == 'user'])
     ai_messages = len([m for m in messages if m['role'] == 'assistant'])
@@ -66,9 +97,9 @@ def calculate_statistics(messages):
     if messages:
         first_time = messages[0].get('timestamp', '')
         last_time = messages[-1].get('timestamp', '')
-        duration = f"{first_time} bis {last_time}"
+        duration = f"{first_time} {L['to']} {last_time}"
     else:
-        duration = "Keine Nachrichten"
+        duration = L['none']
     
     return {
         'total': total_messages,
@@ -82,6 +113,8 @@ def calculate_statistics(messages):
 
 def create_pdf(chat_data):
     """Erstellt PDF aus Chat-Daten."""
+    L = get_labels(chat_data)
+    P = {k: pdf_text(v) for k, v in L.items()}
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=2*cm, bottomMargin=2*cm)
     
@@ -136,47 +169,47 @@ def create_pdf(chat_data):
     story = []
     
     # Titel
-    story.append(Paragraph("DeepSeek Chat - Export", title_style))
+    story.append(Paragraph(P['title'], title_style))
     story.append(Spacer(1, 0.5*cm))
     
     # Server-Info
     server_info = chat_data.get('serverInfo', {})
-    story.append(Paragraph(f"<b>Server:</b> {server_info.get('name', 'Unbekannt')} (IP: {server_info.get('ip', 'Unbekannt')})", styles['Normal']))
-    story.append(Paragraph(f"<b>Export-Datum:</b> {chat_data.get('timestamp', 'Unbekannt')}", styles['Normal']))
+    story.append(Paragraph(f"<b>{P['server']}:</b> {pdf_text(server_info.get('name', L['unknown']))} (IP: {pdf_text(server_info.get('ip', L['unknown']))})", styles['Normal']))
+    story.append(Paragraph(f"<b>{P['export_date']}:</b> {pdf_text(chat_data.get('timestamp', L['unknown']))}", styles['Normal']))
     
     settings = chat_data.get('settings', {})
-    story.append(Paragraph(f"<b>Einstellungen:</b> {settings.get('addressForm', 'sie')}-Form, Modus: {settings.get('defaultMode', 'chat')}", styles['Normal']))
+    story.append(Paragraph(f"<b>{P['settings']}:</b> " + P['form_mode'].replace('{0}', pdf_text(settings.get('addressForm', 'sie'))).replace('{1}', pdf_text(settings.get('defaultMode', 'chat'))), styles['Normal']))
     story.append(Spacer(1, 0.5*cm))
     
     # Statistiken
     messages = chat_data.get('messages', [])
-    stats = calculate_statistics(messages)
+    stats = calculate_statistics(messages, L)
     
-    story.append(Paragraph("Statistiken", heading_style))
-    story.append(Paragraph(f"<b>Nachrichten gesamt:</b> {stats['total']} (Benutzer: {stats['user']}, KI: {stats['ai']})", stats_style))
+    story.append(Paragraph(P['stats'], heading_style))
+    story.append(Paragraph(f"<b>{P['total']}:</b> {stats['total']} ({P['user']}: {stats['user']}, {P['ai']}: {stats['ai']})", stats_style))
     
     modes_text = ", ".join([f"{mode}: {count}x" for mode, count in stats['modes'].items()])
-    story.append(Paragraph(f"<b>Verwendete Modi:</b> {modes_text}", stats_style))
-    story.append(Paragraph(f"<b>Hochgeladene Dateien:</b> {stats['files']}", stats_style))
-    story.append(Paragraph(f"<b>Geschaetzte Token-Nutzung:</b> {stats['tokens']}", stats_style))
-    story.append(Paragraph(f"<b>Chat-Dauer:</b> {stats['duration']}", stats_style))
+    story.append(Paragraph(f"<b>{P['modes']}:</b> {pdf_text(modes_text)}", stats_style))
+    story.append(Paragraph(f"<b>{P['files']}:</b> {stats['files']}", stats_style))
+    story.append(Paragraph(f"<b>{P['tokens']}:</b> {stats['tokens']}", stats_style))
+    story.append(Paragraph(f"<b>{P['duration']}:</b> {pdf_text(stats['duration'])}", stats_style))
     story.append(Spacer(1, 0.5*cm))
     
     # Inhaltsverzeichnis
-    story.append(Paragraph("Inhaltsverzeichnis", heading_style))
+    story.append(Paragraph(P['toc'], heading_style))
     for idx, msg in enumerate(messages, 1):
-        role = "Benutzer" if msg['role'] == 'user' else "KI"
+        role = P['user'] if msg['role'] == 'user' else P['ai']
         preview = msg['content'][:50] + "..." if len(msg['content']) > 50 else msg['content']
         preview = preview.replace('<', '&lt;').replace('>', '&gt;')
-        story.append(Paragraph(f"Nachricht {idx} ({role}): {preview}", stats_style))
+        story.append(Paragraph(f"{P['message']} {idx} ({role}): {preview}", stats_style))
     
     story.append(PageBreak())
     
     # Nachrichten
-    story.append(Paragraph("Chat-Verlauf", heading_style))
+    story.append(Paragraph(P['history'], heading_style))
     
     for idx, msg in enumerate(messages, 1):
-        role = "Benutzer" if msg['role'] == 'user' else "KI"
+        role = P['user'] if msg['role'] == 'user' else P['ai']
         timestamp = msg.get('timestamp', '')
         mode = msg.get('mode', 'chat')
         content = msg['content'].replace('<', '&lt;').replace('>', '&gt;').replace('\n', '<br/>')
@@ -187,7 +220,7 @@ def create_pdf(chat_data):
         
         # Nachricht
         style = user_style if msg['role'] == 'user' else ai_style
-        story.append(Paragraph(f"<b>Nachricht {idx} - {role}</b> {mode_badge} <i>({timestamp})</i>", heading_style))
+        story.append(Paragraph(f"<b>{P['message']} {idx} - {role}</b> {mode_badge} <i>({pdf_text(timestamp)})</i>", heading_style))
         story.append(Paragraph(content, style))
         story.append(Spacer(1, 0.3*cm))
     
@@ -250,3 +283,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+

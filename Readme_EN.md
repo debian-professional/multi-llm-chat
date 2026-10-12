@@ -499,7 +499,7 @@ Every conversation is automatically managed as a server-side session:
 | PDF | Server-side (`export-pdf.py`, ReportLab) | Header, statistics, table of contents, full chat |
 | Markdown | Server-side (`export-markdown.py`) | Identical structure to PDF, with anchors |
 | TXT | Server-side (`export-txt.py`) | Plain text with separators |
-| RTF | Server-side (`export-rtf.py`) | Manual RTF encoding, umlauts as RTF escape codes |
+| RTF | Server-side (`export-rtf.py`) | Manual RTF encoding, all non-ASCII characters as RTF escape codes |
 | **Copy to clipboard** | **Client-side only (no server roundtrip)** | Plain text assembled in JavaScript, written via `navigator.clipboard.writeText()` |
 
 **Per-message export** (hover button on each message):
@@ -510,6 +510,8 @@ Every conversation is automatically managed as a server-side session:
 | Markdown | Client-side |
 | RTF | Client-side |
 | PDF | Server-side (single message sent to `export-pdf.py`) |
+
+**Export language:** All captions in the exports (title, "Date", "Time", "Messages", role names, statistics headings, table of contents, footer) follow the UI language. The frontend sends them with each export request as `chatData.labels` (built by `exportLabels()` from `language.xml`, IDs 283–306); the four CGI scripts use German defaults if no labels arrive. RTF encodes all non-ASCII characters (umlauts, Spanish accents, `¿`, `€`, …) as RTF escape codes. The sending banner, the microphone messages and the close tooltips also come from `language.xml` (IDs 279–282), and number formats follow the UI language.
 
 **Export content** (PDF / Markdown global export):
 - Header: server name, IP, export date, active language, address form
