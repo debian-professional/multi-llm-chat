@@ -2096,13 +2096,21 @@
          * (PDF/Markdown/TXT/RTF). Die CGI-Skripte haben deutsche Standardwerte
          * und uebernehmen diese Labels, wenn sie mitgeschickt werden.
          */
+        function addressFormExportText() {
+            const meta = langMeta[currentLang];
+            if (!meta || !meta.has_address_form) return t(307);
+            const name = (settings && settings.addressForm === 'sie') ? meta.form_formal_status : meta.form_informal_status;
+            return t(293).replace('{0}', name || '');
+        }
+
         function exportLabels() {
             return {
                 title: t(283), server: t(284), date: t(285), time: t(286),
                 messages: t(287), user: t(288), ai: t(289), exported: t(290),
                 export_date: t(291), settings: t(292),
-                // Sprachen ohne Sie/Du-Unterscheidung: nur der Modus, ohne 'sie'/'du'
-                form_mode: (langMeta[currentLang] && langMeta[currentLang].has_address_form) ? t(293) : t(307),
+                // Anredeform als lesbarer Name der Sprache ("Sie-Form", "Usted", "Tu"),
+                // nicht als interner Wert 'sie'/'du'; ohne Anredeform nur der Modus
+                form_mode: addressFormExportText(),
                 stats: t(294), total: t(295), modes: t(296), files: t(297),
                 tokens: t(298), duration: t(299), none: t(300), to: t(301),
                 toc: t(302), history: t(303), message: t(304), unknown: t(305),

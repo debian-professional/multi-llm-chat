@@ -2586,5 +2586,61 @@
     - Dateien: index.html, language.xml, Readme_EN.md, Readme_DE.md,
       Readme_ES.md
 
+    120. [12.10.2026] Korrektur zu 119: Anredeform im Export als lesbarer 
+      Name statt rohem Wert
+    - Anlass: Der neue Browser-Test (web-test.py, Eintrag 121) meldete im
+      spanischen Export weiterhin "Tratamiento sie, modo: chat". In 119 war
+      angenommen worden, Spanisch habe keine Anredeform; tatsaechlich hat es
+      "Usted"/"Tu" (has_address_form="true"), nur Englisch hat keine
+    - index.html: neue Funktion addressFormExportText(); die Konfigurationszeile
+      im Export zeigt den Namen aus der Sprachdatei (form_formal_status /
+      form_informal_status: "Sie-Form", "Du-Form", "Usted", "Tu"). Ohne
+      Anredeform (en, custom) nur der Modus
+    - language.xml: Text 293 angepasst ("{0}, Modus: {1}" / "{0}, mode: {1}" /
+      "Tratamiento: {0}, modo: {1}"), je Sprachblock. Ergebnis: de
+      "Sie-Form, Modus: chat" (vorher "sie-Form, Modus: chat"), es
+      "Tratamiento: Usted, modo: chat", en "Mode: chat"
+    - Die Export-Skripte brauchten keine Aenderung ({0} wird im Frontend
+      ersetzt)
+    - Dateien: index.html, language.xml
+
+    ============================================================================
+
+    121. [12.10.2026] Neu: shell-scripts/web-test.py - automatischer 
+      Browser-Test der Webseite
+    - Anlass: Wunsch nach einem vollstaendigen Test der Oberflaeche wie
+      api-test.py fuer die APIs, damit nicht jedes Mal alles von Hand geprueft
+      werden muss (Sprache, Exporte, Fehlerfaelle usw.)
+    - web-test.py: steuert ein echtes Chromium (Playwright). Provider-Antworten
+      und die Sitzungs-/Lesezeichen-Skripte werden simuliert (keine Kosten, nichts
+      auf dem Server veraendert); die Export-Skripte laufen echt (lokal oder bei
+      --url auf dem Server). Gruppen: laden, sprache, einstellung, chat, fehler,
+      export, speicher, dateien (insgesamt 123 Pruefungen, Laufzeit etwa 1 Minute)
+    - sprache: fuer en/de/es und in Hauptseite sowie allen Dialogen darf kein
+      sichtbarer Text aus einer anderen Sprache stammen (findet deutsche Reste
+      in en/es und umgekehrt); Umschalten im Betrieb; Sprache bleibt nach
+      Neuladen
+    - einstellung: Modelllisten je Anbieter/Plan gegen index.html, Speichern ueber
+      Neuladen, Mikrofon-Knopf je Modell. chat: alle fuenf Anbieter (Endpunkt,
+      Modell, max_tokens, Streaming), Regenerieren, DeepThink, Download-Modus,
+      anonymer Chat, XSS. fehler: Guthaben-/Ausgabenlimit-Banner, Retry (3
+      Versuche), ueberlastet, Tageslimit, Kontext zu gross, Banner folgt der
+      Sprache. export: TXT/MD/RTF/PDF einzeln und global in en/de/es (Titel,
+      Rollen, Akzente, Zeitstempelformat, RTF nur ASCII, Inhalt per LibreOffice
+      und pdftotext, falls vorhanden). speicher: Sitzungen und Lesezeichen.
+      dateien: Textdatei, ausfuehrbare Datei wird abgelehnt
+    - Aufruf: ~/.venvs/webtest/bin/python shell-scripts/web-test.py [--only=...]
+      [--url=https://...] [--headed] [--insecure] [--keep=DIR] [--list];
+      Einrichtung einmalig (venv, pip install playwright, playwright install
+      chromium) steht im Skript-Kopf. Exit-Code 1 bei FAIL
+    - Doku: Readme_EN/DE/ES.md (Werkzeugliste, Skript-Tabelle, Verzeichnisbaum)
+    - Verifiziert: lokal gegen die Repo-Kopie (123 PASS, 0 FAIL); gegen den alten
+      Stand vor 117 gestartet findet die Suite die nicht uebersetzten
+      "Close"-Tooltips. Bereits beim ersten Lauf hat sie den Fehler aus 119
+      aufgedeckt (siehe 120). Noch nicht getestet: --url gegen den Server,
+      Dateien als Bild/PDF, Kompressor, Zwischenablage, Mikrofon
+    - Dateien: shell-scripts/web-test.py, Readme_EN.md, Readme_DE.md,
+      Readme_ES.md
+
     ============================================================================
 

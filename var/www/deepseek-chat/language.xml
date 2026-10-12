@@ -172,7 +172,7 @@ Adding a new language:
     <text id="290">Exported</text>
     <text id="291">Export date</text>
     <text id="292">Settings</text>
-    <text id="293">{0} form, mode: {1}</text>
+    <text id="293">{0}, mode: {1}</text>
     <text id="294">Statistics</text>
     <text id="295">Total messages</text>
     <text id="296">Modes used</text>
@@ -399,7 +399,7 @@ Adding a new language:
     <text id="290">Exportiert</text>
     <text id="291">Export-Datum</text>
     <text id="292">Einstellungen</text>
-    <text id="293">{0}-Form, Modus: {1}</text>
+    <text id="293">{0}, Modus: {1}</text>
     <text id="294">Statistiken</text>
     <text id="295">Nachrichten gesamt</text>
     <text id="296">Verwendete Modi</text>
@@ -624,7 +624,7 @@ Adding a new language:
     <text id="290">Exportado</text>
     <text id="291">Fecha de exportación</text>
     <text id="292">Configuración</text>
-    <text id="293">Tratamiento {0}, modo: {1}</text>
+    <text id="293">Tratamiento: {0}, modo: {1}</text>
     <text id="294">Estadísticas</text>
     <text id="295">Mensajes en total</text>
     <text id="296">Modos utilizados</text>
@@ -842,7 +842,7 @@ Adding a new language:
     <text id="290">Exported</text>
     <text id="291">Export date</text>
     <text id="292">Settings</text>
-    <text id="293">{0} form, mode: {1}</text>
+    <text id="293">{0}, mode: {1}</text>
     <text id="294">Statistics</text>
     <text id="295">Total messages</text>
     <text id="296">Modes used</text>

@@ -146,6 +146,7 @@ Die Architektur ist bewusst einfach, aber gut durchdacht:
 - `install.sh` — installiert `deploy.sh` und `sync-back.sh` im Produktionsverzeichnis.
 - `tag-release.sh` — erstellt einen Git-Tag mit automatisch inkrementierter Versionsnummer (z.B. `v0.94 → v0.95`) und pusht ihn. Führt `git fetch --tags` automatisch aus, um Konflikte mit bestehenden Remote-Tags zu vermeiden.
 - `api-test.py` — testet die Anbieter-APIs mit denselben Parametern wie die CGI-Proxys (Modellliste, Text mit vollem Output-Limit, Bild, Audio, DeepSeek-DeepThink). Liest Modelllisten und Limits aus `index.html`, API-Keys aus `/etc/apache2/envvars`; als root auf dem Server ausführen. Wird nicht nach Produktion deployt.
+- `web-test.py` — automatischer Browser-Test der Webseite (Playwright/Chromium, einmalige Einrichtung im Skript-Kopf). Anbieter-Antworten und die Sitzungs-/Lesezeichen-Skripte werden simuliert, es entstehen also keine Kosten; die Export-Skripte laufen echt. Prüft: Laden, Sprache (jeder sichtbare Text muss zur gewählten Sprache gehören, auch in allen Dialogen), Einstellungen und Modelllisten, Chat für alle fünf Anbieter, Fehlerfälle (Guthaben-Banner, Retry, überlastet, Kontext zu gross), Exporte in allen Sprachen (Titel, Rollen, Akzente, RTF-Kodierung), Sitzungen/Lesezeichen, Datei-Upload. Gegenstück zu `api-test.py`; wird nicht nach Produktion deployt.
 - `repo2text.sh` — exportiert das gesamte Repository als einzelne begrenzte Textdatei für KI-Assistenten.
 
 ---
@@ -1151,6 +1152,7 @@ Seit dem 17. September 2026 wird die sichtbare Beschriftung jedes Modells in den
 | `install.sh` | Installiert `deploy.sh` und `sync-back.sh` im Produktionsverzeichnis |
 | `tag-release.sh` | Erstellt einen Git-Tag mit automatisch inkrementierter Versionsnummer und pusht ihn. Führt zuerst `git fetch --tags` aus um Konflikte mit bestehenden Remote-Tags zu vermeiden. |
 | `api-test.py` | Testet alle Anbieter/Modelle mit den echten Proxy-Parametern (`sudo python3 shell-scripts/api-test.py [Anbieter…] [--no-media] [--dry]`). Wird nicht nach Produktion deployt. |
+| `web-test.py` | Browser-Test der Webseite mit simulierten Anbieter-Antworten (`~/.venvs/webtest/bin/python shell-scripts/web-test.py [--only=Gruppe,…] [--url=https://…] [--headed]`). Wird nicht nach Produktion deployt. |
 
 **Wichtig — `deploy.sh` deployt sich nicht selbst.** Die eigene `cp`-Liste des Skripts umfasst `index.html`, `manifest`, `files-directorys`, `cgi-bin/*.py` und `language.xml` — sich selbst kopiert es nie. Nach einer Änderung an `deploy.sh` im Quell-Repo und einem `git pull` auf dem Server bleibt die Produktionskopie unter `/var/www/deepseek-chat/deploy.sh` die **alte** Version, bis sie manuell überkopiert wird:
 ```bash
@@ -1174,7 +1176,8 @@ Dies führte während der Session vom 19. Juli 2026 zu einem echten Stolperstein
 │   ├── sync-back.sh                    Kopiert Produktion → Quell-Repo
 │   ├── install.sh                      Installiert deploy/sync-back-Skripte
 │   ├── tag-release.sh                  Erstellt und pusht Git-Versions-Tags
-│   └── api-test.py                     Testet Anbieter-APIs mit den Proxy-Parametern
+│   ├── api-test.py                     Testet Anbieter-APIs mit den Proxy-Parametern
+│   └── web-test.py                     Browser-Test der Webseite (Playwright)
 ├── var/www/deepseek-chat/
 │   ├── index.html                      Hauptanwendung (~5.000 Zeilen, alles JS/CSS/HTML)
 │   ├── language.xml                    Alle UI-Texte in allen Sprachen (EN, DE, ES, Custom)
