@@ -3308,12 +3308,17 @@
                                 showTageslimitBanner();
                                 throw new Error(t(257));
                             }
+                            // Hugging Face: Inference-Providers-Guthaben leer (HTTP 402)
+                            if (errData && errData.error_type === 'insufficient_quota') {
+                                showGuthabenBanner();
+                                throw new Error(t(256));
+                            }
                             if (errData && errData.error_type === 'context_exceeded') {
                                 showContextExceededBox();
                                 throw new Error(t(259));
                             }
                         } catch (parseErr) {
-                            if (parseErr.message === t(257) || parseErr.message === t(259)) throw parseErr;
+                            if (parseErr.message === t(256) || parseErr.message === t(257) || parseErr.message === t(259)) throw parseErr;
                         }
                     }
                     const errorText = await response.text();
@@ -4246,12 +4251,17 @@
                                 showTageslimitBanner();
                                 throw new Error(t(257));
                             }
+                            // Hugging Face: Inference-Providers-Guthaben leer (HTTP 402)
+                            if (errData && errData.error_type === 'insufficient_quota') {
+                                showGuthabenBanner();
+                                throw new Error(t(256));
+                            }
                             if (errData && errData.error_type === 'context_exceeded') {
                                 showContextExceededBox();
                                 throw new Error(t(259));
                             }
                         } catch (parseErr) {
-                            if (parseErr.message === t(257) || parseErr.message === t(259)) throw parseErr;
+                            if (parseErr.message === t(256) || parseErr.message === t(257) || parseErr.message === t(259)) throw parseErr;
                         }
                         const errDetail = (errData && (errData.details || errData.error || errData.message)) || '';
                         throw new Error(tf(24, response.status, errDetail));

@@ -199,6 +199,14 @@ def main():
                     'error_type': 'daily_limit',
                     'details': error_body
                 })
+            # HTTP 402: Inference-Providers-Guthaben aufgebraucht ("You have no remaining
+            # credits"). Betrifft alle Modelle; der Client zeigt das rote Guthaben-Banner.
+            elif e.code == 402:
+                send_error(e.code, {
+                    'error': f'Hugging Face API Fehler: {e.code}',
+                    'error_type': 'insufficient_quota',
+                    'details': error_body
+                })
             else:
                 # HTTP 400/413: prüfen ob Kontextfenster überschritten
                 if e.code in (400, 413):

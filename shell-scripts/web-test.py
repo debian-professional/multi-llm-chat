@@ -782,6 +782,39 @@ def t_fehler(C):
     add('fehler', 'DeepSeek insufficient_quota: Guthaben-Banner', p.is_visible('#guthabenBanner'), p.inner_text('#guthabenBannerText')[:60])
     close(p)
 
+    # Hugging Face: Inference-Providers-Guthaben leer (HTTP 402) -> Guthaben-Banner, keine Wiederholung
+    p = err_page(C, 'huggingface', 'Qwen/Qwen2.5-72B-Instruct', {'hfTier': 'free'})
+    C.mock.chat_reply = (402, {'error': 'Hugging Face API Fehler: 402', 'error_type': 'insufficient_quota',
+                               'details': 'You have no remaining credits'})
+    send(p, 'x')
+    p.wait_for_timeout(300)
+    add('fehler', 'HuggingFace 402 insufficient_quota: Guthaben-Banner (ID 256)',
+        p.is_visible('#guthabenBanner') and tx(C, 'en', 256) in p.inner_text('#guthabenBannerText'), p.inner_text('#guthabenBannerText')[:60])
+    add('fehler', 'HuggingFace 402: keine Wiederholung, Fehlertext statt Rohmeldung',
+        len(C.mock.requests) == 1 and tx(C, 'en', 256) in last_ai(p), f'{len(C.mock.requests)} Anfragen; {last_ai(p)[:60]}')
+    close(p)
+
+    # Hugging Face: Guthaben leer beim Regenerieren
+    p = err_page(C, 'huggingface', 'Qwen/Qwen2.5-72B-Instruct', {'hfTier': 'free'})
+    send(p, 'x')
+    C.mock.chat_reply = (402, {'error': 'Hugging Face API Fehler: 402', 'error_type': 'insufficient_quota',
+                               'details': 'You have no remaining credits'})
+    p.dispatch_event('#chat .feedback-btn:nth-child(4)', 'click')
+    p.wait_for_function('!document.getElementById("sendButton").disabled')
+    p.wait_for_timeout(500)
+    add('fehler', 'HuggingFace 402 beim Regenerieren: Guthaben-Banner (ID 256)',
+        p.is_visible('#guthabenBanner') and tx(C, 'en', 256) in p.inner_text('#guthabenBannerText'), p.inner_text('#guthabenBannerText')[:60])
+    close(p)
+
+    # Hugging Face: Tageslimit (429) bleibt unveraendert das blaue Banner
+    p = err_page(C, 'huggingface', 'Qwen/Qwen2.5-72B-Instruct', {'hfTier': 'free'})
+    C.mock.chat_reply = (429, {'error': 'daily', 'error_type': 'daily_limit'})
+    send(p, 'x')
+    p.wait_for_timeout(300)
+    add('fehler', 'HuggingFace 429 daily_limit: weiter Tageslimit-Banner (ID 257), kein Guthaben-Banner',
+        p.is_visible('#tageslimitBanner') and not p.is_visible('#guthabenBanner'), '')
+    close(p)
+
     # Kontext zu gross
     for prov, extra, model in (('openai', {'openaiTier': 'paid'}, 'gpt-6-astra'), ('deepseek', {}, 'deepseek-flash')):
         p = err_page(C, prov, model, extra)

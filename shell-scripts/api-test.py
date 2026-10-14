@@ -29,6 +29,11 @@ Repo-Verzeichnis oder mit vollem Pfad):
   sudo python3 shell-scripts/api-test.py --dry           # nur anzeigen, was getestet wuerde
   sudo python3 shell-scripts/api-test.py groq hf --list  # verfuegbare Modell-IDs des Anbieters auflisten
   --html=PFAD   andere index.html verwenden (Standard: Produktion)
+  --timeout=SEK Wartezeit je Anfrage in Sekunden (Standard 120, erlaubt 5-600); bei langsamen
+                Anbietern (z. B. Google-Ueberlast) kuerzer waehlen, z. B. --timeout=30.
+                Ein Timeout wird als WARN gemeldet (HTTP 0), nicht als FAIL.
+Waehrend einer laufenden Anfrage zeigt das Terminal eine Zeile "... wartet auf <Anbieter Modell
+Test>" (nur bei interaktiver Ausgabe, nicht beim Umleiten in eine Datei).
 
 Host-Schutz (seit 14.10.2026): Das Skript laeuft NUR auf dem Server, auf dem multi-llm-chat
 betrieben wird, und bricht sonst vor jeder Anfrage mit einer Fehlermeldung ab (Exit-Code 2):
@@ -198,10 +203,14 @@ def make_webm(wav_bytes):
         return open(dst, 'rb').read()
 
 
-def http(url, payload=None, headers=None, method=None):
+def http(url, payload=None, headers=None, method=None, label=None):
     data = json.dumps(payload).encode('utf-8') if payload is not None else None
     req = urllib.request.Request(url, data=data, headers=headers or {}, method=method or ('POST' if data else 'GET'))
     t0 = time.time()
+    show = bool(label) and sys.stdout.isatty()
+    if show:  # Wartehinweis, damit ein langsamer Anbieter nicht wie ein Haenger aussieht
+        sys.stdout.write(f'      ... wartet auf {label} (max. {TIMEOUT}s)')
+        sys.stdout.flush()
     try:
         with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
             body = r.read().decode('utf-8', 'replace')
@@ -210,6 +219,10 @@ def http(url, payload=None, headers=None, method=None):
         return e.code, e.read().decode('utf-8', 'replace'), time.time() - t0
     except Exception as e:
         return 0, str(e), time.time() - t0
+    finally:
+        if show:
+            sys.stdout.write('\r\033[K')
+            sys.stdout.flush()
 
 
 def bad(st):
@@ -328,6 +341,16 @@ def main():
     no_media = '--no-media' in sys.argv
     todo = [p for p in PROVIDERS if not args or p in args]
     keys = require_host(todo)  # bricht ab, wenn Host/Apache2/Keys nicht stimmen
+    global TIMEOUT
+    for a in sys.argv[1:]:
+        if a.startswith('--timeout='):
+            try:
+                TIMEOUT = int(a.split('=', 1)[1])
+                if not 5 <= TIMEOUT <= 600:
+                    raise ValueError
+            except ValueError:
+                print('FEHLER: --timeout=SEK erwartet eine ganze Zahl von 5 bis 600.', file=sys.stderr)
+                sys.exit(2)
     html = default_html()
     for a in sys.argv[1:]:
         if a.startswith('--html='):
@@ -411,7 +434,7 @@ def main():
                     'in Modellliste' if m in avail else 'NICHT in der Modellliste des Anbieters')
             # A: Text mit vollem Output-Limit
             url, h, pl = build(p, m, key, 'Antworte nur mit dem Wort OK.', limit)
-            st, body, dt = http(url, pl, h)
+            st, body, dt = http(url, pl, h, label=f'{p} {m} A-text')
             ok, txt, info = parse_reply(p, st, body)
             if st == 200 and ok:
                 add(p, m, 'A-text', 'PASS', f'{dt:4.1f}s max={limit} "{clean(txt, keys, 30)}" {info}')
@@ -424,7 +447,7 @@ def main():
             # B: Bild
             if caps.get(m):
                 url, h, pl = build(p, m, key, 'Welche Farbe hat dieses Bild? Antworte mit einem Wort.', limit, image=png)
-                st, body, dt = http(url, pl, h)
+                st, body, dt = http(url, pl, h, label=f'{p} {m} B-bild')
                 ok, txt, info = parse_reply(p, st, body)
                 if st == 200 and ok:
                     good = bool(re.search(r'rot|red|rojo', txt, re.I))
@@ -439,7 +462,7 @@ def main():
                 for label, data, mime, fmt in variants:
                     url, h, pl = build(p, m, key, 'Beschreibe das Geraeusch in hoechstens fuenf Worten.', limit,
                                        audio=(data, mime, fmt))
-                    st, body, dt = http(url, pl, h)
+                    st, body, dt = http(url, pl, h, label=f'{p} {m} C-audio-{label}')
                     ok, txt, info = parse_reply(p, st, body)
                     if st == 200 and ok:
                         add(p, m, f'C-audio-{label}', 'PASS', f'{dt:4.1f}s "{clean(txt, keys, 50)}"')
@@ -454,14 +477,14 @@ def main():
         if p == 'deepseek' and not dry:
             for m in [x for x in models]:
                 url, h, pl = build(p, m, key, 'Was ist 17 * 23? Nur die Zahl.', cfg.get(m, 8192), deepthink=True)
-                st, body, dt = http(url, pl, h)
+                st, body, dt = http(url, pl, h, label=f'{p} {m} D-deepthink')
                 ok, txt, info = parse_reply(p, st, body)
                 if st == 200 and ok:
                     add(p, m, 'D-deepthink', 'PASS' if '391' in txt else 'WARN', f'{dt:4.1f}s "{clean(txt, keys, 30)}" {info}')
                 else:
                     add(p, m, 'D-deepthink', bad(st), f'HTTP {st}: {clean(txt or info, keys)}')
             url, h, pl = build(p, 'deepseek-v4-flash', key, 'Antworte nur mit dem Wort OK.', 384000)
-            st, body, dt = http(url, pl, h)
+            st, body, dt = http(url, pl, h, label=f'{p} deepseek-v4-flash E-alias')
             ok, txt, info = parse_reply(p, st, body)
             add(p, 'deepseek-v4-flash', 'E-alias', 'PASS' if (st == 200 and ok) else 'WARN',
                 f'HTTP {st} (abgeloester Alias; WARN waere nur Hinweis): {clean(txt or info, keys, 80)}')
