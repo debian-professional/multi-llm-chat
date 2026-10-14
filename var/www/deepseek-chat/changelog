@@ -2760,5 +2760,19 @@
      nur bei gpt-audio*-Modellen und dort nur als WAV/MP3, der Browser nimmt aber WebM auf.
    - Dateien: var/www/deepseek-chat/manifest
 
+134. 14.10.2026 - api-test.py: Host-Schutz (laeuft nur auf dem richtigen Server)
+   - Neu: api-test.py bricht vor jeder Anfrage mit Fehlermeldung und Exit-Code 2 ab, wenn
+     * Apache2 nicht installiert ist (apache2 / apache2ctl fehlt),
+     * die Produktion /var/www/deepseek-chat (index.html, cgi-bin) nicht vorhanden ist,
+     * /etc/apache2/envvars fehlt oder nicht lesbar ist (als root starten),
+     * der API-Key eines gewaehlten Anbieters dort fehlt oder nicht plausibel ist
+       (leer, Platzhalter, Leerzeichen, kuerzer als 16 Zeichen).
+   - Der Schutz gilt fuer alle Betriebsarten (auch --dry, --list, --html=).
+   - API-Keys werden nur noch aus /etc/apache2/envvars gelesen, nicht mehr aus Umgebungsvariablen.
+   - Alle Probleme werden gemeinsam aufgelistet; es wird keine Anfrage an einen Anbieter gesendet.
+   - Ob ein Key beim Anbieter gueltig ist, zeigen weiterhin die Tests selbst (HTTP 401/403 = FAIL).
+   - Standard-index.html ist immer die der Produktion (Repo-Kopie als Rueckfall entfaellt).
+   - Dateien: shell-scripts/api-test.py, Readme_DE.md, Readme_EN.md, Readme_ES.md
+
     ============================================================================
 

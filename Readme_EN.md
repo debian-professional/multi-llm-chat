@@ -145,7 +145,7 @@ The architecture is intentionally simple but well thought out:
 - `sync-back.sh` — copies changed files from production back to the source repo.
 - `install.sh` — installs `deploy.sh` and `sync-back.sh` in the production directory.
 - `tag-release.sh` — creates a Git tag with auto-incremented version (e.g. `v0.94 → v0.95`) and pushes it. Runs `git fetch --tags` automatically to avoid conflicts with existing remote tags.
-- `api-test.py` — tests the provider APIs with the same parameters as the CGI proxies (model list, text at the full output limit, image, audio, DeepSeek DeepThink). Reads the model lists and limits from `index.html`, API keys from `/etc/apache2/envvars`; run as root on the server. Not deployed to production.
+- `api-test.py` — tests the provider APIs with the same parameters as the CGI proxies (model list, text at the full output limit, image, audio, DeepSeek DeepThink). Reads the model lists and limits from `index.html`, API keys from `/etc/apache2/envvars`; run as root on the server. Host guard (since 14.10.2026): before any request the script aborts with exit code 2 if Apache2 is not installed, the production directory `/var/www/deepseek-chat` is missing, `/etc/apache2/envvars` is not readable, or the API keys of the selected providers are missing or implausible; keys from environment variables are not used. Not deployed to production.
 - `web-test.py` — automatic browser test of the web page (Playwright/Chromium, one-time setup in the script header). Provider answers and the session/bookmark scripts are simulated, so it costs nothing; the export scripts run for real. Checks: loading, language (every visible text must belong to the chosen language, in all dialogs), settings and model lists, chat for all five providers, error cases (credit banner, retry, overloaded, context too large), exports in all languages (title, roles, accents, RTF encoding), sessions/bookmarks, file upload (text, image, PDF), clipboard (copy, pasting text, image and file paths), microphone (Chromium fake microphone), compressor and – with `--url` – the VPN tunnel (TCP connection attempt to 172.29.255.1, no ping needed). `--check` first verifies the installed extra software and shows the installation guide for anything missing. Counterpart to `api-test.py`; not deployed to production.
 - `repo2text.sh` — exports the entire repository as a single delimited text file for AI assistants.
 
@@ -1152,7 +1152,7 @@ Since 17 September 2026, the visible label for every model in the dropdowns abov
 | `sync-back.sh <user>` | Copies changed files from production back to the source repo |
 | `install.sh` | Installs `deploy.sh` and `sync-back.sh` in the production directory |
 | `tag-release.sh` | Creates a Git tag with auto-incremented version number and pushes it. Runs `git fetch --tags` first to avoid conflicts with existing remote tags. |
-| `api-test.py` | Tests all providers/models with the proxies' real parameters (`sudo python3 shell-scripts/api-test.py [provider…] [--no-media] [--dry]`). Not deployed to production. |
+| `api-test.py` | Tests all providers/models with the proxies' real parameters (`sudo python3 shell-scripts/api-test.py [provider…] [--no-media] [--dry]`). Runs only on the server (Apache2, production directory and valid keys required, otherwise abort). Not deployed to production. |
 | `web-test.py` | Browser test of the web page with simulated provider answers (`~/.venvs/webtest/bin/python shell-scripts/web-test.py [--only=group,…] [--url=https://…] [--headed] [--check]`). Not deployed to production. |
 
 **Important — `deploy.sh` does not deploy itself.** The script's own `cp` list covers `index.html`, `manifest`, `files-directorys`, `cgi-bin/*.py`, and `language.xml` — it never copies itself. After changing `deploy.sh` in the source repo and running `git pull` on the server, the production copy at `/var/www/deepseek-chat/deploy.sh` remains the **old** version until it is copied over manually:
@@ -1348,6 +1348,3 @@ This project demonstrates professional-level web development in a minimalist, se
 ---
 
 *Last updated: 17.09.2026*
-
-
-

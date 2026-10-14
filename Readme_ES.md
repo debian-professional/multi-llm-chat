@@ -145,7 +145,7 @@ La arquitectura es intencionalmente simple pero bien pensada:
 - `sync-back.sh` — copia archivos modificados desde producción de vuelta al repositorio fuente.
 - `install.sh` — instala `deploy.sh` y `sync-back.sh` en el directorio de producción.
 - `tag-release.sh` — crea un tag Git con número de versión auto-incrementado (p.ej. `v0.94 → v0.95`) y lo envía. Ejecuta `git fetch --tags` automáticamente para evitar conflictos con tags remotos existentes.
-- `api-test.py` — prueba las APIs de los proveedores con los mismos parámetros que los proxies CGI (lista de modelos, texto con el límite de salida completo, imagen, audio, DeepThink de DeepSeek). Lee las listas de modelos y límites de `index.html` y las claves API de `/etc/apache2/envvars`; ejecutar como root en el servidor. No se despliega en producción.
+- `api-test.py` — prueba las APIs de los proveedores con los mismos parámetros que los proxies CGI (lista de modelos, texto con el límite de salida completo, imagen, audio, DeepThink de DeepSeek). Lee las listas de modelos y límites de `index.html` y las claves API de `/etc/apache2/envvars`; ejecutar como root en el servidor. Protección de host (desde el 14.10.2026): antes de cualquier petición el script se cancela con código de salida 2 si Apache2 no está instalado, falta el directorio de producción `/var/www/deepseek-chat`, `/etc/apache2/envvars` no es legible o faltan las claves API de los proveedores elegidos o no son plausibles; no se usan claves de variables de entorno. No se despliega en producción.
 - `web-test.py` — prueba automática de la página web en el navegador (Playwright/Chromium, configuración única en la cabecera del script). Las respuestas de los proveedores y los scripts de sesiones/marcadores se simulan, por lo que no cuesta nada; los scripts de exportación se ejecutan de verdad. Comprueba: carga, idioma (cada texto visible debe pertenecer al idioma elegido, también en todos los diálogos), ajustes y listas de modelos, chat con los cinco proveedores, casos de error (banner de crédito, reintento, sobrecargado, contexto demasiado grande), exportaciones en todos los idiomas (título, roles, acentos, codificación RTF), sesiones/marcadores, carga de archivos (texto, imagen, PDF), portapapeles (copiar, pegar texto, imagen y rutas de archivos), micrófono (micrófono simulado de Chromium), compresor y – con `--url` – el túnel VPN (intento de conexión TCP a 172.29.255.1, sin necesidad de ping). `--check` comprueba antes el software adicional instalado y muestra la guía de instalación de lo que falte. Complemento de `api-test.py`; no se despliega en producción.
 - `repo2text.sh` — exporta todo el repositorio como un único archivo de texto delimitado para asistentes de IA.
 
@@ -1151,7 +1151,7 @@ Desde el 17 de septiembre de 2026, la etiqueta visible de cada modelo en los des
 | `sync-back.sh <user>` | Copia archivos modificados desde producción de vuelta al repositorio fuente |
 | `install.sh` | Instala `deploy.sh` y `sync-back.sh` en el directorio de producción |
 | `tag-release.sh` | Crea un tag Git con número de versión auto-incrementado y lo envía. Ejecuta primero `git fetch --tags` para evitar conflictos con tags remotos existentes. |
-| `api-test.py` | Prueba todos los proveedores/modelos con los parámetros reales de los proxies (`sudo python3 shell-scripts/api-test.py [proveedor…] [--no-media] [--dry]`). No se despliega en producción. |
+| `api-test.py` | Prueba todos los proveedores/modelos con los parámetros reales de los proxies (`sudo python3 shell-scripts/api-test.py [proveedor…] [--no-media] [--dry]`). Solo se ejecuta en el servidor (se requieren Apache2, directorio de producción y claves válidas; si no, se cancela). No se despliega en producción. |
 | `web-test.py` | Prueba de la página web en el navegador con respuestas de proveedores simuladas (`~/.venvs/webtest/bin/python shell-scripts/web-test.py [--only=grupo,…] [--url=https://…] [--headed] [--check]`). No se despliega en producción. |
 
 **Importante — `deploy.sh` no se despliega a sí mismo.** La propia lista `cp` del script cubre `index.html`, `manifest`, `files-directorys`, `cgi-bin/*.py` y `language.xml` — nunca se copia a sí mismo. Tras modificar `deploy.sh` en el repositorio fuente y ejecutar `git pull` en el servidor, la copia de producción en `/var/www/deepseek-chat/deploy.sh` sigue siendo la versión **antigua** hasta que se copia manualmente:
@@ -1347,6 +1347,3 @@ Este proyecto demuestra desarrollo web de nivel profesional en un enfoque minima
 ---
 
 *Última actualización: 17.09.2026*
-
-
-

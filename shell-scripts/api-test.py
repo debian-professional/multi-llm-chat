@@ -28,7 +28,17 @@ Repo-Verzeichnis oder mit vollem Pfad):
   sudo python3 shell-scripts/api-test.py --no-media      # nur Test 0, A, D, E
   sudo python3 shell-scripts/api-test.py --dry           # nur anzeigen, was getestet wuerde
   sudo python3 shell-scripts/api-test.py groq hf --list  # verfuegbare Modell-IDs des Anbieters auflisten
-  --html=PFAD   andere index.html verwenden (Standard: Produktion, sonst Repo-Kopie)
+  --html=PFAD   andere index.html verwenden (Standard: Produktion)
+
+Host-Schutz (seit 14.10.2026): Das Skript laeuft NUR auf dem Server, auf dem multi-llm-chat
+betrieben wird, und bricht sonst vor jeder Anfrage mit einer Fehlermeldung ab (Exit-Code 2):
+  - Apache2 muss installiert sein (apache2 / apache2ctl),
+  - die Produktion /var/www/deepseek-chat (index.html und cgi-bin) muss vorhanden sein,
+  - /etc/apache2/envvars muss existieren und lesbar sein (als root starten),
+  - die API-Keys der gewaehlten Anbieter muessen dort gesetzt und plausibel sein (nicht leer,
+    kein Platzhalter, mindestens 16 Zeichen). Keys aus Umgebungsvariablen werden NICHT verwendet.
+Das gilt fuer alle Betriebsarten (auch --dry, --list, --html=). Ob ein Key beim Anbieter gueltig
+ist, zeigen die Tests selbst (HTTP 401/403 = FAIL).
 
 Einstufung: FAIL = Konfiguration/Anfrage fehlerhaft. WARN bei HTTP 402/429/503 oder
 Timeout = Konto-/Anbieterproblem (Guthaben leer, Kontingent, Ueberlast); die Konfiguration
@@ -54,8 +64,11 @@ import urllib.request
 import wave
 import zlib
 
-HTML_PATH = '/var/www/deepseek-chat/index.html'
+PROD_DIR = '/var/www/deepseek-chat'
+HTML_PATH = PROD_DIR + '/index.html'
 ENVVARS = '/etc/apache2/envvars'
+APACHE_BINARIES = ('/usr/sbin/apache2', '/usr/sbin/apache2ctl')
+MIN_KEY_LEN = 16
 TIMEOUT = 120
 
 PROVIDERS = {
@@ -70,10 +83,9 @@ PROVIDERS = {
 # Hilfsfunktionen
 # ----------------------------------------------------------------------------
 def load_keys():
+    """Liest die API-Keys NUR aus /etc/apache2/envvars (wie die CGI-Proxys). Umgebungsvariablen
+    werden bewusst nicht beruecksichtigt, damit das Skript nicht auf fremden Rechnern laeuft."""
     keys = {}
-    for name in ('DEEPSEEK_API_KEY', 'OPENAI_API_KEY', 'GOOGLE_API_KEY', 'GRQ_API_KEY', 'HF_API_KEY'):
-        if os.environ.get(name):
-            keys[name] = os.environ[name]
     try:
         with open(ENVVARS, encoding='utf-8') as f:
             for line in f:
@@ -82,17 +94,63 @@ def load_keys():
                     v = m.group(2).strip().strip('"').strip("'")
                     if v:
                         keys[m.group(1)] = v
-    except OSError as e:
-        print(f'Hinweis: {ENVVARS} nicht lesbar ({e}) - als root starten oder Keys als Umgebungsvariablen setzen.')
+    except OSError:
+        pass  # check_host() meldet das mit einer verstaendlichen Fehlermeldung
     return keys
 
 
 def default_html():
-    """Produktions-index.html, sonst die Kopie im Repo (relativ zu shell-scripts/)."""
-    if os.path.exists(HTML_PATH):
-        return HTML_PATH
-    here = os.path.dirname(os.path.abspath(__file__))
-    return os.path.join(here, '..', 'var', 'www', 'deepseek-chat', 'index.html')
+    """index.html der Produktion (der Host-Schutz stellt sicher, dass sie existiert)."""
+    return HTML_PATH
+
+
+def key_problem(name, value):
+    """Gibt einen Fehlertext zurueck, wenn der Key fehlt oder nicht plausibel ist, sonst None."""
+    if not value:
+        return f'{name} ist in {ENVVARS} nicht gesetzt'
+    if re.search(r'\s', value):
+        return f'{name} enthaelt Leerzeichen'
+    if len(value) < MIN_KEY_LEN or re.search(
+            r'your|change|dummy|example|placeholder|xxxx|todo|<|>|\.\.\.', value, re.I):
+        return f'{name} ist leer, zu kurz oder ein Platzhalter'
+    return None
+
+
+def check_host(providers, keys):
+    """Prueft, ob das Skript auf dem richtigen Host laeuft. Gibt eine Liste von Problemen zurueck
+    (leer = alles in Ordnung)."""
+    problems = []
+    if not (any(os.access(p, os.X_OK) for p in APACHE_BINARIES) or shutil.which('apache2')
+            or shutil.which('apache2ctl')):
+        problems.append('Apache2 ist auf diesem Rechner nicht installiert.')
+    if not (os.path.isfile(HTML_PATH) and os.path.isdir(PROD_DIR + '/cgi-bin')):
+        problems.append(f'Die Produktion {PROD_DIR} (index.html, cgi-bin) ist nicht vorhanden.')
+    if not os.path.isfile(ENVVARS):
+        problems.append(f'{ENVVARS} existiert nicht (dort stehen die API-Keys).')
+    elif not os.access(ENVVARS, os.R_OK):
+        problems.append(f'{ENVVARS} ist nicht lesbar - als root starten (sudo).')
+    else:
+        for p in providers:
+            name = PROVIDERS[p]['key']
+            err = key_problem(name, keys.get(name, ''))
+            if err:
+                problems.append(f'{p}: {err}.')
+    return problems
+
+
+def require_host(providers):
+    """Bricht mit Exit-Code 2 ab, wenn der Host nicht stimmt. Gibt sonst die Keys zurueck."""
+    keys = load_keys()
+    problems = check_host(providers, keys)
+    if problems:
+        print('ABBRUCH: api-test.py darf nur auf dem Server laufen, auf dem multi-llm-chat '
+              'betrieben wird (Apache2 installiert, Produktion vorhanden, gueltige API-Keys '
+              f'in {ENVVARS}).', file=sys.stderr)
+        for pr in problems:
+            print('  - ' + pr, file=sys.stderr)
+        print('Es wurde keine Anfrage an einen Anbieter gesendet.', file=sys.stderr)
+        sys.exit(2)
+    return keys
 
 
 def parse_html(path):
@@ -268,13 +326,13 @@ def main():
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
     dry = '--dry' in sys.argv
     no_media = '--no-media' in sys.argv
+    todo = [p for p in PROVIDERS if not args or p in args]
+    keys = require_host(todo)  # bricht ab, wenn Host/Apache2/Keys nicht stimmen
     html = default_html()
     for a in sys.argv[1:]:
         if a.startswith('--html='):
             html = a.split('=', 1)[1]
     cfg, caps, lists = parse_html(html)
-    keys = {} if dry else load_keys()
-    todo = [p for p in PROVIDERS if not args or p in args]
 
     if '--list' in sys.argv:
         for p in todo:
